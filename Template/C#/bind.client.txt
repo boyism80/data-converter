@@ -1,0 +1,13 @@
+using MasterData.{{ scope }};
+using MasterData.Types;
+using MasterData.Types.Util;
+using System.Collections.Generic;
+
+{{~ for table in tables ~}} 
+[Table("{{ table.name }}.json")]
+public partial class Table{{ table.name }} : {{ table.type }}<{{ table.generic }}>
+{ }
+{{~ if !for.last ~}}
+
+{{~ end ~}}
+{{~ end ~}}

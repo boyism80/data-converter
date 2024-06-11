@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ExcelTableConverter": {
+      "commandName": "Project",
+      "commandLineArgs": "--dir=..\\\\..\\\\..\\\\sample"
+    }
+  }
+}

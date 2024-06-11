@@ -1,0 +1,24 @@
+#include <fb/model/{{ scope | string.downcase }}.h>
+
+namespace fb { namespace model { namespace {{ scope | string.downcase }} {
+
+{{~ for table in tables ~}}
+class {{ table.name | string.downcase }}s : public fb::model::{{ table.type }}<{{ table.generic }}>
+{
+public:
+    {{ table.name | string.downcase }}s() : {{ table.type }}<{{ table.generic }}>("{{ table.name }}.json")
+    {}
+    ~{{ table.name | string.downcase }}s() = default;
+};
+{{~ end ~}}
+
+
+class container
+{
+public:
+{{~ for table in tables ~}}
+    fb::model::{{ table.name | string.downcase }}s {{ table.name | string.downcase }};
+{{~ end ~}}
+};
+
+} } }

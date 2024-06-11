@@ -1,0 +1,13 @@
+#ifndef	__ENUM_H__
+#define	__ENUM_H__
+
+namespace fb { namespace model {
+
+{{~ for code in codes ~}}
+{{ code }}
+{{~ if !for.last }}
+{{ end ~}}
+{{~ end ~}}
+} }
+
+#endif

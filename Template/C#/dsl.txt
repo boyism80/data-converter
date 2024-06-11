@@ -1,0 +1,38 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using WebUtil.Util;
+
+namespace MasterData.Types.Dsl.Parameter
+{
+    public class {{ header }}
+    {
+{{~ for param in params ~}}
+        public {{ param.type }} {{ param.name }} { get; set; }
+{{~ end ~}}
+
+        public static {{ header }} Parse(object[] parameters)
+        {
+            return new {{ header }}
+            {
+{{~ for param in params ~}}
+                {{ param.name }} = {{ param.deserialize }}{{ if !for.last }},{{ end }}
+{{~ end ~}}
+            };
+        }
+
+        public Dsl ToDsl()
+        {
+            return new Dsl
+            {
+                Type = DslFunctionType.{{ header }},
+                Parameters = new object[]
+                {
+{{~ for param in params ~}}
+                    {{ param.serialize }}{{ param.name }}{{ if !for.last }},{{ end }}
+{{~ end ~}}
+                }
+            };
+        }
+    }
+}

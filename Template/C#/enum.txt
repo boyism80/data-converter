@@ -1,0 +1,17 @@
+// Generated code. DO NOT MODIFY DIRECTLY
+
+using System;
+using System.Collections.Generic;
+using MasterData.Types;
+using MasterData.Types.Common;
+
+namespace MasterData.Types
+{
+    [DescriptiveEnumEnforcement(DescriptiveEnumEnforcementAttribute.EnforcementTypeEnum.ThrowException)]
+    public enum {{ name }}
+    {
+{{~ for pair in properties ~}}
+        {{ pair.key }} = {{ pair.value }}{{ if !for.last }}, {{ end }}
+{{~ end ~}}
+    }
+}

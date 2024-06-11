@@ -1,0 +1,16 @@
+using MasterData.Client;
+using MasterData.Types;
+using MessagePack;
+using System.Collections.Generic;
+
+[MessagePackObject]
+public partial class CustomMessagePackResolver
+{
+{{~ for property in properties ~}}
+    [MessagePack.Key({{ property.index }})]
+    public {{ property.type }}<{{ property.generic }}> {{ property.name }} { get; set; }
+{{~ if !for.last ~}}
+
+{{~ end ~}}
+{{~ end ~}}
+}

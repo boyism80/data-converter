@@ -1,0 +1,13 @@
+{
+    "ConstFilePrefix": "const.",
+    "EnumFilePrefix": "enum.",
+    "JsonFilePath": "json",
+    "JsonSheetFilePath":  "json_sheet",
+    "DiffFilePath": "diff",
+    "ClassCodeFilePath": "class",
+    "BindingCodeFilePath": "bind",
+    "ConstCodeFilePath": "const",
+    "EnumCodeFilePath": "enum",
+    "CMPResolverCodeFilePath": "resolver",
+    "DslCodeFilePath": "dsl"
+}

@@ -1,0 +1,6 @@
+enum class {{ name }}
+{
+{{~ for pair in properties ~}}
+    {{ pair.key }} = {{ pair.value }}{{ if !for.last }}, {{ end }}
+{{~ end ~}}
+};

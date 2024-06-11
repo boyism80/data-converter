@@ -1,0 +1,13 @@
+namespace fb { namespace model { namespace {{ scope | string.downcase }} { namespace consts {
+
+{{~ for item in items ~}}
+class {{ item.key }}{{~ if !super }} : public fb::model::common::consts::{{ item.key }} {{~ end }}
+{
+public:
+{{~ for prop in item.value ~}}
+    inline static const {{ prop.type }} {{ prop.name }} = {{ prop.value }};
+{{~ end ~}}
+};
+{{~ end ~}}
+
+} } } }

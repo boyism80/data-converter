@@ -1,0 +1,41 @@
+#ifndef __MODEL_TYPE_H__
+#define __MODEL_TYPE_H__
+
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <map>
+#include <vector>
+
+namespace fb { namespace model {
+
+class date_range
+{
+public:
+    const boost::posix_time::ptime begin, end;
+
+public:
+    date_range(const boost::posix_time::ptime& begin, const boost::posix_time::ptime& end) : 
+        begin(begin),
+        end(end)
+    {}
+    ~date_range() = default;
+};
+
+template <typename K, typename V>
+class kv_container : private std::map<K, V>
+{
+protected:
+    kv_container() = default;
+    ~kv_container() = default;
+};
+
+template <typename T>
+class array_container : private std::vector<T>
+{
+protected:
+    array_container() = default;
+    ~array_container();
+};
+
+} }
+
+#endif

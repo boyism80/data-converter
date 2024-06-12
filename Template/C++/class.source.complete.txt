@@ -1,0 +1,13 @@
+{{~ if super ~}}
+#include <fb/model/common/class.h>
+{{~ else ~}}
+#include <fb/model/class.h>
+{{~ end ~}}
+
+{{~ for code in codes ~}}
+{{ code }}
+{{~ if !for.last }}
+
+
+{{ end ~}}
+{{~ end ~}}

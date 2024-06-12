@@ -7,11 +7,8 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 {
     public class BindFileGenerator : ParallelWorker<Scope, bool>
     {
-        private static readonly Dictionary<Scope, Template> _template = new Dictionary<Scope, Template>
-        {
-            [Scope.Server] = Template.Parse(File.ReadAllText($"Template/C++/bind.{Scope.Server.ToString().ToLower()}.txt")),
-            [Scope.Client] = Template.Parse(File.ReadAllText($"Template/C++/bind.{Scope.Server.ToString().ToLower()}.txt")),
-        };
+        private static readonly Template _headerTemplate = Template.Parse(File.ReadAllText($"Template/C++/bind.header.txt"));
+        private static readonly Template _sourceTemplate = Template.Parse(File.ReadAllText($"Template/C++/bind.source.txt"));
         private readonly string _dir;
 
         public BindFileGenerator(Context ctx) : base(ctx)
@@ -21,22 +18,25 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 
         protected override IEnumerable<Scope> OnReady()
         {
+            if(Directory.Exists(_dir) == false)
+                Directory.CreateDirectory(_dir);
+
+            foreach (var file in Directory.GetFiles(_dir))
+                File.Delete(file);
+
+            foreach (var dir in Directory.GetDirectories(_dir))
+                Directory.Delete(dir, true);
+
             foreach (var scope in new[] { Scope.Server, Scope.Client })
             {
-                var dir = Path.Combine(_dir, $"{scope}".ToLower());
-                if (Directory.Exists(dir) == false)
-                    Directory.CreateDirectory(dir);
-
-                foreach (var file in Directory.GetFiles(dir))
-                    File.Delete(file);
-
+                Directory.CreateDirectory(Path.Combine(_dir, $"{scope.ToString().ToLower()}", "include"));
+                Directory.CreateDirectory(Path.Combine(_dir, $"{scope.ToString().ToLower()}", "source"));
                 yield return scope;
             }
         }
 
         protected override IEnumerable<bool> OnWork(Scope scope)
         {
-            var template = _template[scope];
             var buffer = new List<BindingCodeGeneratorProperty>();
             foreach (var (tableName, schemaSet) in Context.Result.Schema.OrderBy(x => x.Key))
             {
@@ -44,7 +44,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 if (ftdSchemaSet.Count == 0)
                     continue;
 
-                var modelName = $"fb::model::{scope.ToString().ToLower()}::{tableName}";
+                var modelName = $"fb::model::{tableName}";
 
                 var containerType = string.Empty;
                 var genericType = string.Empty;
@@ -79,9 +79,8 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 });
             }
 
-            var code = template.Render(new { Scope = scope, Tables = buffer });
-            var path = Path.Combine(_dir, $"{scope}".ToLower(), "container.h");
-            File.WriteAllText(path, code);
+            File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", "include", "container.h"), _headerTemplate.Render(new { Scope = scope, Tables = buffer }));
+            File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", "source", "container.cpp"), _sourceTemplate.Render(new { Scope = scope, Tables = buffer }));
             yield return true;
         }
 

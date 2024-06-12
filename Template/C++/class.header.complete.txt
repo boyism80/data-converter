@@ -1,0 +1,22 @@
+#ifndef __MODEL_{{ scope | string.upcase }}_H__
+#define __MODEL_{{ scope | string.upcase }}_H__
+
+{{~ if super ~}}
+#include <fb/model/model.h>
+#include <fb/model/enum.h>
+#include <fb/model/dsl.h>
+{{~ else ~}}
+#include <fb/model/common/class.h>
+{{~ end ~}}
+
+namespace fb { namespace model { {{ if super }} namespace common { {{ end }}
+
+{{~ for code in codes ~}}
+{{ code }}
+{{~ if !for.last }}
+{{ end ~}}
+{{~ end ~}}
+
+} }{{ if super }} } {{ end }}
+
+#endif

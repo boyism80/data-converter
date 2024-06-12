@@ -10,7 +10,7 @@ namespace ExcelTableConverter.Factory.CPP
 
         }
 
-        protected override bool OnStart(object value, string root, bool nullable, out string result)
+        protected override bool OnStart(object value, string root, bool nullable, out string result, DataFormatOption option)
         {
             if (Util.Value.IsNull(value))
             {
@@ -22,7 +22,7 @@ namespace ExcelTableConverter.Factory.CPP
             return true;
         }
 
-        protected override string ArrayType(object value, string root, string e)
+        protected override string ArrayType(object value, string root, string e, DataFormatOption option)
         {
             var list = value as List<object>;
             var values = string.Join(", ", list.Select(x => Build(e, x)));
@@ -30,12 +30,12 @@ namespace ExcelTableConverter.Factory.CPP
             return $"{{ {values} }}";
         }
 
-        protected override string BooleanType(object value, string root, bool nullable)
+        protected override string BooleanType(object value, string root, bool nullable, DataFormatOption option)
         {
             return $"{value}";
         }
 
-        protected override string DateRangeType(object value, string root, bool nullable)
+        protected override string DateRangeType(object value, string root, bool nullable, DataFormatOption option)
         {
             switch (value)
             {
@@ -47,13 +47,13 @@ namespace ExcelTableConverter.Factory.CPP
             }
         }
 
-        protected override string DateTimeType(object value, string root, bool nullable)
+        protected override string DateTimeType(object value, string root, bool nullable, DataFormatOption option)
         {
             var dt = (DateTime)value;
             return $"boost::posix_time::time_from_string({Build("string", dt.ToString("yyyy-MM-dd HH:mm:ss"))})";
         }
 
-        protected override string DictionaryType(object value, string root, string k, string v)
+        protected override string DictionaryType(object value, string root, string k, string v, DataFormatOption option)
         {
             var map = value as Dictionary<object, object>;
             var values = string.Join(", ", map.Select(x =>
@@ -67,12 +67,12 @@ namespace ExcelTableConverter.Factory.CPP
             return $"{{ {values} }}";
         }
 
-        protected override string DoubleType(object value, string root, bool nullable)
+        protected override string DoubleType(object value, string root, bool nullable, DataFormatOption option)
         {
             return $"{value}";
         }
 
-        protected override string DslType(object value, string root, bool nullable)
+        protected override string DslType(object value, string root, bool nullable, DataFormatOption option)
         {
             var dsl = value as DSL;
 
@@ -90,7 +90,7 @@ namespace ExcelTableConverter.Factory.CPP
             return $"new MasterData.Types.Dsl.Parameter.{dsl.Type} {{ {string.Join(", ", args.Select(x => $"{x.Name} = {x.Value}"))} }}.ToDsl()";
         }
 
-        protected override string EnumType(object value, string root, string e, bool nullable)
+        protected override string EnumType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
             foreach (var (k, v) in Context.Result.Enum[root])
             {
@@ -100,22 +100,22 @@ namespace ExcelTableConverter.Factory.CPP
             throw new LogicException($"{value}는 {root} 열거형에 존재하지 않는 값입니다.");
         }
 
-        protected override string FloatType(object value, string root, bool nullable)
+        protected override string FloatType(object value, string root, bool nullable, DataFormatOption option)
         {
             return $"{value}";
         }
 
-        protected override string IntType(object value, string root, bool nullable)
+        protected override string IntType(object value, string root, bool nullable, DataFormatOption option)
         {
             return $"{value}";
         }
 
-        protected override string LongType(object value, string root, bool nullable)
+        protected override string LongType(object value, string root, bool nullable, DataFormatOption option)
         {
             return $"{value}";
         }
 
-        protected override string StringType(object value, string root)
+        protected override string StringType(object value, string root, DataFormatOption option)
         {
             var s = value as string;
             if (string.IsNullOrEmpty(s))
@@ -126,7 +126,7 @@ namespace ExcelTableConverter.Factory.CPP
                 return $"\"{s}\"";
         }
 
-        protected override string TimeSpanType(object value, string root, bool nullable)
+        protected override string TimeSpanType(object value, string root, bool nullable, DataFormatOption option)
         {
             var ts = (TimeSpan)value;
             return $"std::chrono::milliseconds({(uint)ts.TotalMilliseconds} /* {ts} */)";

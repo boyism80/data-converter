@@ -23,7 +23,7 @@ namespace ExcelTableConverter.Factory.CS
             return castedValues.GetOrAdd(value, _x => result);
         }
 
-        protected override object BooleanType(object value, string root, bool nullable)
+        protected override object BooleanType(object value, string root, bool nullable, DataFormatOption option)
         {
             if (value is bool b)
                 return b;
@@ -42,7 +42,7 @@ namespace ExcelTableConverter.Factory.CS
             return DP(root, value, result);
         }
 
-        protected override object ArrayType(object value, string root, string e)
+        protected override object ArrayType(object value, string root, string e, DataFormatOption option)
         {
             if (value is List<object>)
                 return value;
@@ -57,7 +57,7 @@ namespace ExcelTableConverter.Factory.CS
                 .ToList());
         }
 
-        protected override object DictionaryType(object value, string root, string k, string v)
+        protected override object DictionaryType(object value, string root, string k, string v, DataFormatOption option)
         {
             if (value is Dictionary<object, object>)
                 return value;
@@ -77,7 +77,7 @@ namespace ExcelTableConverter.Factory.CS
             return DP(root, value, result);
         }
 
-        protected override object DoubleType(object value, string root, bool nullable)
+        protected override object DoubleType(object value, string root, bool nullable, DataFormatOption option)
         {
             if (Util.Value.IsNull(value))
             {
@@ -106,7 +106,7 @@ namespace ExcelTableConverter.Factory.CS
             }
         }
 
-        protected override object DslType(object value, string root, bool nullable)
+        protected override object DslType(object value, string root, bool nullable, DataFormatOption option)
         {
             if (Util.Value.IsNull(value))
             {
@@ -157,7 +157,7 @@ namespace ExcelTableConverter.Factory.CS
             });
         }
 
-        protected override object EnumType(object value, string root, string e, bool nullable)
+        protected override object EnumType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
             if (Util.Value.IsNull(value))
             {
@@ -177,17 +177,17 @@ namespace ExcelTableConverter.Factory.CS
             return DP(root, value, $"{value}");
         }
 
-        protected override object FloatType(object value, string root, bool nullable)
+        protected override object FloatType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return DoubleType(value, root, nullable);
+            return DoubleType(value, root, nullable, option);
         }
 
-        protected override object IntType(object value, string root, bool nullable)
+        protected override object IntType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return LongType(value, root, nullable);
+            return LongType(value, root, nullable, option);
         }
 
-        protected override object LongType(object value, string root, bool nullable)
+        protected override object LongType(object value, string root, bool nullable, DataFormatOption option)
         {
             if (Util.Value.IsNull(value))
             {
@@ -216,7 +216,7 @@ namespace ExcelTableConverter.Factory.CS
             }
         }
 
-        protected override object StringType(object value, string root)
+        protected override object StringType(object value, string root, DataFormatOption option)
         {
             if (Util.Value.IsNull(value))
             {
@@ -229,7 +229,7 @@ namespace ExcelTableConverter.Factory.CS
             return DP(root, value, $"{value}");
         }
 
-        protected override object TimeSpanType(object value, string root, bool nullable)
+        protected override object TimeSpanType(object value, string root, bool nullable, DataFormatOption option)
         {
             if (Util.Value.IsNull(value))
             {
@@ -257,7 +257,7 @@ namespace ExcelTableConverter.Factory.CS
             }
         }
 
-        protected override object DateRangeType(object value, string root, bool nullable)
+        protected override object DateRangeType(object value, string root, bool nullable, DataFormatOption option)
         {
             if (Util.Value.IsNull(value))
             {
@@ -292,7 +292,7 @@ namespace ExcelTableConverter.Factory.CS
             throw new TypeCastException(value, root);
         }
 
-        protected override object DateTimeType(object value, string root, bool nullable)
+        protected override object DateTimeType(object value, string root, bool nullable, DataFormatOption option)
         {
             if (Util.Value.IsNull(value))
             {

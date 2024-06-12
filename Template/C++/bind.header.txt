@@ -1,0 +1,31 @@
+#ifndef __MODEL_BIND_{{ scope | string.upcase }}_H__
+#define __MODEL_BIND_{{ scope | string.upcase }}_H__
+
+#include <fb/model/class.h>
+#include <fb/model/type.h>
+
+namespace fb { namespace model { {{ if super }}namespace common { {{ end }}
+
+{{~ for table in tables ~}}
+class __{{ table.name }} : public {{ table.type }}<{{ table.generic }}>
+{
+public:
+    __{{ table.name }}();
+    ~__{{ table.name }}();
+};
+{{~ if !for.last }}
+{{ end ~}}
+{{~ end ~}}
+
+
+class container
+{
+public:
+{{~ for table in tables ~}}
+    fb::model::__{{ table.name }} {{ table.name }};
+{{~ end ~}}
+};
+
+} }{{ if super }} } {{ end }}
+
+#endif

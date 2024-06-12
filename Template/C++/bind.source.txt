@@ -1,0 +1,14 @@
+#include <fb/model/container.h>
+
+{{~ for table in tables ~}}
+// __{{ table.name }} class
+fb::model::{{ scope | string.downcase }}::__{{ table.name }}::__{{ table.name }}() : {{ table.type }}<{{ table.generic }}>("{{ table.name }}.json")
+{ }
+
+fb::model::{{ scope | string.downcase }}::__{{ table.name }}::~__{{ table.name }}()
+{ }
+{{~ if !for.last }}
+
+
+{{ end ~}}
+{{~ end ~}}

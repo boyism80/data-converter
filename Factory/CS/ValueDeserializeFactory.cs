@@ -15,33 +15,33 @@ namespace ExcelTableConverter.Factory.CS
             return $"{prefix}{result}";
         }
 
-        protected override string ArrayType(object obj, string root, string e)
+        protected override string ArrayType(object obj, string root, string e, DataFormatOption option)
         {
             return $"({obj} as object[]).Select(x => {Build(e, "x")}).ToList()";
         }
 
-        protected override string BooleanType(object obj, string root, bool nullable)
+        protected override string BooleanType(object obj, string root, bool nullable, DataFormatOption option)
         {
             return WithNullable(obj as string, $"({new TypeFactory(Context).Build(root)})System.Convert.ChangeType({obj}, typeof({root}))", nullable);
         }
 
-        protected override string DateRangeType(object obj, string root, bool nullable)
+        protected override string DateRangeType(object obj, string root, bool nullable, DataFormatOption option)
         {
             return WithNullable(obj as string, $"DateRange.Parse({obj})", nullable);
         }
 
-        protected override string DateTimeType(object obj, string root, bool nullable)
+        protected override string DateTimeType(object obj, string root, bool nullable, DataFormatOption option)
         {
             return WithNullable(obj as string, $"DateTime.Parse({obj}.ToString())", nullable);
         }
 
-        protected override string DictionaryType(object obj, string root, string k, string v)
+        protected override string DictionaryType(object obj, string root, string k, string v, DataFormatOption option)
         {
             // TODO: 디버깅 후 다시 작성
             return $"({obj} as object[]).Select(x => {Build(k, "x")}).ToList()";
         }
 
-        protected override string DoubleType(object obj, string root, bool nullable)
+        protected override string DoubleType(object obj, string root, bool nullable, DataFormatOption option)
         {
             var result = $"(double){obj}";
             if (nullable)
@@ -50,7 +50,7 @@ namespace ExcelTableConverter.Factory.CS
             return WithNullable(obj as string, result, nullable);
         }
 
-        protected override string DslType(object obj, string root, bool nullable)
+        protected override string DslType(object obj, string root, bool nullable, DataFormatOption option)
         {
             var result = $"Newtonsoft.Json.JsonConvert.DeserializeObject<Dsl>(Newtonsoft.Json.JsonConvert.SerializeObject({obj}))";
             if (nullable)
@@ -58,12 +58,12 @@ namespace ExcelTableConverter.Factory.CS
             return WithNullable(obj as string, result, nullable);
         }
 
-        protected override string EnumType(object obj, string root, string e, bool nullable)
+        protected override string EnumType(object obj, string root, string e, bool nullable, DataFormatOption option)
         {
             return WithNullable(obj as string, $"EnumParse<{root}>.Parse({obj}.ToString())", nullable);
         }
 
-        protected override string FloatType(object obj, string root, bool nullable)
+        protected override string FloatType(object obj, string root, bool nullable, DataFormatOption option)
         {
             var result = $"(float)(double){obj}";
             if (nullable)
@@ -72,7 +72,7 @@ namespace ExcelTableConverter.Factory.CS
             return WithNullable(obj as string, result, nullable);
         }
 
-        protected override string IntType(object obj, string root, bool nullable)
+        protected override string IntType(object obj, string root, bool nullable, DataFormatOption option)
         {
             var result = $"(int)(long){obj}";
             if (nullable)
@@ -81,7 +81,7 @@ namespace ExcelTableConverter.Factory.CS
             return WithNullable(obj as string, result, nullable);
         }
 
-        protected override string LongType(object obj, string root, bool nullable)
+        protected override string LongType(object obj, string root, bool nullable, DataFormatOption option)
         {
             var result = $"(long){obj}";
             if (nullable)
@@ -90,12 +90,12 @@ namespace ExcelTableConverter.Factory.CS
             return WithNullable(obj as string, result, nullable);
         }
 
-        protected override string StringType(object obj, string root)
+        protected override string StringType(object obj, string root, DataFormatOption option)
         {
             return $"{obj}?.ToString()";
         }
 
-        protected override string TimeSpanType(object obj, string root, bool nullable)
+        protected override string TimeSpanType(object obj, string root, bool nullable, DataFormatOption option)
         {
             var result = $"TimeSpan.Parse({obj}.ToString())";
             if (nullable)

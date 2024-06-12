@@ -201,7 +201,7 @@ try
         isCastValues = true;
     }, stopOnError: true);
 
-    Scheduler.Add(() => new NameValidator(ctx).Run());
+    //Scheduler.Add(() => new NameValidator(ctx).Run());
     Scheduler.Add(() => new SchemaValidator(ctx).Run());
     Scheduler.Add(() => new KeyValidator(ctx).Run());
     Scheduler.Add(() => new DslValidator(ctx).Run());
@@ -228,7 +228,7 @@ try
     if (isComplete)
     {
         Scheduler.Add(() => new JsonFileGenerator(ctx).Run());
-        Scheduler.Add(() => new DiffFileGenerator(ctx).Run());
+        //Scheduler.Add(() => new DiffFileGenerator(ctx).Run());
         Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CPP.ClassFileGenerator(ctx).Run());
         Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CPP.BindFileGenerator(ctx).Run());
         Scheduler.Add(() =>
@@ -261,8 +261,8 @@ try
             new ExcelTableConverter.Worker.Generator.CPP.ConstFileGenerator(ctx).Run();
         });
         Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CPP.EnumFileGenerator(ctx).Run());
-        Scheduler.Add(() => new CMPResolverGenerator(ctx).Run());
-        Scheduler.Add(() => new DslFileGenerator(ctx).Run());
+        //Scheduler.Add(() => new CMPResolverGenerator(ctx).Run());
+        Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CPP.DslFileGenerator(ctx).Run());
         Scheduler.Add(() =>
         {
             foreach (var scope in new[] { Scope.Server, Scope.Client })

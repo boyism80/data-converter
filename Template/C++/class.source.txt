@@ -1,0 +1,9 @@
+// {{ name }} class
+fb::model::{{ scope | string.downcase }}::{{ name }}::{{ name }}(const Json::Value& json){{ if !super || properties.size > 0 }} : {{ end }}{{ if !super }}fb::model::common::{{ name }}(json){{ if properties.size > 0 }}, {{ end }}{{ end }}
+{{~ for property in properties ~}}
+    {{ property.name }}({{ property.initializer }}){{~ if !for.last ~}},{{ end }}
+{{~ end ~}}
+{ }
+
+fb::model::{{ scope | string.downcase }}::{{ name }}::~{{ name }}()
+{ }

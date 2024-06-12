@@ -1,5 +1,4 @@
-﻿using ExcelTableConverter.Factory;
-using ExcelTableConverter.Factory.CS;
+﻿using ExcelTableConverter.Factory.CS;
 using ExcelTableConverter.Model;
 using ExcelTableConverter.Model.CS;
 using Newtonsoft.Json;

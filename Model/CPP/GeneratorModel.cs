@@ -27,4 +27,14 @@ namespace ExcelTableConverter.Model.CPP
         public string Name { get; set; }
         public string Value { get; set; }
     }
+
+    public class DslCodeGeneratorProperty
+    {
+        public string Type { get; set; }
+        public string RType { get; set; }
+        public string Name { get; set; }
+        public string Serialize { get; set; }
+        public string Deserialize { get; set; }
+        public bool IsReference { get; set; }
+    }
 }

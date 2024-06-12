@@ -21,6 +21,7 @@ XCOPY bin\output\class\include\*.h %DEST%\include\fb\model\*.h
 XCOPY bin\output\class\common\include\*.h %DEST%\include\fb\model\common\*.h
 XCOPY bin\output\class\server\include\*.h %DEST%\include\fb\model\*.h
 XCOPY bin\output\bind\server\include\*.h %DEST%\include\fb\model\*.h
+XCOPY bin\output\json\\server\*.json %DEST%\game\json\*.json
 
 GOTO SKIP_PAUSE
 :END

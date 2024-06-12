@@ -54,7 +54,7 @@ public:
 class __{{ table.name }} : public {{ table.type }}<{{ table.generic }}>
 {
 public:
-    __{{ table.name }}() : {{ table.type }}<{{ table.generic }}>(std::string("{{ table.name }}.json"))
+    __{{ table.name }}() : {{ table.type }}<{{ table.generic }}>(std::string("json/{{ table.name }}.json"))
     { }
     ~__{{ table.name }}()
     { }

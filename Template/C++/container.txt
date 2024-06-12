@@ -1,10 +1,54 @@
 #ifndef __MODEL_BIND_{{ scope | string.upcase }}_H__
 #define __MODEL_BIND_{{ scope | string.upcase }}_H__
 
+#include <jsoncpp/json/json.h>
 #include <fb/model/class.h>
-#include <fb/model/type.h>
+#include <string>
 
 namespace fb { namespace model { {{ if super }}namespace common { {{ end }}
+
+{{~ if !super ~}}
+template <typename K, typename V>
+class kv_container : private std::map<K, V>
+{
+private:
+    const std::string _fname;
+
+protected:
+    kv_container(const std::string& fname);
+    kv_container(const Json::Value& json);
+
+public:
+    ~kv_container() = default;
+
+private:
+    void load(const std::string& fname);
+    void load(const Json::Value& json);
+
+public:
+    void load();
+};
+
+template <typename T>
+class array_container : private std::vector<T>
+{
+private:
+    const std::string _fname;
+
+protected:
+    array_container(const std::string& fname);
+    array_container(const Json::Value& json);
+public:
+    ~array_container() = default;
+
+private:
+    void load(const std::string& fname);
+    void load(const Json::Value& json);
+
+public:
+    void load();
+};
+{{~ end ~}}
 
 {{~ for table in tables ~}}
 class __{{ table.name }} : public {{ table.type }}<{{ table.generic }}>
@@ -29,5 +73,96 @@ public:
 };
 
 } }{{ if super }} } {{ end }}
+
+{{~ if !super ~}}
+template <typename K, typename V>
+fb::model::kv_container<K, V>::kv_container(const std::string& fname) : _fname(fname)
+{ }
+
+template <typename K, typename V>
+fb::model::kv_container<K, V>::kv_container(const Json::Value& json)
+{ }
+
+template <typename K, typename V>
+void fb::model::kv_container<K, V>::load(const std::string& fname)
+{
+    Json::Value             json;
+    std::ifstream           ifstream;
+    ifstream.open(fname);
+    if (ifstream.is_open() == false)
+        throw std::runtime_error("cannot find json file");
+
+    Json::Reader            reader;
+    if (reader.parse(ifstream, json) == false)
+    {
+        ifstream.close();
+        throw std::runtime_error("cannot parse json file");
+    }
+
+    ifstream.close();
+    this->load(json);
+}
+
+template <typename K, typename V>
+void fb::model::kv_container<K, V>::load(const Json::Value& json)
+{
+    for (auto i = json.begin(); i != json.end(); i++)
+    {
+        std::map<K, V>::insert({ fb::model::build<K>(i.key()), fb::model::build<V>(*i) });
+    }
+}
+
+template <typename K, typename V>
+void fb::model::kv_container<K, V>::load()
+{
+    this->load(this->_fname);
+}
+
+template <typename T>
+fb::model::array_container<T>::array_container(const std::string& fname) : _fname(fname)
+{ }
+
+template <typename T>
+fb::model::array_container<T>::array_container(const Json::Value& json)
+{
+    this->load(json);
+}
+
+template <typename T>
+void fb::model::array_container<T>::load(const std::string& fname)
+{
+    Json::Value             json;
+    std::ifstream           ifstream;
+    ifstream.open(fname);
+    if (ifstream.is_open() == false)
+        throw std::runtime_error("cannot find json file");
+
+    Json::Reader            reader;
+    if (reader.parse(ifstream, json) == false)
+    {
+        ifstream.close();
+        throw std::runtime_error("cannot parse json file");
+    }
+
+    ifstream.close();
+    this->load(json);
+}
+
+template <typename T>
+void fb::model::array_container<T>::load(const Json::Value& json)
+{
+    for (auto i = json.begin(); i != json.end(); i++)
+    {
+        std::vector<T>::push_back(fb::model::build<T>(*i));
+    }
+}
+
+template <typename T>
+void fb::model::array_container<T>::load()
+{
+    this->load(this->_fname);
+}
+
+{{~ end ~}}
 
 #endif

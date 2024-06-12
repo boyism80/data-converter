@@ -4,3 +4,20 @@ enum class {{ name }}
     {{ pair.key }} = {{ pair.value }}{{ if !for.last }}, {{ end }}
 {{~ end ~}}
 };
+
+template <>
+{{ name }} enum_parse<{{ name }}>(const std::string k)
+{
+    static const std::unordered_map<std::string, {{ name }}> enums
+    {
+{{~ for pair in properties ~}}
+        { "{{ pair.key }}", {{ name }}::{{ pair.key }} }{{ if !for.last }}, {{ end }}
+{{~ end ~}}
+    };
+
+    auto i = enums.find(k);
+    if (i == enums.end())
+        throw std::runtime_error("no enum value");
+
+    return i->second;
+}

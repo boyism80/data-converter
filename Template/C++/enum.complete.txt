@@ -1,7 +1,15 @@
 #ifndef	__ENUM_H__
 #define	__ENUM_H__
 
+#include <unordered_map>
+
 namespace fb { namespace model {
+
+template <typename T>
+T enum_parse(const std::string k)
+{
+    throw std::runtime_error("cannot parse enum value");
+}
 
 {{~ for code in codes ~}}
 {{ code }}

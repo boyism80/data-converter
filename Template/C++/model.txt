@@ -48,13 +48,16 @@ class date_range;
 template <typename T>
 static typename std::enable_if<fb::model::is_default<T>::value, T>::type build(const Json::Value& json)
 {
-    throw std::runtime_error("does not support type");
+    return T(json);
 }
 
 template <typename T>
 static typename std::enable_if<std::is_enum<T>::value, T>::type build(const Json::Value& json)
 {
-    return T(json.asInt());
+    if(json.isString())
+        return T(fb::model::enum_parse<T>(json.asCString()));
+    else
+        return T(json.asInt());
 }
 
 template <typename T>
@@ -86,7 +89,10 @@ static typename std::enable_if<fb::model::is_optional<T>::value, T>::type build(
 template <>
 static int build<int>(const Json::Value& json)
 {
-    return json.asInt();
+    if (json.isString())
+        return std::atoi(json.asCString());
+    else
+        return json.asInt();
 }
 
 template <>
@@ -113,7 +119,10 @@ static double build<double>(const Json::Value& json)
 template <>
 static long long build<long long>(const Json::Value& json)
 {
-    return json.asLargestInt();
+    if (json.isString())
+        return std::atoll(json.asCString());
+    else
+        return json.asLargestInt();
 }
 
 template <>
@@ -125,24 +134,37 @@ static bool build<bool>(const Json::Value& json)
 template <>
 static boost::posix_time::ptime build<boost::posix_time::ptime>(const Json::Value& json)
 {
-    return boost::posix_time::time_from_string(json.asCString());
+    try
+    {
+        return boost::posix_time::time_from_string(json.asCString());
+    }
+    catch (std::exception& e)
+    {
+        return boost::posix_time::ptime();
+    }
 }
 
 template <>
 static std::chrono::milliseconds build<std::chrono::milliseconds>(const Json::Value& json)
 {
-    static const auto regex = boost::xpressive::sregex::compile("(?P<hour>\\d{1,2}):(?P<min>\\d{1,2}):(?P<sec>\\d{1,2})(?:.(?P<ms>\\d+))?");
+    static const auto regex = boost::xpressive::sregex::compile("((?P<day>\\d+)\.)?(?P<hour>\\d{1,2}):(?P<min>\\d{1,2}):(?P<sec>\\d{1,2})(?:.(?P<ms>\\d+))?");
     auto what = boost::xpressive::smatch();
     auto data = json.asString();
     if (boost::xpressive::regex_match(data, what, regex) == false)
         throw std::runtime_error("cannot parse timespan");
 
+    auto day = what["day"].matched ? std::stoi(what["day"].str()) : 0;
     auto hours = std::stoi(what["hour"].str());
     auto mins = std::stoi(what["min"].str());
     auto secs = std::stoi(what["sec"].str());
     auto ms = what["ms"].matched ? std::stoi(what["ms"].str()) : 0;
 
-    return std::chrono::milliseconds(ms + (secs * 1000) + (mins * 60 * 1000) + (hours * 60 * 60 * 1000));
+    auto count = day;
+    count = count * 24 + hours;
+    count = count * 60 + mins;
+    count = count * 60 + secs;
+    count = count * 1000 + ms;
+    return std::chrono::milliseconds(count);
 }
 
 template <>
@@ -164,7 +186,7 @@ fb::model::dsl fb::model::build<fb::model::dsl>(const Json::Value& json)
 template <>
 fb::model::date_range fb::model::build<fb::model::date_range>(const Json::Value& json)
 {
-    return fb::model::date_range(build<boost::posix_time::ptime>(json["Begin"]), build<boost::posix_time::ptime>(json["End"]));
+    return fb::model::date_range(build<std::optional<boost::posix_time::ptime>>(json["Begin"]), build<std::optional<boost::posix_time::ptime>>(json["End"]));
 }
 
 #endif

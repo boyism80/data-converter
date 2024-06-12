@@ -70,7 +70,7 @@ namespace ExcelTableConverter.Factory.CPP
 
         protected override string LongType(object obj, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable(obj, $"long", nullable);
+            return WithNullable(obj, $"long long", nullable);
         }
 
         protected override string StringType(object obj, string root, DataFormatOption option)

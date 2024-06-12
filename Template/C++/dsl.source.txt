@@ -7,7 +7,7 @@ fb::model::dsl::{{ name }}::{{ name }}({{ for param in params }}{{ param.rtype }
 
 fb::model::dsl::{{ name }}::{{ name }}(const Json::Value& json){{ if params.size > 0 }} : {{ end }}
 {{~ for param in params ~}}
-    {{ param.name }}(fb::model::build<{{ param.type }}>(json["{{ param.name }}"])){{ if !for.last }},{{ end }}
+    {{ param.name }}(fb::model::build<{{ param.type }}>(json[{{ for.index }}])){{ if !for.last }},{{ end }}
 {{~ end ~}}
 { }
 

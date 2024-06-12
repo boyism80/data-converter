@@ -4,16 +4,17 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <map>
 #include <vector>
+#include <optional>
 
 namespace fb { namespace model {
 
 class date_range
 {
 public:
-    const boost::posix_time::ptime begin, end;
+    const std::optional<boost::posix_time::ptime> begin, end;
 
 public:
-    date_range(const boost::posix_time::ptime& begin, const boost::posix_time::ptime& end) : 
+    date_range(const std::optional<boost::posix_time::ptime>& begin, const std::optional<boost::posix_time::ptime>& end) : 
         begin(begin),
         end(end)
     {}

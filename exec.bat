@@ -1,6 +1,8 @@
 SET DEST="C:\Users\cshyeon\fb"
 
 CALL dotnet publish -c Release -o "bin"
+if ERRORLEVEL 1 GOTO END
+
 PUSHD bin
 CALL ExcelTableConverter.exe --dir=../sample
 POPD
@@ -8,11 +10,8 @@ POPD
 if ERRORLEVEL 1 GOTO END
 
 RMDIR /s /q "%DEST%\include\fb\model"
-MKDIR "%DEST%\include\fb\model"
-
 RMDIR /s /q "%DEST%\model"
-MKDIR "%DEST%\model"
-
+RMDIR /s /q "%DEST%\game\json"
 XCOPY bin\output\enum\*.h %DEST%\include\fb\model\*.h
 XCOPY bin\output\const\common\*.h %DEST%\include\fb\model\common\*.h
 XCOPY bin\output\const\server\*.h %DEST%\include\fb\model\*.h

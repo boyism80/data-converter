@@ -3,7 +3,8 @@
 
 #include <jsoncpp/json/json.h>
 #include <fb/model/class.h>
-#include <string>
+#include <future>
+#include <mutex>
 
 namespace fb { namespace model { {{ if super }}namespace common { {{ end }}
 
@@ -16,9 +17,9 @@ private:
 
 protected:
     kv_container(const std::string& fname);
-    kv_container(const Json::Value& json);
 
 public:
+    kv_container(const Json::Value& json);
     ~kv_container() = default;
 
 private:
@@ -37,8 +38,9 @@ private:
 
 protected:
     array_container(const std::string& fname);
-    array_container(const Json::Value& json);
+
 public:
+    array_container(const Json::Value& json);
     ~array_container() = default;
 
 private:
@@ -70,6 +72,50 @@ public:
 {{~ for table in tables ~}}
     fb::model::__{{ table.name }} {{ table.name }};
 {{~ end ~}}
+
+public:
+    void load(const std::function<void(float)>& callback)
+    {
+        std::queue<std::function<void()>> queue;
+#pragma region enqueue
+{{~ for table in tables ~}}
+        queue.push([this]() { this->{{ table.name }}.load(); });
+{{~ end ~}}
+#pragma endregion
+
+        auto size = queue.size();
+        auto process = 0;
+        auto mutex = std::mutex();
+        auto fn = [&]() 
+        {
+            while (true)
+            {
+                std::function<void()> job;
+                {
+                    auto _ = std::lock_guard(mutex);
+                    if(queue.empty())
+                        break;
+
+                    job = queue.front();
+                    queue.pop();
+                }
+                
+                job();
+
+                {
+                    auto _ = std::lock_guard(mutex);
+                    auto percent = (++process * 100) / float(size);
+                    callback(percent);
+                }
+            }
+        };
+
+        auto tasks = std::queue<std::future<void>>();
+        for(int i = 0; i < std::thread::hardware_concurrency(); i++)
+        {
+            tasks.push(std::async(std::launch::async, fn));
+        }
+    }
 };
 
 } }{{ if super }} } {{ end }}
@@ -81,7 +127,9 @@ fb::model::kv_container<K, V>::kv_container(const std::string& fname) : _fname(f
 
 template <typename K, typename V>
 fb::model::kv_container<K, V>::kv_container(const Json::Value& json)
-{ }
+{
+    this->load(json);
+}
 
 template <typename K, typename V>
 void fb::model::kv_container<K, V>::load(const std::string& fname)

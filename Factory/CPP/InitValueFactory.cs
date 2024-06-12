@@ -68,7 +68,7 @@ namespace ExcelTableConverter.Factory.CPP
 
         protected override string LongType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable("long", value, nullable);
+            return WithNullable("long long", value, nullable);
         }
 
         protected override string StringType(object value, string root, DataFormatOption option)
@@ -78,7 +78,7 @@ namespace ExcelTableConverter.Factory.CPP
 
         protected override string TimeSpanType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable("std::chrono::milliseconds", value, false);
+            return WithNullable("std::chrono::milliseconds", value, nullable);
         }
 
         public string Build(string type, string name)

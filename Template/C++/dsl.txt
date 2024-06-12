@@ -47,7 +47,7 @@ std::vector<std::any> fb::model::dsl::parse_params(const Json::Value& json)
     auto header = json["Type"].asString();
 {{~ for dsl in dsls ~}}
     if(header == "{{ dsl }}")
-        return fb::model::dsl::{{ dsl }}(json).to_dsl().params;
+        return fb::model::dsl::{{ dsl }}(json["Parameters"]).to_dsl().params;
 
 {{~ end ~}}
     throw std::runtime_error("invalid dsl header");

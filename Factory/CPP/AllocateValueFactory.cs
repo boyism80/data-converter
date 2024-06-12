@@ -40,7 +40,7 @@ namespace ExcelTableConverter.Factory.CPP
             switch (value)
             {
                 case DateRange dr:
-                    return $"new DateRange {{ Begin = {Build("DateTime", dr.Start)}, End = {Build("DateTime", dr.End)} }}";
+                    return $"{{ {Build("DateTime", dr.Start)}, {Build("DateTime", dr.End)} }}";
 
                 default:
                     throw new InvalidOperationException("알 수 없는 에러");
@@ -50,7 +50,7 @@ namespace ExcelTableConverter.Factory.CPP
         protected override string DateTimeType(object value, string root, bool nullable)
         {
             var dt = (DateTime)value;
-            return $"DateTime.Parse({Build("string", dt.ToString("yyyy-MM-dd HH:mm:ss"))})";
+            return $"boost::posix_time::time_from_string({Build("string", dt.ToString("yyyy-MM-dd HH:mm:ss"))})";
         }
 
         protected override string DictionaryType(object value, string root, string k, string v)
@@ -94,7 +94,7 @@ namespace ExcelTableConverter.Factory.CPP
         {
             foreach (var (k, v) in Context.Result.Enum[root])
             {
-                return $"{root}.{k}";
+                return $"fb::model::{root}::{k}";
             }
 
             throw new LogicException($"{value}는 {root} 열거형에 존재하지 않는 값입니다.");
@@ -121,7 +121,7 @@ namespace ExcelTableConverter.Factory.CPP
             if (string.IsNullOrEmpty(s))
                 return "\"\"";
             else if (s.Contains('\n'))
-                return $"@\"{s}\"";
+                return $"R\"({s})\"";
             else
                 return $"\"{s}\"";
         }
@@ -129,7 +129,7 @@ namespace ExcelTableConverter.Factory.CPP
         protected override string TimeSpanType(object value, string root, bool nullable)
         {
             var ts = (TimeSpan)value;
-            return $"TimeSpan.Parse({Build("string", ts.ToString())})";
+            return $"std::chrono::milliseconds({(uint)ts.TotalMilliseconds} /* {ts} */)";
         }
 
         public new string Build(string type, object value)

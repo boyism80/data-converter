@@ -1,15 +1,20 @@
+#ifndef __MODEL_BIND_{{ scope | string.upcase }}_H__
+#define __MODEL_BIND_{{ scope | string.upcase }}_H__
+
 #include <fb/model/{{ scope | string.downcase }}.h>
 
 namespace fb { namespace model { namespace {{ scope | string.downcase }} {
 
 {{~ for table in tables ~}}
-class {{ table.name | string.downcase }}s : public fb::model::{{ table.type }}<{{ table.generic }}>
+class {{ table.name }}s : public {{ table.type }}<{{ table.generic }}>
 {
 public:
-    {{ table.name | string.downcase }}s() : {{ table.type }}<{{ table.generic }}>("{{ table.name }}.json")
+    {{ table.name }}s() : {{ table.type }}<{{ table.generic }}>("{{ table.name }}.json")
     {}
-    ~{{ table.name | string.downcase }}s() = default;
+    ~{{ table.name }}s() = default;
 };
+{{~ if !for.last }}
+{{ end ~}}
 {{~ end ~}}
 
 
@@ -17,8 +22,10 @@ class container
 {
 public:
 {{~ for table in tables ~}}
-    fb::model::{{ table.name | string.downcase }}s {{ table.name | string.downcase }};
+    fb::model::{{ table.name }}s {{ table.name }};
 {{~ end ~}}
 };
 
 } } }
+
+#endif

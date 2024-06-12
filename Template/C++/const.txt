@@ -1,4 +1,18 @@
-namespace fb { namespace model { namespace {{ scope | string.downcase }} { namespace consts {
+#ifndef __MODEL_CONST_{{ scope | string.upcase }}_H__
+#define __MODEL_CONST_{{ scope | string.upcase }}_H__
+
+{{~ if super ~}}
+#include <string>
+#include <vector>
+#include <map>
+#include <chrono>
+#include <boost/date_time/posix_time/posix_time_types.hpp>
+#include <fb/model/enum.h>
+{{~ else ~}}
+#include <fb/model/const/common.h>
+{{~ end ~}}
+
+namespace fb { namespace model { namespace consts { namespace {{ scope | string.downcase }} {
 
 {{~ for item in items ~}}
 class {{ item.key }}{{~ if !super }} : public fb::model::common::consts::{{ item.key }} {{~ end }}
@@ -11,3 +25,5 @@ public:
 {{~ end ~}}
 
 } } } }
+
+#endif

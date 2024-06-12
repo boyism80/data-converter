@@ -82,7 +82,7 @@ namespace ExcelTableConverter.Factory.CPP
 
         protected override string TimeSpanType(object value, string root, bool nullable)
         {
-            return WithNullable("std::chrono::duration", nullable);
+            return WithNullable("std::chrono::milliseconds", nullable);
         }
 
         public string Build(string type)

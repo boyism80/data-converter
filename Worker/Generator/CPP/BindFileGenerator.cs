@@ -44,29 +44,31 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 if (ftdSchemaSet.Count == 0)
                     continue;
 
+                var modelName = $"fb::model::{scope.ToString().ToLower()}::{tableName}";
+
                 var containerType = string.Empty;
                 var genericType = string.Empty;
                 var pk = ftdSchemaSet.FirstOrDefault(x => Util.Type.IsPrimaryKey(x.Type, out _));
                 var gk = ftdSchemaSet.FirstOrDefault(x => Util.Type.IsGroupKey(x.Type, out _));
                 if (gk != null && pk != null)
                 {
-                    containerType = "kv_container";
-                    genericType = $"{new TypeFactory(Context).Build(gk.Type)}, kv_container<{new TypeFactory(Context).Build(pk.Type)}, {tableName}>";
+                    containerType = "fb::model::kv_container";
+                    genericType = $"{new TypeFactory(Context).Build(gk.Type)}, fb::model::kv_container<{new TypeFactory(Context).Build(pk.Type)}, {modelName}>";
                 }
                 else if (pk != null)
                 {
-                    containerType = "kv_container";
-                    genericType = $"{new TypeFactory(Context).Build(pk.Type)}, {tableName}";
+                    containerType = "fb::model::kv_container";
+                    genericType = $"{new TypeFactory(Context).Build(pk.Type)}, {modelName}";
                 }
                 else if (gk != null)
                 {
-                    containerType = "kv_container";
-                    genericType = $"{new TypeFactory(Context).Build(gk.Type)}, array_container<{tableName}>";
+                    containerType = "fb::model::kv_container";
+                    genericType = $"{new TypeFactory(Context).Build(gk.Type)}, fb::model::array_container<{modelName}>";
                 }
                 else
                 {
-                    containerType = "array_container";
-                    genericType = tableName;
+                    containerType = "fb::model::array_container";
+                    genericType = modelName;
                 }
 
                 buffer.Add(new BindingCodeGeneratorProperty

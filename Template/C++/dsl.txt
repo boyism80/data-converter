@@ -1,0 +1,71 @@
+#ifndef	__MODEL_DSL_H__
+#define	__MODEL_DSL_H__
+
+#include <fb/model/enum.h>
+#include <jsoncpp/json/json.h>
+#include <any>
+#include <optional>
+#include <chrono>
+#include <boost/xpressive/xpressive.hpp>
+#include <fb/model/type.h>
+
+namespace fb { namespace model {
+
+class dsl
+{
+public:
+{{~ for dsl in dsls ~}}
+    class {{ dsl }};
+{{~ end ~}}
+
+public:
+    const std::string header;
+    const std::vector<std::any> params;
+
+private:
+    static std::vector<std::any> parse_params(const Json::Value& json);
+
+public:
+    dsl(const std::string& header, const std::vector<std::any>& params);
+    dsl(const Json::Value& json);
+    ~dsl();
+};
+
+
+{{~ for header in headers ~}}
+{{ header }}
+{{ if !for.last }}
+{{ end }}
+{{~ end ~}}
+
+} }
+
+#include <fb/model/model.h>
+
+std::vector<std::any> fb::model::dsl::parse_params(const Json::Value& json)
+{
+    auto header = json["Type"].asString();
+{{~ for dsl in dsls ~}}
+    if(header == "{{ dsl }}")
+        return fb::model::dsl::{{ dsl }}(json).to_dsl().params;
+
+{{~ end ~}}
+    throw std::runtime_error("invalid dsl header");
+}
+
+fb::model::dsl::dsl(const std::string& header, const std::vector<std::any>& params) : header(header), params(params)
+{ }
+
+fb::model::dsl::dsl(const Json::Value& json) : header(json["Type"].asString()), params(parse_params(json))
+{ }
+
+fb::model::dsl::~dsl()
+{ }
+
+{{~ for source in sources ~}}
+{{ source }}
+{{ if !for.last }}
+{{ end }}
+{{~ end ~}}
+
+#endif

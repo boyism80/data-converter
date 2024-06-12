@@ -81,23 +81,14 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             File.WriteAllText(Path.Combine(_dir, "include", $"model.h"), Template.Parse(File.ReadAllText("Template/C++/model.txt")).Render());
             File.WriteAllText(Path.Combine(_dir, "include", $"type.h"), Template.Parse(File.ReadAllText("Template/C++/type.txt")).Render());
 
-            var headerTemplate = Template.Parse(File.ReadAllText("Template/C++/class.header.complete.txt"));
+            var template = Template.Parse(File.ReadAllText("Template/C++/class.txt"));
             foreach (var g in output.GroupBy(x => x.Scope))
             {
+                var codes = g.OrderBy(x => x.Name).Select(x => (Header: x.Header, Source: x.Source)).ToList();
                 var scope = g.Key;
                 var super = scope == Scope.Common;
-                var code = headerTemplate.Render(new { Scope = scope, Super = super, Codes = g.OrderBy(x => x.Name).Select(x => x.Header).ToList() });
+                var code = template.Render(new { Scope = scope, Super = super, Headers = codes.Select(x => x.Header).ToList(), Sources = codes.Select(x => x.Source).ToList() });
                 var path = Path.Combine(_dir, $"{scope.ToString().ToLower()}", "include", "class.h");
-                File.WriteAllText(path, code);
-            }
-
-            var sourceTemplate = Template.Parse(File.ReadAllText("Template/C++/class.source.complete.txt"));
-            foreach (var g in output.GroupBy(x => x.Scope))
-            {
-                var scope = g.Key;
-                var super = scope == Scope.Common;
-                var code = sourceTemplate.Render(new { Scope = scope, Super = super, Codes = g.OrderBy(x => x.Name).Select(x => x.Source).ToList() });
-                var path = Path.Combine(_dir, $"{scope.ToString().ToLower()}", "source", "class.cpp");
                 File.WriteAllText(path, code);
             }
 

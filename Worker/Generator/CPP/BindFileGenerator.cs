@@ -7,8 +7,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 {
     public class BindFileGenerator : ParallelWorker<Scope, bool>
     {
-        private static readonly Template _headerTemplate = Template.Parse(File.ReadAllText($"Template/C++/bind.header.txt"));
-        private static readonly Template _sourceTemplate = Template.Parse(File.ReadAllText($"Template/C++/bind.source.txt"));
+        private static readonly Template _template = Template.Parse(File.ReadAllText($"Template/C++/container.txt"));
         private readonly string _dir;
 
         public BindFileGenerator(Context ctx) : base(ctx)
@@ -79,8 +78,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 });
             }
 
-            File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", "include", "container.h"), _headerTemplate.Render(new { Scope = scope, Tables = buffer }));
-            File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", "source", "container.cpp"), _sourceTemplate.Render(new { Scope = scope, Tables = buffer }));
+            File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", "include", "container.h"), _template.Render(new { Scope = scope, Tables = buffer }));
             yield return true;
         }
 

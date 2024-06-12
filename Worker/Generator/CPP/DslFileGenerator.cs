@@ -59,12 +59,15 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 
         protected override IReadOnlyList<(string Name, string Header, string Source)> OnFinish(IReadOnlyList<(string Name, string Header, string Source)> output)
         {
-            var dslProperties = _prototypes.Keys.OrderBy(x => x).ToList();
-            var headerList = output.OrderBy(x => x.Name).Select(x => x.Header).ToList();
-            var sourceList = output.OrderBy(x => x.Name).Select(x => x.Source).ToList();
-
-            File.WriteAllText(Path.Combine(_dir, $"dsl.h"), Template.Parse(File.ReadAllText($"Template/C++/dsl.header.complete.txt")).Render(new { Codes = headerList, Dsls = dslProperties }));
-            File.WriteAllText(Path.Combine(_dir, $"dsl.cpp"), Template.Parse(File.ReadAllText($"Template/C++/dsl.source.complete.txt")).Render(new { Codes = sourceList, Dsls = dslProperties }));
+            var codes = output.OrderBy(x => x.Name).Select(x => (x.Header, x.Source)).ToList();
+            var template = Template.Parse(File.ReadAllText($"Template/C++/dsl.txt"));
+            var parameters = new 
+            {
+                Headers = codes.Select(x => x.Header).ToList(), 
+                Sources = codes.Select(x => x.Source).ToList(), 
+                Dsls = _prototypes.Keys.OrderBy(x => x).ToList() 
+            };
+            File.WriteAllText(Path.Combine(_dir, $"dsl.h"), template.Render(parameters));
 
             Logger.Complete("DSL 파일을 생성했습니다.");
             return base.OnFinish(output);

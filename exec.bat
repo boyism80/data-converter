@@ -22,11 +22,6 @@ XCOPY bin\output\class\common\include\*.h %DEST%\include\fb\model\common\*.h
 XCOPY bin\output\class\server\include\*.h %DEST%\include\fb\model\*.h
 XCOPY bin\output\bind\server\include\*.h %DEST%\include\fb\model\*.h
 
-XCOPY bin\output\class\common\source\*.cpp %DEST%\model\common\*.cpp
-XCOPY bin\output\class\server\source\*.cpp %DEST%\model\*.cpp
-XCOPY bin\output\dsl\*.cpp %DEST%\model\*.cpp
-XCOPY bin\output\bind\server\source\*.cpp %DEST%\model\*.cpp
-
 GOTO SKIP_PAUSE
 :END
 PAUSE

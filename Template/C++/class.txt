@@ -11,12 +11,20 @@
 
 namespace fb { namespace model { {{ if super }} namespace common { {{ end }}
 
-{{~ for code in codes ~}}
-{{ code }}
+{{~ for header in headers ~}}
+{{ header }}
 {{~ if !for.last }}
 {{ end ~}}
 {{~ end ~}}
 
 } }{{ if super }} } {{ end }}
+
+#include <fb/model/model.h>
+
+{{~ for source in sources ~}}
+{{ source }}
+{{~ if !for.last }}
+{{ end ~}}
+{{~ end ~}}
 
 #endif

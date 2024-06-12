@@ -4,6 +4,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <map>
 #include <vector>
+#include <jsoncpp/json/json.h>
 
 namespace fb { namespace model {
 
@@ -23,17 +24,32 @@ public:
 template <typename K, typename V>
 class kv_container : private std::map<K, V>
 {
+private:
+    const std::string _fname;
+
 protected:
-    kv_container() = default;
+    kv_container(const std::string& fname) : _fname(fname)
+    { }
+    kv_container(const Json::Value& json)
+    { }
+
+public:
     ~kv_container() = default;
 };
 
 template <typename T>
 class array_container : private std::vector<T>
 {
+private:
+    const std::string _fname;
+
 protected:
-    array_container() = default;
-    ~array_container();
+    array_container(const std::string& fname) : _fname(fname)
+    { }
+    array_container(const Json::Value& json)
+    { }
+public:
+    ~array_container() = default;
 };
 
 } }

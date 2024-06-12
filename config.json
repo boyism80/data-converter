@@ -1,6 +1,6 @@
 {
-    "ConstFilePrefix": "const.",
-    "EnumFilePrefix": "enum.",
+    "ConstFilePrefix": "_Const",
+    "EnumFilePrefix": "_Enum",
     "JsonFilePath": "json",
     "JsonSheetFilePath":  "json_sheet",
     "DiffFilePath": "diff",

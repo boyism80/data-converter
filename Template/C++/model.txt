@@ -111,7 +111,7 @@ static double build<double>(const Json::Value& json)
 }
 
 template <>
-static long build<long>(const Json::Value& json)
+static long long build<long long>(const Json::Value& json)
 {
     return json.asLargestInt();
 }

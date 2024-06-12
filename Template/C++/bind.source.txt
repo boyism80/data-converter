@@ -2,10 +2,10 @@
 
 {{~ for table in tables ~}}
 // __{{ table.name }} class
-fb::model::{{ scope | string.downcase }}::__{{ table.name }}::__{{ table.name }}() : {{ table.type }}<{{ table.generic }}>("{{ table.name }}.json")
+fb::model::__{{ table.name }}::__{{ table.name }}() : {{ table.type }}<{{ table.generic }}>(std::string("{{ table.name }}.json"))
 { }
 
-fb::model::{{ scope | string.downcase }}::__{{ table.name }}::~__{{ table.name }}()
+fb::model::__{{ table.name }}::~__{{ table.name }}()
 { }
 {{~ if !for.last }}
 

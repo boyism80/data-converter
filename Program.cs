@@ -234,10 +234,6 @@ try
 
         switch (lang.ToLower())
         {
-            case "c++":
-                Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CPP.ClassCodeGenerator(ctx).Run());
-                break;
-
             case "c#":
                 Scheduler.Add(() => new JsonSheetFileGenerator(ctx).Run());
                 Scheduler.Add(() =>

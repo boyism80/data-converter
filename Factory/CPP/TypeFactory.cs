@@ -10,7 +10,7 @@ namespace ExcelTableConverter.Factory.CPP
         private string WithNullable(string type, bool nullable)
         {
             if (nullable)
-                return Util.Type.MakeCPPNullable(Util.Type.Nake(type));
+                return $"std::optional<{Util.Type.Nake(type)}>";
             else
                 return type;
         }
@@ -65,10 +65,7 @@ namespace ExcelTableConverter.Factory.CPP
 
         protected override string EnumType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            if (nullable)
-                return Util.Type.MakeCPPNullable($"{Util.CPP.Namespace.Access(Context.Config.Namespace)}{Util.Type.Nake(root)}");
-            else
-                return $"{Util.CPP.Namespace.Access(Context.Config.Namespace)}{root}";
+            return WithNullable($"{Util.CPP.Namespace.Access(Context.Config.Namespace)}{Util.Type.Nake(root)}", nullable);
         }
 
         protected override string FloatType(object value, string root, bool nullable, DataFormatOption option)

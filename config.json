@@ -1,5 +1,5 @@
 {
-    "Namespace": ["MasterData"],
+    "Namespace": ["fb", "model"],
     "ConstFilePrefix": "_Const",
     "EnumFilePrefix": "_Enum",
     "JsonFilePath": "json",
@@ -11,12 +11,6 @@
     "EnumCodeFilePath": "enum",
     "CMPResolverCodeFilePath": "resolver",
     "DslCodeFilePath": "dsl",
-    "SharedJsonFiles": [
-        "CharacterAnimation.json",
-        "ScenePosition.json",
-        "SkillAnimation.json"
-    ],
-    "PartitionJsonTables": [
-        "Text", "TalkScript"
-    ]
+    "SharedJsonFiles": [],
+    "PartitionJsonTables": []
 }

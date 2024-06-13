@@ -1,17 +1,24 @@
-enum class {{ name }}
+template <typename T>
+T enum_parse(const std::string k)
 {
-{{~ for pair in properties ~}}
-    {{ pair.key }} = {{ pair.value }}{{ if !for.last }}, {{ end }}
+    throw std::runtime_error("cannot parse enum value");
+}
+
+{{~ for item in items ~}}
+enum class {{ item.name }}
+{
+{{~ for prop in item.props ~}}
+    {{ prop.name }} = {{ prop.value }}{{ if !for.last }}, {{ end }}
 {{~ end ~}}
 };
 
 template <>
-{{ name }} enum_parse<{{ name }}>(const std::string k)
+{{ item.name }} enum_parse<{{ item.name }}>(const std::string k)
 {
-    static const std::unordered_map<std::string, {{ name }}> enums
+    static const std::unordered_map<std::string, {{ item.name }}> enums
     {
-{{~ for pair in properties ~}}
-        { "{{ pair.key }}", {{ name }}::{{ pair.key }} }{{ if !for.last }}, {{ end }}
+{{~ for prop in item.props ~}}
+        { "{{ prop.name }}", {{ item.name }}::{{ prop.name }} }{{ if !for.last }}, {{ end }}
 {{~ end ~}}
     };
 
@@ -21,3 +28,6 @@ template <>
 
     return i->second;
 }
+{{~ if !for.last }}
+{{ end ~}}
+{{~ end ~}}

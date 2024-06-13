@@ -1,6 +1,5 @@
 ﻿using ExcelTableConverter.Factory.CS;
 using ExcelTableConverter.Model;
-using ExcelTableConverter.Model.CS;
 using Scriban;
 using System.Text;
 
@@ -45,21 +44,18 @@ namespace ExcelTableConverter.Worker.Generator.CS
 
         protected override IEnumerable<bool> OnWork(Scope scope)
         {
-            var items = new Dictionary<string, List<ConstCodeGeneratorProperty>>();
+            var items = new Dictionary<string, List<object>>();
             foreach (var (groupName, constSet) in Context.Result.Const.OrderBy(x => x.Key))
             {
-                var properties = new List<ConstCodeGeneratorProperty>();
-                foreach (var constData in constSet.Values)
+                var properties = new List<object>();
+                foreach (var constData in constSet.Values.Where(x => x.Scope == scope))
                 {
-                    if (constData.Scope == scope)
+                    properties.Add(new
                     {
-                        properties.Add(new ConstCodeGeneratorProperty
-                        {
-                            Name = constData.Name,
-                            Type = new TypeFactory(Context).Build(constData.Type),
-                            Value = new AllocateValueFactory(Context).Build(constData.Type, constData.Value),
-                        });
-                    }
+                        Name = constData.Name,
+                        Type = new TypeFactory(Context).Build(constData.Type),
+                        Value = new AllocateValueFactory(Context).Build(constData.Type, constData.Value),
+                    });
                 }
 
                 items.Add(groupName, properties);

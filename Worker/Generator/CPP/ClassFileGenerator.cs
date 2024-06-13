@@ -1,11 +1,10 @@
 ﻿using ExcelTableConverter.Factory.CPP;
 using ExcelTableConverter.Model;
-using ExcelTableConverter.Model.CPP;
 using Scriban;
 
 namespace ExcelTableConverter.Worker.Generator.CPP
 {
-    public class ClassCodeGenerator : ParallelWorker<string, (Scope Scope, string Name, List<ClassCodeGenerationProperty> Props)>
+    public class ClassCodeGenerator : ParallelWorker<string, (Scope Scope, string Name, List<object> Props)>
     {
         private readonly string _dir;
 
@@ -36,15 +35,15 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             }
         }
 
-        protected override IEnumerable<(Scope, string, List<ClassCodeGenerationProperty>)> OnWork(string tableName)
+        protected override IEnumerable<(Scope, string, List<object>)> OnWork(string tableName)
         {
             var schemaSet = Context.Result.Schema[tableName];
-            var result = new[] { Scope.Server, Scope.Client }.ToDictionary(x => x, x => new List<ClassCodeGenerationProperty>());
+            var result = new[] { Scope.Server, Scope.Client }.ToDictionary(x => x, x => new List<object>());
             var properties = schemaSet.Values.ToList();
             for (int i = 0; i < properties.Count; i++)
             {
                 var property = properties[i];
-                var ccgp = new ClassCodeGenerationProperty
+                var ccgp = new
                 {
                     Key = Util.Type.IsKey(property.Type, out _),
                     Type = new TypeFactory(Context).Build(property.Type),
@@ -63,18 +62,18 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 }
             }
 
-            foreach (var (scope, p) in result)
+            foreach (var (scope, props) in result)
             {
-                yield return (scope, tableName, p);
+                yield return (scope, tableName, props);
             }
         }
 
-        protected override void OnWorked(string input, (Scope Scope, string Name, List<ClassCodeGenerationProperty> Props) output, int percent)
+        protected override void OnWorked(string input, (Scope Scope, string Name, List<object> Props) output, int percent)
         {
             Logger.Write($"클래스 코드 파일을 저장했습니다. - {input}", percent: percent);
         }
 
-        protected override IReadOnlyList<(Scope Scope, string Name, List<ClassCodeGenerationProperty> Props)> OnFinish(IReadOnlyList<(Scope Scope, string Name, List<ClassCodeGenerationProperty> Props)> output)
+        protected override IReadOnlyList<(Scope Scope, string Name, List<object> Props)> OnFinish(IReadOnlyList<(Scope Scope, string Name, List<object> Props)> output)
         {
             var enumCodeGenerator = new EnumCodeGenerator(Context);
             enumCodeGenerator.Run();

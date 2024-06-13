@@ -3,7 +3,7 @@ using Scriban;
 
 namespace ExcelTableConverter.Worker.Generator.CPP
 {
-    public class EnumCodeGenerator : ParallelWorker<string, (string Name, string Code)>
+    public class EnumCodeGenerator : ParallelWorker<string, (string Name, object Props)>
     {
         private static readonly Template _template = Template.Parse(File.ReadAllText($"Template/C++/enum.txt"));
 
@@ -21,23 +21,30 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             }
         }
 
-        protected override IEnumerable<(string, string)> OnWork(string enumName)
+        protected override IEnumerable<(string, object)> OnWork(string enumName)
         {
-            var code = _template.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), Name = enumName, Properties = Context.Result.Enum[enumName].OrderBy(x => x.Value) });
-            yield return (enumName, code);
+            var props = Context.Result.Enum[enumName].OrderBy(x => x.Value).Select(x => new 
+            {
+                Name = x.Key,
+                Value = x.Value
+            } as object).ToList();
+            yield return (enumName, props);
         }
 
-        protected override void OnWorked(string input, (string Name, string Code) output, int percent)
+        protected override void OnWorked(string input, (string Name, object Props) output, int percent)
         {
-            Logger.Write($"열거형 코드 파일을 생성했습니다. - {input}", percent: percent);
             base.OnWorked(input, output, percent);
         }
 
-        protected override IReadOnlyList<(string Name, string Code)> OnFinish(IReadOnlyList<(string Name, string Code)> output)
+        protected override IReadOnlyList<(string Name, object Props)> OnFinish(IReadOnlyList<(string Name, object Props)> output)
         {
-            var codeList = output.OrderBy(x => x.Name).Select(x => x.Code).ToList();
-            var template = Template.Parse(File.ReadAllText($"Template/C++/enum.complete.txt"));
-            Result = template.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), Codes = codeList });
+            var items = output.OrderBy(x => x.Name).Select(x => new
+            {
+                x.Name,
+                x.Props
+            } as object).ToList();
+
+            Result = _template.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), Items = items });
             
             return base.OnFinish(output);
         }

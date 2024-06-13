@@ -13,7 +13,7 @@ using Newtonsoft.Json;
 try
 {
     var dir = Path.Combine("..", "..", "..", "..");
-    var lang = "c#";
+    var lang = "node";
     var options = new OptionSet
     {
         { "d|dir=", "input directory", v => dir = v },
@@ -287,6 +287,11 @@ try
                 Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CS.EnumFileGenerator(ctx).Run());
                 Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CS.CMPResolverGenerator(ctx).Run());
                 Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CS.DslFileGenerator(ctx).Run());
+                break;
+
+            case "node":
+                Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.Node.EnumCodeGenerator(ctx).Run());
+                Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.Node.ConstCodeGenerator(ctx).Run());
                 break;
         }
         Scheduler.Add(() =>

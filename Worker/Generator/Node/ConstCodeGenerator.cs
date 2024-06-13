@@ -1,12 +1,12 @@
-﻿using ExcelTableConverter.Factory.CPP;
+﻿using ExcelTableConverter.Factory.Node;
 using ExcelTableConverter.Model;
 using Scriban;
 
-namespace ExcelTableConverter.Worker.Generator.CPP
+namespace ExcelTableConverter.Worker.Generator.Node
 {
     public class ConstCodeGenerator : ParallelWorker<Scope, string>
     {
-        private static readonly Template _template = Template.Parse(File.ReadAllText($"Template/C++/const.txt"));
+        private static readonly Template _template = Template.Parse(File.ReadAllText($"Template/Node/const.txt"));
 
         public Dictionary<Scope, string> Result { get; private set; } = new Dictionary<Scope, string>();
 
@@ -24,25 +24,28 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 
         protected override IEnumerable<string> OnWork(Scope scope)
         {
-            var items = new Dictionary<string, List<object>>();
+            var items = new List<object>();
             var scopes = new[] { scope, Scope.Common };
             foreach (var (groupName, constSet) in Context.Result.Const.OrderBy(x => x.Key))
             {
-                var properties = new List<object>();
+                var props = new List<object>();
                 foreach (var constData in constSet.Values.Where(x => scopes.Contains(x.Scope)))
                 {
-                    properties.Add(new
+                    props.Add(new 
                     {
                         Name = constData.Name,
-                        Type = new TypeFactory(Context).Build(constData.Type),
                         Value = new AllocateValueFactory(Context).Build(constData.Type, constData.Value),
                     });
                 }
 
-                items.Add(groupName, properties);
+                items.Add(new 
+                {
+                    Name = groupName,
+                    Props = props,
+                });
             }
 
-            yield return _template.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), Super = scope == Scope.Common, Scope = scope, Items = items });
+            yield return _template.Render(new { Items = items }); ;
         }
 
         protected override void OnWorked(Scope input, string output, int percent)

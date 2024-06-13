@@ -1,6 +1,5 @@
 ﻿using ExcelTableConverter.Factory.CS;
 using ExcelTableConverter.Model;
-using ExcelTableConverter.Model.CS;
 using Scriban;
 
 namespace ExcelTableConverter.Worker.Generator.CS
@@ -34,7 +33,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
 
         protected override IEnumerable<bool> OnWork(bool value)
         {
-            var properties = new List<CMPResolverCodeGeneratorProperty>();
+            var properties = new List<object>();
             var index = 0;
             foreach (var (tableName, schemaSet) in Context.Result.Schema.OrderBy(x => x.Key))
             {
@@ -67,7 +66,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
                     genericType = tableName;
                 }
 
-                properties.Add(new CMPResolverCodeGeneratorProperty
+                properties.Add(new
                 {
                     Index = index++,
                     Name = tableName,

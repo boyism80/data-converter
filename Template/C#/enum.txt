@@ -2,10 +2,10 @@
 
 using System;
 using System.Collections.Generic;
-using MasterData.Types;
-using MasterData.Types.Common;
+using {{for namespace in namespaces}}{{namespace}}.{{end}}Types;
+using {{for namespace in namespaces}}{{namespace}}.{{end}}Types.Common;
 
-namespace MasterData.Types
+namespace {{for namespace in namespaces}}{{namespace}}.{{end}}Types
 {
     [DescriptiveEnumEnforcement(DescriptiveEnumEnforcementAttribute.EnforcementTypeEnum.ThrowException)]
     public enum {{ name }}

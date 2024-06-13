@@ -15,7 +15,14 @@ namespace ExcelTableConverter.Worker.Generator.CS
                 Directory.CreateDirectory(_dir);
 
             foreach (var file in Directory.GetFiles(_dir))
+            {
                 File.Delete(file);
+            }
+
+            foreach (var dir in Directory.GetDirectories(_dir))
+            {
+                Directory.Delete(dir, true);
+            }
         }
 
         protected override IEnumerable<string> OnReady()
@@ -28,7 +35,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
 
         protected override IEnumerable<bool> OnWork(string enumName)
         {
-            var code = _template.Render(new { Name = enumName, Properties = Context.Result.Enum[enumName].OrderBy(x => x.Value) });
+            var code = _template.Render(new { Namespaces = Context.Config.Namespace, Name = enumName, Properties = Context.Result.Enum[enumName].OrderBy(x => x.Value) });
             var path = Path.Combine(_dir, $"{enumName}.cs");
             File.WriteAllText(path, code);
             yield return true;

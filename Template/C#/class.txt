@@ -1,24 +1,24 @@
 // Generated code. DO NOT MODIFY DIRECTLY
 
-using MasterData.Types;
-using MasterData.Types.Common;
-using MasterData.Types.Dsl;
+using {{for namespace in namespaces}}{{namespace}}.{{end}}Types;
+using {{for namespace in namespaces}}{{namespace}}.{{end}}Types.Common;
+using {{for namespace in namespaces}}{{namespace}}.{{end}}Types.Dsl;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 
-namespace MasterData.{{ scope }}
+namespace {{for namespace in namespaces}}{{namespace}}.{{end}}{{ scope }}
 {
     [MessagePack.MessagePackObject]
 {{~ if super ~}}
     public class {{ name }}
 {{~ else ~}}
-    public class {{ name }}{{ if inherit }} : MasterData.Common.{{ name }}{{ end }}
+    public class {{ name }}{{ if inherit }} : {{for namespace in namespaces}}{{namespace}}.{{end}}Common.{{ name }}{{ end }}
 {{~ end ~}}
     {
 {{~ for property in properties ~}} 
 {{~ if property.key ~}}
-        [MasterData.Types.Util.Key]
+        [{{for namespace in namespaces}}{{namespace}}.{{end}}Types.Util.Key]
 {{~ end ~}}
         [MessagePack.Key({{ property.index }})]
         public {{ property.type }} {{ property.name }} { get; set; }

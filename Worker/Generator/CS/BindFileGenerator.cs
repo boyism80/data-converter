@@ -17,6 +17,18 @@ namespace ExcelTableConverter.Worker.Generator.CS
         public BindFileGenerator(Context ctx) : base(ctx)
         {
             _dir = Path.Combine(Context.Output, Context.Config.BindingCodeFilePath);
+            if (Directory.Exists(_dir) == false)
+                Directory.CreateDirectory(_dir);
+
+            foreach (var file in Directory.GetFiles(_dir))
+            {
+                File.Delete(file);
+            }
+
+            foreach (var dir in Directory.GetDirectories(_dir))
+            {
+                Directory.Delete(dir, true);
+            }
         }
 
         protected override IEnumerable<Scope> OnReady()
@@ -77,7 +89,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
                 });
             }
 
-            var code = template.Render(new { Scope = scope, Tables = buffer });
+            var code = template.Render(new { Namespaces = Context.Config.Namespace, Scope = scope, Tables = buffer });
             var path = Path.Combine(_dir, $"{scope}".ToLower(), "Table.cs");
             File.WriteAllText(path, code);
             yield return true;

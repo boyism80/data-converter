@@ -8,30 +8,17 @@ namespace ExcelTableConverter.Worker.Generator.CPP
     public class BindCodeGenerator : ParallelWorker<Scope, bool>
     {
         private static readonly Template _template = Template.Parse(File.ReadAllText($"Template/C++/container.txt"));
-        private readonly string _dir;
 
         public Dictionary<Scope, string> Result { get; private set; } = new Dictionary<Scope, string>();
 
         public BindCodeGenerator(Context ctx) : base(ctx)
         {
-            _dir = Path.Combine(Context.Output, Context.Config.BindingCodeFilePath);
         }
 
         protected override IEnumerable<Scope> OnReady()
         {
-            if(Directory.Exists(_dir) == false)
-                Directory.CreateDirectory(_dir);
-
-            foreach (var file in Directory.GetFiles(_dir))
-                File.Delete(file);
-
-            foreach (var dir in Directory.GetDirectories(_dir))
-                Directory.Delete(dir, true);
-
             foreach (var scope in new[] { Scope.Server, Scope.Client })
             {
-                Directory.CreateDirectory(Path.Combine(_dir, $"{scope.ToString().ToLower()}", "include"));
-                Directory.CreateDirectory(Path.Combine(_dir, $"{scope.ToString().ToLower()}", "source"));
                 yield return scope;
             }
         }
@@ -87,13 +74,11 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 
         protected override void OnWorked(Scope input, bool output, int percent)
         {
-            //Logger.Write($"테이블 연결 코드 파일을 생성했습니다. - {input}", percent: percent);
             base.OnWorked(input, output, percent);
         }
 
         protected override IReadOnlyList<bool> OnFinish(IReadOnlyList<bool> output)
         {
-            //Logger.Complete("테이블 연결 코드 파일을 생성했습니다.");
             return base.OnFinish(output);
         }
     }

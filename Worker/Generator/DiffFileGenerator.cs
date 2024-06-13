@@ -3,7 +3,7 @@ using ExcelTableConverter.Util;
 using Newtonsoft.Json;
 using System.Text;
 
-namespace ExcelTableConverter.Worker.Generator.CS
+namespace ExcelTableConverter.Worker.Generator
 {
     public class DiffFileGenerator : ParallelWorker<RawSheetData, bool>
     {

@@ -20,7 +20,14 @@ namespace ExcelTableConverter.Worker.Generator.CS
                 Directory.CreateDirectory(_dir);
 
             foreach (var file in Directory.GetFiles(_dir))
+            {
                 File.Delete(file);
+            }
+
+            foreach (var dir in Directory.GetDirectories(_dir))
+            {
+                Directory.Delete(dir, true);
+            }
 
             yield return true;
         }
@@ -68,7 +75,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
                     Generic = genericType
                 });
             }
-            var code = _template.Render(new { Properties = properties });
+            var code = _template.Render(new { Namespaces = Context.Config.Namespace, Properties = properties });
             File.WriteAllText(Path.Combine(_dir, "CustomMessagePackResolver.cs"), code);
             yield return true;
         }

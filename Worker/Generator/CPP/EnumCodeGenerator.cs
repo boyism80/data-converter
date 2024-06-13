@@ -6,18 +6,11 @@ namespace ExcelTableConverter.Worker.Generator.CPP
     public class EnumCodeGenerator : ParallelWorker<string, (string Name, string Code)>
     {
         private static readonly Template _template = Template.Parse(File.ReadAllText($"Template/C++/enum.txt"));
-        private readonly string _dir;
 
         public string Result { get; private set; }
 
         public EnumCodeGenerator(Context ctx) : base(ctx)
         {
-            _dir = Path.Combine(ctx.Output, Context.Config.EnumCodeFilePath);
-            if (Directory.Exists(_dir) == false)
-                Directory.CreateDirectory(_dir);
-
-            foreach (var file in Directory.GetFiles(_dir))
-                File.Delete(file);
         }
 
         protected override IEnumerable<string> OnReady()

@@ -1,6 +1,6 @@
-using MasterData.{{ scope }};
-using MasterData.Types;
-using MasterData.Types.Util;
+using {{for namespace in namespaces}}{{namespace}}.{{end}}{{ scope }};
+using {{for namespace in namespaces}}{{namespace}}.{{end}}Types;
+using {{for namespace in namespaces}}{{namespace}}.{{end}}Types.Util;
 using System.Collections.Generic;
 
 namespace WebUtil.Service

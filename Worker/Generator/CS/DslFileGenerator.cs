@@ -19,7 +19,14 @@ namespace ExcelTableConverter.Worker.Generator.CS
                 Directory.CreateDirectory(_dir);
 
             foreach (var file in Directory.GetFiles(_dir))
+            {
                 File.Delete(file);
+            }
+
+            foreach (var dir in Directory.GetDirectories(_dir))
+            {
+                Directory.Delete(dir, true);
+            }
         }
 
         protected override IEnumerable<KeyValuePair<string, List<DSLParameter>>> OnReady()
@@ -44,7 +51,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
                 };
             }).ToList();
 
-            var code = _template.Render(new { Header = header, Params = properties });
+            var code = _template.Render(new { Namespaces = Context.Config.Namespace, Header = header, Params = properties });
             var path = Path.Combine(_dir, $"{header}.cs");
             File.WriteAllText(path, code);
             yield return true;

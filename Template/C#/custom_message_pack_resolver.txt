@@ -1,5 +1,5 @@
-using MasterData.Client;
-using MasterData.Types;
+using {{for namespace in namespaces}}{{namespace}}.{{end}}Client;
+using {{for namespace in namespaces}}{{namespace}}.{{end}}Types;
 using MessagePack;
 using System.Collections.Generic;
 

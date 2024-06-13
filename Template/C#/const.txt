@@ -2,12 +2,12 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 
-namespace MasterData.Types{{~ if super ~}}.{{ scope }} {{~ end }}
+namespace {{for namespace in namespaces}}{{namespace}}.{{end}}Types{{~ if super ~}}.{{ scope }} {{~ end }}
 {
 {{~ if super ~}}
     public class Const
 {{~ else ~}}
-    public partial class Const : MasterData.Types.Common.Const
+    public partial class Const : {{for namespace in namespaces}}{{namespace}}.{{end}}Types.Common.Const
 {{~ end ~}}
     {
 {{~ if super ~}}
@@ -17,7 +17,7 @@ namespace MasterData.Types{{~ if super ~}}.{{ scope }} {{~ end }}
 {{~ end ~}}
 
 {{~ for item in items ~}}
-        public{{~ if !super}} new{{~ end }} class __{{ item.key }}{{~ if !super }} : MasterData.Types.Common.Const.__{{ item.key }} {{~ end }}
+        public{{~ if !super}} new{{~ end }} class __{{ item.key }}{{~ if !super }} : {{for namespace in namespaces}}{{namespace}}.{{end}}Types.Common.Const.__{{ item.key }} {{~ end }}
         {
 {{~ for prop in item.value ~}}
             public {{ prop.type }} {{ prop.name }} = {{ prop.value }};

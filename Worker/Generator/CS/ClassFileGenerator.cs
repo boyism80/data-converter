@@ -13,15 +13,24 @@ namespace ExcelTableConverter.Worker.Generator.CS
         public ClassFileGenerator(Context ctx) : base(ctx)
         {
             _dir = Path.Combine(ctx.Output, Context.Config.ClassCodeFilePath);
+            if (Directory.Exists(_dir) == false)
+                Directory.CreateDirectory(_dir);
+
+            foreach (var file in Directory.GetFiles(_dir))
+            {
+                File.Delete(file);
+            }
+
+            foreach (var dir in Directory.GetDirectories(_dir))
+            {
+                Directory.Delete(dir, true);
+            }
 
             foreach (var scope in new[] { Scope.Common, Scope.Server, Scope.Client })
             {
                 var dir = Path.Combine(_dir, $"{scope}".ToLower());
                 if (Directory.Exists(dir) == false)
                     Directory.CreateDirectory(dir);
-
-                foreach (var file in Directory.GetFiles(dir))
-                    File.Delete(file);
             }
         }
 
@@ -58,7 +67,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
                 if (!inherit && p.Count == 0)
                     continue;
 
-                var code = _template.Render(new { Scope = scope, Name = tableName, Properties = p, Super = super, Inherit = inherit });
+                var code = _template.Render(new { Namespaces = Context.Config.Namespace, Scope = scope, Name = tableName, Properties = p, Super = super, Inherit = inherit });
                 var path = Path.Combine(_dir, $"{scope}".ToLower(), $"{tableName}.cs");
                 File.WriteAllText(path, code);
             }

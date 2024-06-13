@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using WebUtil.Util;
 
-namespace MasterData.Types.Dsl.Parameter
+namespace {{for namespace in namespaces}}{{namespace}}.{{end}}Types.Dsl.Parameter
 {
     public class {{ header }}
     {

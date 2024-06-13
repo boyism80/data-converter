@@ -7,8 +7,6 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 {
     public class ClassCodeGenerator : ParallelWorker<string, (Scope Scope, string Name, List<ClassCodeGenerationProperty> Props)>
     {
-        private static readonly Template _headerTemplate = Template.Parse(File.ReadAllText("Template/C++/class.header.txt"));
-        private static readonly Template _sourceTemplate = Template.Parse(File.ReadAllText("Template/C++/class.source.txt"));
         private readonly string _dir;
 
         public ClassCodeGenerator(Context ctx) : base(ctx)
@@ -23,12 +21,10 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             foreach (var file in Directory.GetFiles(_dir))
                 File.Delete(file);
 
-            Directory.CreateDirectory(Path.Combine(_dir, "include"));
-
             foreach (var scope in new[] { Scope.Server, Scope.Client })
             {
-                Directory.CreateDirectory(Path.Combine(_dir, $"{scope.ToString().ToLower()}", "include"));
-                Directory.CreateDirectory(Path.Combine(_dir, $"{scope.ToString().ToLower()}", "source"));
+                Directory.CreateDirectory(Path.Combine(_dir, $"{scope.ToString().ToLower()}"));
+                Directory.CreateDirectory(Path.Combine(_dir, $"{scope.ToString().ToLower()}"));
             }
         }
 
@@ -98,7 +94,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             foreach (var g in output.GroupBy(x => x.Scope))
             {
                 var scope = g.Key;
-                File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", "include", $"model.h"), modelTemplate.Render(new
+                File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", $"model.h"), modelTemplate.Render(new
                 {
                     Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace),
                     Namespaces = Context.Config.Namespace,

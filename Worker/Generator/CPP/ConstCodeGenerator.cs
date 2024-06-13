@@ -8,34 +8,17 @@ namespace ExcelTableConverter.Worker.Generator.CPP
     public class ConstCodeGenerator : ParallelWorker<Scope, string>
     {
         private static readonly Template _template = Template.Parse(File.ReadAllText($"Template/C++/const.txt"));
-        private readonly string _dir;
 
         public Dictionary<Scope, string> Result { get; private set; } = new Dictionary<Scope, string>();
 
         public ConstCodeGenerator(Context ctx) : base(ctx)
         {
-            _dir = Path.Combine(ctx.Output, Context.Config.ConstCodeFilePath);
-            if (Directory.Exists(_dir) == false)
-                Directory.CreateDirectory(_dir);
-
-            foreach (var dir in Directory.GetDirectories(_dir))
-                Directory.Delete(dir, true);
-
-            foreach (var file in Directory.GetFiles(_dir))
-                File.Delete(file);
         }
 
         protected override IEnumerable<Scope> OnReady()
         {
             foreach (var scope in new[] { Scope.Server, Scope.Client })
             {
-                var dir = Path.Combine(_dir, $"{scope}".ToLower());
-                if (Directory.Exists(dir) == false)
-                    Directory.CreateDirectory(dir);
-
-                foreach (var file in Directory.GetFiles(dir))
-                    File.Delete(file);
-
                 yield return scope;
             }
         }

@@ -10,7 +10,9 @@ POPD
 if ERRORLEVEL 1 GOTO END
 
 DEL /s /q "%DEST%\include\fb\game\model.h"
-XCOPY bin\output\class\server\include\*.h %DEST%\include\fb\game\*.h
+RMDIR /s /q "%DEST%\game\json"
+XCOPY bin\output\class\server\*.h %DEST%\include\fb\game\*.h
+XCOPY bin\output\json\\server\*.json %DEST%\game\json\*.json
 
 GOTO SKIP_PAUSE
 :END

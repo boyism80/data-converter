@@ -26,7 +26,7 @@ namespace ExcelTableConverter.Worker.Validator
             {
                 foreach (var rawEnum in rawEnums)
                 {
-                    if (_files.Contains(rawEnum.FileName))
+                    if (_files.Contains(rawEnum.FileName) == false)
                         continue;
 
                     foreach (var name in rawEnum.Values.Keys)
@@ -38,7 +38,7 @@ namespace ExcelTableConverter.Worker.Validator
             {
                 foreach (var rawConst in rawConsts)
                 {
-                    if (_files.Contains(rawConst.FileName))
+                    if (_files.Contains(rawConst.FileName) == false)
                         continue;
 
                     yield return (rawConst, rawConst.Name);
@@ -47,7 +47,7 @@ namespace ExcelTableConverter.Worker.Validator
 
             foreach (var rawSheetData in Context.RawData.SelectMany(x => x.Value))
             {
-                if (_files.Contains(rawSheetData.FileName))
+                if (_files.Contains(rawSheetData.FileName) == false)
                     continue;
 
                 foreach (var column in rawSheetData.Columns)

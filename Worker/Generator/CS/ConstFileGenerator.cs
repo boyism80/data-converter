@@ -14,6 +14,18 @@ namespace ExcelTableConverter.Worker.Generator.CS
         public ConstFileGenerator(Context ctx) : base(ctx)
         {
             _dir = Path.Combine(ctx.Output, Context.Config.ConstCodeFilePath);
+            if (Directory.Exists(_dir) == false)
+                Directory.CreateDirectory(_dir);
+
+            foreach (var file in Directory.GetFiles(_dir))
+            {
+                File.Delete(file);
+            }
+
+            foreach (var dir in Directory.GetDirectories(_dir))
+            {
+                Directory.Delete(dir, true);
+            }
         }
 
         protected override IEnumerable<Scope> OnReady()
@@ -53,7 +65,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
                 items.Add(groupName, properties);
             }
 
-            var code = _template.Render(new { Super = scope == Scope.Common, Scope = scope, Items = items });
+            var code = _template.Render(new { Namespaces = Context.Config.Namespace, Super = scope == Scope.Common, Scope = scope, Items = items });
             var path = Path.Combine(_dir, $"{scope}".ToLower(), "Const.cs");
             File.WriteAllText(path, code, Encoding.UTF8);
             yield return true;

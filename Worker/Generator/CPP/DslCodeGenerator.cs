@@ -9,18 +9,11 @@ namespace ExcelTableConverter.Worker.Generator.CPP
     public class DslCodeGenerator : ParallelWorker<KeyValuePair<string, List<DSLParameter>>, (string Name, List<DslCodeGeneratorProperty> Props)>
     {
         private static readonly Dictionary<string, List<DSLParameter>> _prototypes = JsonConvert.DeserializeObject<Dictionary<string, List<DSLParameter>>>(File.ReadAllText("dsl.json"));
-        private readonly string _dir;
 
         public string Result { get; private set; }
 
         public DslCodeGenerator(Context ctx) : base(ctx)
         {
-            _dir = Path.Combine(ctx.Output, Context.Config.DslCodeFilePath);
-            if (Directory.Exists(_dir) == false)
-                Directory.CreateDirectory(_dir);
-
-            foreach (var file in Directory.GetFiles(_dir))
-                File.Delete(file);
         }
 
         protected override IEnumerable<KeyValuePair<string, List<DSLParameter>>> OnReady()

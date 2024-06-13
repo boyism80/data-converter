@@ -1,6 +1,5 @@
 ﻿using ExcelTableConverter.Factory.CS;
 using ExcelTableConverter.Model;
-using ExcelTableConverter.Model.CS;
 using Newtonsoft.Json;
 using Scriban;
 
@@ -40,18 +39,18 @@ namespace ExcelTableConverter.Worker.Generator.CS
             var header = value.Key;
             var prototypes = value.Value;
 
-            var properties = prototypes.Select((prototype, i) =>
+            var props = prototypes.Select((prototype, i) =>
             {
-                return new DslCodeGeneratorProperty
+                return new
                 {
                     Name = prototype.Name,
                     Type = new TypeFactory(Context).Build(prototype.Type),
                     Serialize = Context.GetCSharpSerializeCode(prototype.Type, prototype.Name),
                     Deserialize = new ValueDeserializeFactory(Context).Build(prototype.Type, $"parameters[{i}]")
-                };
+                } as object;
             }).ToList();
 
-            var code = _template.Render(new { Namespaces = Context.Config.Namespace, Header = header, Params = properties });
+            var code = _template.Render(new { Namespaces = Context.Config.Namespace, Header = header, Props = props });
             var path = Path.Combine(_dir, $"{header}.cs");
             File.WriteAllText(path, code);
             yield return true;

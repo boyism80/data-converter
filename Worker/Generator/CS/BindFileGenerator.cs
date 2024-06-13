@@ -1,6 +1,5 @@
 ﻿using ExcelTableConverter.Factory.CS;
 using ExcelTableConverter.Model;
-using ExcelTableConverter.Model.CS;
 using Scriban;
 
 namespace ExcelTableConverter.Worker.Generator.CS
@@ -49,7 +48,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
         protected override IEnumerable<bool> OnWork(Scope scope)
         {
             var template = _template[scope];
-            var buffer = new List<BindingCodeGeneratorProperty>();
+            var buffer = new List<object>();
             foreach (var (tableName, schemaSet) in Context.Result.Schema.OrderBy(x => x.Key))
             {
                 var ftdSchemaSet = schemaSet.Values.Where(x => x.Scope.HasFlag(scope)).ToList();
@@ -81,7 +80,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
                     genericType = tableName;
                 }
 
-                buffer.Add(new BindingCodeGeneratorProperty
+                buffer.Add(new
                 {
                     Name = tableName,
                     Type = containerType,

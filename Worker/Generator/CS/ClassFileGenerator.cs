@@ -1,6 +1,5 @@
 ﻿using ExcelTableConverter.Factory.CS;
 using ExcelTableConverter.Model;
-using ExcelTableConverter.Model.CS;
 using Scriban;
 
 namespace ExcelTableConverter.Worker.Generator.CS
@@ -45,13 +44,13 @@ namespace ExcelTableConverter.Worker.Generator.CS
         protected override IEnumerable<bool> OnWork(string tableName)
         {
             var schemaSet = Context.Result.Schema[tableName];
-            var result = new[] { Scope.Server, Scope.Client, Scope.Common }.ToDictionary(x => x, x => new List<ClassCodeGenerationProperty>());
+            var result = new[] { Scope.Server, Scope.Client, Scope.Common }.ToDictionary(x => x, x => new List<object>());
             var properties = schemaSet.Values.ToList();
             for (int i = 0; i < properties.Count; i++)
             {
                 var property = properties[i];
 
-                result[property.Scope].Add(new ClassCodeGenerationProperty
+                result[property.Scope].Add(new
                 {
                     Index = i,
                     Key = Util.Type.IsKey(property.Type, out _),

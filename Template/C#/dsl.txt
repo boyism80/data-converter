@@ -7,16 +7,16 @@ namespace {{for namespace in namespaces}}{{namespace}}.{{end}}Types.Dsl.Paramete
 {
     public class {{ header }}
     {
-{{~ for param in params ~}}
-        public {{ param.type }} {{ param.name }} { get; set; }
+{{~ for prop in props ~}}
+        public {{ prop.type }} {{ prop.name }} { get; set; }
 {{~ end ~}}
 
         public static {{ header }} Parse(object[] parameters)
         {
             return new {{ header }}
             {
-{{~ for param in params ~}}
-                {{ param.name }} = {{ param.deserialize }}{{ if !for.last }},{{ end }}
+{{~ for prop in props ~}}
+                {{ prop.name }} = {{ prop.deserialize }}{{ if !for.last }},{{ end }}
 {{~ end ~}}
             };
         }
@@ -28,8 +28,8 @@ namespace {{for namespace in namespaces}}{{namespace}}.{{end}}Types.Dsl.Paramete
                 Type = DslFunctionType.{{ header }},
                 Parameters = new object[]
                 {
-{{~ for param in params ~}}
-                    {{ param.serialize }}{{ param.name }}{{ if !for.last }},{{ end }}
+{{~ for prop in props ~}}
+                    {{ prop.serialize }}{{ prop.name }}{{ if !for.last }},{{ end }}
 {{~ end ~}}
                 }
             };

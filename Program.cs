@@ -10,14 +10,15 @@ using ExcelTableConverter.Worker.Validator;
 using Force.Crc32;
 using NDesk.Options;
 using Newtonsoft.Json;
-using Scriban;
 
 try
 {
     var dir = Path.Combine("..", "..", "..", "..");
+    var lang = "c#";
     var options = new OptionSet
     {
-        { "d|dir=", "input directory", v => dir = v }
+        { "d|dir=", "input directory", v => dir = v },
+        { "l|lang=", "code language", v => lang = v }
     };
 
     options.Parse(args);
@@ -130,7 +131,9 @@ try
     }
 
     Logger.Next();
-    if (updatedFiles.Concat(errorFiles).Any())
+
+    var processFiles = updatedFiles.Concat(errorFiles).ToList();
+    if (processFiles.Any())
     {
         Logger.Write(" 변경된 파일 또는 가장 마지막 에러 발생 파일에 대해서만 작업을 진행합니다.", false, false, foreground: ConsoleColor.Blue);
 
@@ -201,16 +204,16 @@ try
         isCastValues = true;
     }, stopOnError: true);
 
-    //Scheduler.Add(() => new NameValidator(ctx).Run());
+    Scheduler.Add(() => new NameValidator(ctx, processFiles).Run());
     Scheduler.Add(() => new SchemaValidator(ctx).Run());
     Scheduler.Add(() => new KeyValidator(ctx).Run());
     Scheduler.Add(() => new DslValidator(ctx).Run());
     Scheduler.Add(() => new RelationTypeValidator(ctx).Run());
 
     var rvds = new List<RelationValueValidationData>();
-    Scheduler.Add(() => rvds.AddRange(new RelationValueTraveller(ctx, updatedFiles.Concat(errorFiles)).Run().SelectMany(x => x)));
+    Scheduler.Add(() => rvds.AddRange(new RelationValueTraveller(ctx, processFiles).Run().SelectMany(x => x)));
     Scheduler.Add(() => new RelationValueValidator(ctx, rvds).Run());
-    Scheduler.Add(() => new StrongTypeValidator(ctx, updatedFiles.Concat(errorFiles)).Run());
+    Scheduler.Add(() => new StrongTypeValidator(ctx, processFiles).Run());
 
     Scheduler.Run();
 
@@ -228,41 +231,17 @@ try
     if (isComplete)
     {
         Scheduler.Add(() => new JsonFileGenerator(ctx).Run());
-        //Scheduler.Add(() => new DiffFileGenerator(ctx).Run());
-        Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CPP.ClassCodeGenerator(ctx).Run());
-        Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CPP.BindCodeGenerator(ctx).Run());
-        //Scheduler.Add(() =>
-        //{
-        //    foreach (var scope in new[] { Scope.Server, Scope.Client })
-        //    {
-        //        var result = new Dictionary<string, Dictionary<string, object>>();
-        //        foreach (var (tableName, constSet) in ctx.Result.Const.OrderBy(x => x.Key))
-        //        {
-        //            var buffer = new Dictionary<string, object>();
-        //            foreach (var constValue in constSet.Values)
-        //            {
-        //                if (constValue.Scope.HasFlag(scope) == false)
-        //                    continue;
+        Scheduler.Add(() => new DiffFileGenerator(ctx).Run());
 
-        //                buffer.Add(constValue.Name, constValue.Value);
-        //            }
-        //            result.Add($"___{tableName}", buffer);
-        //        }
+        switch (lang.ToLower())
+        {
+            case "c++":
+                Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CPP.ClassCodeGenerator(ctx).Run());
+                break;
 
-        //        foreach (var p in new[] { Context.Config.JsonFilePath, Context.Config.JsonSheetFilePath })
-        //        {
-        //            var path = Path.Combine(ctx.Output, p, $"{scope}".ToLower(), "const.json");
-        //            if (Directory.Exists(Path.GetDirectoryName(path)) == false)
-        //                continue;
-
-        //            File.WriteAllText(path, JsonConvert.SerializeObject(result, Formatting.Indented));
-        //        }
-        //    }
-        //    new ExcelTableConverter.Worker.Generator.CPP.ConstFileGenerator(ctx).Run();
-        //});
-        //Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CPP.EnumCodeGenerator(ctx).Run());
-        //Scheduler.Add(() => new CMPResolverGenerator(ctx).Run());
-        Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CPP.DslCodeGenerator(ctx).Run());
+            case "c#":
+                break;
+        }
         Scheduler.Add(() =>
         {
             foreach (var scope in new[] { Scope.Server, Scope.Client })
@@ -278,20 +257,6 @@ try
                 File.WriteAllText(Path.Combine(jsondir, "Crc.txt"), JsonConvert.SerializeObject(crc32));
             }
             Logger.Complete($"CRC 파일을 생성했습니다.");
-        });
-        Scheduler.Add(() =>
-        {
-            var template = Template.Parse(File.ReadAllText($"Template/readme.txt"));
-            var dslPrototypes = JsonConvert.DeserializeObject<Dictionary<string, List<DSLParameter>>>(File.ReadAllText("dsl.json"));
-            var code = template.Render(new { Dsl = dslPrototypes });
-
-            var path = Path.Combine(ctx.Output, "readme");
-            if (Directory.Exists(path) == false)
-                Directory.CreateDirectory(path);
-
-            path = Path.Combine(path, "README.md");
-            File.WriteAllText(path, code);
-            Logger.Complete($"README 파일을 생성했습니다.");
         });
     }
     if (isCastValues)

@@ -1,5 +1,4 @@
 ﻿using ExcelTableConverter.Model;
-using NPOI.POIFS.Properties;
 using System.Text.RegularExpressions;
 
 namespace ExcelTableConverter.Worker.Validator
@@ -13,11 +12,12 @@ namespace ExcelTableConverter.Worker.Validator
 
     public class NameValidator : ParallelWorker<(IExcelFileTrackable Tracker, string Name), bool>
     {
+        private HashSet<string> _files;
         private readonly Regex _regex = new Regex(@"^[a-zA-Z_$][a-zA-Z_$0-9]*$", RegexOptions.Compiled);
 
-        public NameValidator(Context ctx) : base(ctx)
+        public NameValidator(Context ctx, List<string> files) : base(ctx)
         {
-
+            _files = files.ToHashSet();
         }
 
         protected override IEnumerable<(IExcelFileTrackable, string)> OnReady()
@@ -26,6 +26,9 @@ namespace ExcelTableConverter.Worker.Validator
             {
                 foreach (var rawEnum in rawEnums)
                 {
+                    if (_files.Contains(rawEnum.FileName))
+                        continue;
+
                     foreach (var name in rawEnum.Values.Keys)
                         yield return (rawEnum, name);
                 }
@@ -35,12 +38,18 @@ namespace ExcelTableConverter.Worker.Validator
             {
                 foreach (var rawConst in rawConsts)
                 {
+                    if (_files.Contains(rawConst.FileName))
+                        continue;
+
                     yield return (rawConst, rawConst.Name);
                 }
             }
 
             foreach (var rawSheetData in Context.RawData.SelectMany(x => x.Value))
             {
+                if (_files.Contains(rawSheetData.FileName))
+                    continue;
+
                 foreach (var column in rawSheetData.Columns)
                 {
                     yield return (rawSheetData, column.Name);

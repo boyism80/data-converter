@@ -6,14 +6,14 @@ using Scriban;
 
 namespace ExcelTableConverter.Worker.Generator.CPP
 {
-    public class DslFileGenerator : ParallelWorker<KeyValuePair<string, List<DSLParameter>>, (string Name, string Header, string Source)>
+    public class DslCodeGenerator : ParallelWorker<KeyValuePair<string, List<DSLParameter>>, (string Name, List<DslCodeGeneratorProperty> Props)>
     {
-        private static readonly Template _headerTemplate = Template.Parse(File.ReadAllText($"Template/C++/dsl.header.txt"));
-        private static readonly Template _sourceTemplate = Template.Parse(File.ReadAllText($"Template/C++/dsl.source.txt"));
         private static readonly Dictionary<string, List<DSLParameter>> _prototypes = JsonConvert.DeserializeObject<Dictionary<string, List<DSLParameter>>>(File.ReadAllText("dsl.json"));
         private readonly string _dir;
 
-        public DslFileGenerator(Context ctx) : base(ctx)
+        public string Result { get; private set; }
+
+        public DslCodeGenerator(Context ctx) : base(ctx)
         {
             _dir = Path.Combine(ctx.Output, Context.Config.DslCodeFilePath);
             if (Directory.Exists(_dir) == false)
@@ -29,12 +29,10 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 yield return pair;
         }
 
-        protected override IEnumerable<(string, string, string)> OnWork(KeyValuePair<string, List<DSLParameter>> value)
+        protected override IEnumerable<(string Name, List<DslCodeGeneratorProperty> Props)> OnWork(KeyValuePair<string, List<DSLParameter>> value)
         {
             var name = value.Key;
-            var prototypes = value.Value;
-
-            var properties = prototypes.Select((prototype, i) =>
+            var props = value.Value.Select((prototype, i) =>
             {
                 return new DslCodeGeneratorProperty
                 {
@@ -46,31 +44,25 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 };
             }).ToList();
 
-            var header = _headerTemplate.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), Name = name, Params = properties });
-            var source = _sourceTemplate.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), Name = name, Params = properties });
-            yield return (name, header, source);
+            yield return (name, props);
         }
 
-        protected override void OnWorked(KeyValuePair<string, List<DSLParameter>> input, (string, string, string) output, int percent)
+        protected override void OnWorked(KeyValuePair<string, List<DSLParameter>> input, (string Name, List<DslCodeGeneratorProperty> Props) output, int percent)
         {
-            Logger.Write($"DSL 파일을 생성했습니다. - {input.Key}", percent: percent);
             base.OnWorked(input, output, percent);
         }
 
-        protected override IReadOnlyList<(string Name, string Header, string Source)> OnFinish(IReadOnlyList<(string Name, string Header, string Source)> output)
+        protected override IReadOnlyList<(string Name, List<DslCodeGeneratorProperty> Props)> OnFinish(IReadOnlyList<(string Name, List<DslCodeGeneratorProperty> Props)> output)
         {
-            var codes = output.OrderBy(x => x.Name).Select(x => (x.Header, x.Source)).ToList();
             var template = Template.Parse(File.ReadAllText($"Template/C++/dsl.txt"));
             var parameters = new 
             {
                 Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), 
-                Headers = codes.Select(x => x.Header).ToList(), 
-                Sources = codes.Select(x => x.Source).ToList(), 
+                Items = output.OrderBy(x => x.Name).Select(x => new { x.Name, x.Props }),
                 Dsls = _prototypes.Keys.OrderBy(x => x).ToList() 
             };
-            File.WriteAllText(Path.Combine(_dir, $"dsl.h"), template.Render(parameters));
 
-            Logger.Complete("DSL 파일을 생성했습니다.");
+            Result = template.Render(parameters);
             return base.OnFinish(output);
         }
     }

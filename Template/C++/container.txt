@@ -1,33 +1,77 @@
-#ifndef __MODEL_BIND_{{ scope | string.upcase }}_H__
-#define __MODEL_BIND_{{ scope | string.upcase }}_H__
-
-#include <jsoncpp/json/json.h>
-#include <fb/model/class.h>
-#include <future>
-#include <mutex>
-
-namespace fb { namespace model { {{ if super }}namespace common { {{ end }}
-
-{{~ if !super ~}}
 template <typename K, typename V>
-class kv_container : private std::map<K, V>
+class kv_container : private std::unordered_map<K, V>
 {
 private:
     const std::string _fname;
 
+public:
+    using std::unordered_map<K,V>::size;
+    using std::unordered_map<K,V>::begin;
+    using std::unordered_map<K,V>::end;
+    using std::unordered_map<K,V>::cbegin;
+    using std::unordered_map<K,V>::cend;
+
 protected:
-    kv_container(const std::string& fname);
+    kv_container(const std::string& fname) : _fname(fname)
+    { }
 
 public:
-    kv_container(const Json::Value& json);
+    kv_container(const Json::Value& json)
+    {
+        this->load(json);
+    }
     ~kv_container() = default;
 
 private:
-    void load(const std::string& fname);
-    void load(const Json::Value& json);
+    void load(const std::string& fname)
+    {
+        Json::Value             json;
+        std::ifstream           ifstream;
+        ifstream.open(fname);
+        if (ifstream.is_open() == false)
+            throw std::runtime_error("cannot find json file");
+
+        Json::Reader            reader;
+        if (reader.parse(ifstream, json) == false)
+        {
+            ifstream.close();
+            throw std::runtime_error("cannot parse json file");
+        }
+
+        ifstream.close();
+        this->load(json);
+    }
+    void load(const Json::Value& json)
+    {
+        for (auto i = json.begin(); i != json.end(); i++)
+        {
+            std::unordered_map<K, V>::insert({ {{ namespace }}build<K>(i.key()), {{ namespace }}build<V>(*i) });
+        }
+    }
 
 public:
-    void load();
+    void load()
+    {
+        this->load(this->_fname);
+    }
+
+    const V* find(const K& k) const
+    {
+        auto i = std::unordered_map<K, V>::find(k);
+        if (i == std::unordered_map<K, V>::cend())
+            return nullptr;
+
+        return &i->second;
+    }
+
+    const V& operator [] (const K& k) const 
+    {
+        auto found = this->find(k);
+        if(found == nullptr)
+            throw std::runtime_error("does not exists");
+
+        return *found;
+    }
 };
 
 template <typename T>
@@ -36,21 +80,75 @@ class array_container : private std::vector<T>
 private:
     const std::string _fname;
 
+public:
+    using std::vector<T>::size;
+    using std::vector<T>::begin;
+    using std::vector<T>::end;
+    using std::vector<T>::cbegin;
+    using std::vector<T>::cend;
+    using std::vector<T>::at;
+
 protected:
-    array_container(const std::string& fname);
+    array_container(const std::string& fname) : _fname(fname)
+    { }
 
 public:
-    array_container(const Json::Value& json);
+    array_container(const Json::Value& json)
+    {
+        this->load(json);
+    }
     ~array_container() = default;
 
 private:
-    void load(const std::string& fname);
-    void load(const Json::Value& json);
+    void load(const std::string& fname)
+    {
+        Json::Value             json;
+        std::ifstream           ifstream;
+        ifstream.open(fname);
+        if (ifstream.is_open() == false)
+            throw std::runtime_error("cannot find json file");
+
+        Json::Reader            reader;
+        if (reader.parse(ifstream, json) == false)
+        {
+            ifstream.close();
+            throw std::runtime_error("cannot parse json file");
+        }
+
+        ifstream.close();
+        this->load(json);
+    }
+    void load(const Json::Value& json)
+    {
+        for (auto i = json.begin(); i != json.end(); i++)
+        {
+            std::vector<T>::push_back({{ namespace }}build<T>(*i));
+        }
+    }
 
 public:
-    void load();
+    void load()
+    {
+        this->load(this->_fname);
+    }
+
+    const T* find(uint32_t i) const
+    {
+        if (i > std::vector<T>::size() - 1)
+            return nullptr;
+
+        return &std::vector<T>::at(i);
+    }
+
+    const T& operator [] (uint32_t i) const
+    {
+        auto found = this->find(i);
+        if (found == nullptr)
+            throw std::out_of_range();
+
+        return *found;
+    }
 };
-{{~ end ~}}
 
 {{~ for table in tables ~}}
 class __{{ table.name }} : public {{ table.type }}<{{ table.generic }}>
@@ -117,100 +215,3 @@ public:
         }
     }
 };
-
-} }{{ if super }} } {{ end }}
-
-{{~ if !super ~}}
-template <typename K, typename V>
-{{ namespace }}kv_container<K, V>::kv_container(const std::string& fname) : _fname(fname)
-{ }
-
-template <typename K, typename V>
-{{ namespace }}kv_container<K, V>::kv_container(const Json::Value& json)
-{
-    this->load(json);
-}
-
-template <typename K, typename V>
-void {{ namespace }}kv_container<K, V>::load(const std::string& fname)
-{
-    Json::Value             json;
-    std::ifstream           ifstream;
-    ifstream.open(fname);
-    if (ifstream.is_open() == false)
-        throw std::runtime_error("cannot find json file");
-
-    Json::Reader            reader;
-    if (reader.parse(ifstream, json) == false)
-    {
-        ifstream.close();
-        throw std::runtime_error("cannot parse json file");
-    }
-
-    ifstream.close();
-    this->load(json);
-}
-
-template <typename K, typename V>
-void {{ namespace }}kv_container<K, V>::load(const Json::Value& json)
-{
-    for (auto i = json.begin(); i != json.end(); i++)
-    {
-        std::map<K, V>::insert({ {{ namespace }}build<K>(i.key()), {{ namespace }}build<V>(*i) });
-    }
-}
-
-template <typename K, typename V>
-void {{ namespace }}kv_container<K, V>::load()
-{
-    this->load(this->_fname);
-}
-
-template <typename T>
-{{ namespace }}array_container<T>::array_container(const std::string& fname) : _fname(fname)
-{ }
-
-template <typename T>
-{{ namespace }}array_container<T>::array_container(const Json::Value& json)
-{
-    this->load(json);
-}
-
-template <typename T>
-void {{ namespace }}array_container<T>::load(const std::string& fname)
-{
-    Json::Value             json;
-    std::ifstream           ifstream;
-    ifstream.open(fname);
-    if (ifstream.is_open() == false)
-        throw std::runtime_error("cannot find json file");
-
-    Json::Reader            reader;
-    if (reader.parse(ifstream, json) == false)
-    {
-        ifstream.close();
-        throw std::runtime_error("cannot parse json file");
-    }
-
-    ifstream.close();
-    this->load(json);
-}
-
-template <typename T>
-void {{ namespace }}array_container<T>::load(const Json::Value& json)
-{
-    for (auto i = json.begin(); i != json.end(); i++)
-    {
-        std::vector<T>::push_back({{ namespace }}build<T>(*i));
-    }
-}
-
-template <typename T>
-void {{ namespace }}array_container<T>::load()
-{
-    this->load(this->_fname);
-}
-
-{{~ end ~}}
-
-#endif

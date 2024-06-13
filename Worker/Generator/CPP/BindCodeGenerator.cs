@@ -5,12 +5,14 @@ using Scriban;
 
 namespace ExcelTableConverter.Worker.Generator.CPP
 {
-    public class BindFileGenerator : ParallelWorker<Scope, bool>
+    public class BindCodeGenerator : ParallelWorker<Scope, bool>
     {
         private static readonly Template _template = Template.Parse(File.ReadAllText($"Template/C++/container.txt"));
         private readonly string _dir;
 
-        public BindFileGenerator(Context ctx) : base(ctx)
+        public Dictionary<Scope, string> Result { get; private set; } = new Dictionary<Scope, string>();
+
+        public BindCodeGenerator(Context ctx) : base(ctx)
         {
             _dir = Path.Combine(Context.Output, Context.Config.BindingCodeFilePath);
         }
@@ -79,19 +81,19 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 });
             }
 
-            File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", "include", "container.h"), _template.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), Scope = scope, Tables = buffer }));
+            Result.Add(scope, _template.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), Scope = scope, Tables = buffer }));
             yield return true;
         }
 
         protected override void OnWorked(Scope input, bool output, int percent)
         {
-            Logger.Write($"테이블 연결 코드 파일을 생성했습니다. - {input}", percent: percent);
+            //Logger.Write($"테이블 연결 코드 파일을 생성했습니다. - {input}", percent: percent);
             base.OnWorked(input, output, percent);
         }
 
         protected override IReadOnlyList<bool> OnFinish(IReadOnlyList<bool> output)
         {
-            Logger.Complete("테이블 연결 코드 파일을 생성했습니다.");
+            //Logger.Complete("테이블 연결 코드 파일을 생성했습니다.");
             return base.OnFinish(output);
         }
     }

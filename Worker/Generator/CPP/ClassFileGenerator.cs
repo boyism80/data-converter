@@ -5,13 +5,13 @@ using Scriban;
 
 namespace ExcelTableConverter.Worker.Generator.CPP
 {
-    public class ClassFileGenerator : ParallelWorker<string, (Scope Scope, string Name, string Header, string Source)>
+    public class ClassCodeGenerator : ParallelWorker<string, (Scope Scope, string Name, List<ClassCodeGenerationProperty> Props)>
     {
         private static readonly Template _headerTemplate = Template.Parse(File.ReadAllText("Template/C++/class.header.txt"));
         private static readonly Template _sourceTemplate = Template.Parse(File.ReadAllText("Template/C++/class.source.txt"));
         private readonly string _dir;
 
-        public ClassFileGenerator(Context ctx) : base(ctx)
+        public ClassCodeGenerator(Context ctx) : base(ctx)
         {
             _dir = Path.Combine(ctx.Output, Context.Config.ClassCodeFilePath);
             if (Directory.Exists(_dir) == false)
@@ -25,7 +25,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 
             Directory.CreateDirectory(Path.Combine(_dir, "include"));
 
-            foreach (var scope in new[] { Scope.Common, Scope.Server, Scope.Client })
+            foreach (var scope in new[] { Scope.Server, Scope.Client })
             {
                 Directory.CreateDirectory(Path.Combine(_dir, $"{scope.ToString().ToLower()}", "include"));
                 Directory.CreateDirectory(Path.Combine(_dir, $"{scope.ToString().ToLower()}", "source"));
@@ -40,56 +40,75 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             }
         }
 
-        protected override IEnumerable<(Scope, string, string, string)> OnWork(string tableName)
+        protected override IEnumerable<(Scope, string, List<ClassCodeGenerationProperty>)> OnWork(string tableName)
         {
             var schemaSet = Context.Result.Schema[tableName];
-            var result = new[] { Scope.Server, Scope.Client, Scope.Common }.ToDictionary(x => x, x => new List<ClassCodeGenerationProperty>());
+            var result = new[] { Scope.Server, Scope.Client }.ToDictionary(x => x, x => new List<ClassCodeGenerationProperty>());
             var properties = schemaSet.Values.ToList();
             for (int i = 0; i < properties.Count; i++)
             {
                 var property = properties[i];
-
-                result[property.Scope].Add(new ClassCodeGenerationProperty
+                var ccgp = new ClassCodeGenerationProperty
                 {
                     Key = Util.Type.IsKey(property.Type, out _),
                     Type = new TypeFactory(Context).Build(property.Type),
                     Name = property.Name,
                     Initializer = new InitValueFactory(Context).Build(property.Type, property.Name)
-                });
+                };
+
+                if (property.Scope == Scope.Common)
+                {
+                    result[Scope.Server].Add(ccgp);
+                    result[Scope.Client].Add(ccgp);
+                }
+                else
+                {
+                    result[property.Scope].Add(ccgp);
+                }
             }
 
             foreach (var (scope, p) in result)
             {
-                var super = scope == Scope.Common;
-                var inherit = !super && result[Scope.Common].Count > 0;
-                if (!inherit && p.Count == 0)
-                    continue;
-
-                var header = _headerTemplate.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), Scope = scope, Name = tableName, Properties = p, Super = super, Inherit = inherit });
-                var source = _sourceTemplate.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), Scope = scope, Name = tableName, Properties = p, Super = super, Inherit = inherit });
-                yield return (scope, tableName, header, source);
+                yield return (scope, tableName, p);
             }
         }
 
-        protected override void OnWorked(string input, (Scope Scope, string Name, string Header, string Source) output, int percent)
+        protected override void OnWorked(string input, (Scope Scope, string Name, List<ClassCodeGenerationProperty> Props) output, int percent)
         {
             Logger.Write($"클래스 코드 파일을 저장했습니다. - {input}", percent: percent);
         }
 
-        protected override IReadOnlyList<(Scope Scope, string Name, string Header, string Source)> OnFinish(IReadOnlyList<(Scope Scope, string Name, string Header, string Source)> output)
+        protected override IReadOnlyList<(Scope Scope, string Name, List<ClassCodeGenerationProperty> Props)> OnFinish(IReadOnlyList<(Scope Scope, string Name, List<ClassCodeGenerationProperty> Props)> output)
         {
-            File.WriteAllText(Path.Combine(_dir, "include", $"model.h"), Template.Parse(File.ReadAllText("Template/C++/model.txt")).Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace) }));
-            File.WriteAllText(Path.Combine(_dir, "include", $"type.h"), Template.Parse(File.ReadAllText("Template/C++/type.txt")).Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace) }));
+            var enumCodeGenerator = new EnumCodeGenerator(Context);
+            enumCodeGenerator.Run();
 
-            var template = Template.Parse(File.ReadAllText("Template/C++/class.txt"));
+            var dslCodeGenerator = new DslCodeGenerator(Context);
+            dslCodeGenerator.Run();
+
+            var constCodeGenerator = new ConstCodeGenerator(Context);
+            constCodeGenerator.Run();
+
+            var bindCodeGenerator = new BindCodeGenerator(Context);
+            bindCodeGenerator.Run();
+
+            var classTemplate = Template.Parse(File.ReadAllText("Template/C++/class.txt"));
+            var baseTypeTemplate = Template.Parse(File.ReadAllText("Template/C++/type.txt"));
+            var modelTemplate = Template.Parse(File.ReadAllText("Template/C++/model.txt"));
             foreach (var g in output.GroupBy(x => x.Scope))
             {
-                var codes = g.OrderBy(x => x.Name).Select(x => (Header: x.Header, Source: x.Source)).ToList();
                 var scope = g.Key;
-                var super = scope == Scope.Common;
-                var code = template.Render(new { Scope = scope, Super = super, Headers = codes.Select(x => x.Header).ToList(), Sources = codes.Select(x => x.Source).ToList() });
-                var path = Path.Combine(_dir, $"{scope.ToString().ToLower()}", "include", "class.h");
-                File.WriteAllText(path, code);
+                File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", "include", $"model.h"), modelTemplate.Render(new
+                {
+                    Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace),
+                    Namespaces = Context.Config.Namespace,
+                    Enum = enumCodeGenerator.Result,
+                    Dsl = dslCodeGenerator.Result,
+                    Type = baseTypeTemplate.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace) }),
+                    Const = constCodeGenerator.Result[scope],
+                    Class = classTemplate.Render(new { Items = g.OrderBy(x => x.Name).Select(x => new { x.Name, x.Props }).ToList() }),
+                    Container = bindCodeGenerator.Result[scope]
+                }));
             }
 
             Logger.Complete($"클래스 코드 파일을 저장했습니다.");

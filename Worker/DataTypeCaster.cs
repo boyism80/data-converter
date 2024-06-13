@@ -152,7 +152,7 @@ namespace ExcelTableConverter.Worker
                     {
                         var parentRow = normalColumns.Select(normalColumn => normalColumn.RowValuePairs.Keys.Cast<int?>().ElementAtOrDefault(row)).Where(x => x != null).OrderBy(x => x).FirstOrDefault().Value;
                         var parent = boldKeyColumns.RowValuePairs.Where(x => x.Key < parentRow).OrderByDescending(x => x.Key).First().Value;
-                        values.Add("Parent", parent);
+                        values.Add("Parent", Context.Cast(boldKeyColumns.Type, parent));
                     }
 
                     if (values.Count == 0)

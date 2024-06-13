@@ -1,30 +1,20 @@
-#ifndef __MODEL_{{ scope | string.upcase }}_H__
-#define __MODEL_{{ scope | string.upcase }}_H__
-
-{{~ if super ~}}
-#include <fb/model/model.h>
-#include <fb/model/enum.h>
-#include <fb/model/dsl.h>
-{{~ else ~}}
-#include <fb/model/common/class.h>
+{{~ for item in items ~}}
+class {{ item.name }}
+{
+{{~ if item.props.size > 0 ~}}
+public:
+{{~ for prop in item.props ~}}
+    const {{ prop.type }} {{ prop.name }};
 {{~ end ~}}
 
-namespace fb { namespace model { {{ if super }} namespace common { {{ end }}
-
-{{~ for header in headers ~}}
-{{ header }}
-{{~ if !for.last }}
-{{ end ~}}
 {{~ end ~}}
-
-} }{{ if super }} } {{ end }}
-
-#include <fb/model/model.h>
-
-{{~ for source in sources ~}}
-{{ source }}
-{{~ if !for.last }}
-{{ end ~}}
+public:
+    {{ item.name }}(const Json::Value& json){{ if item.props.size > 0 }} : {{ end }}
+{{~ for prop in item.props ~}}
+    	{{ prop.name }}({{ prop.initializer }}){{~ if !for.last ~}},{{ end }}
 {{~ end ~}}
-
-#endif
+	{ }
+    ~{{ item.name }}()
+	{ }
+};
+{{~ end ~}}

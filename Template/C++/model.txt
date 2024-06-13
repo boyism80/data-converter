@@ -10,9 +10,21 @@
 #include <jsoncpp/json/json.h>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/xpressive/xpressive.hpp>
-#include <fb/model/enum.h>
+#include <unordered_map>
 
-namespace fb { namespace model {
+{{for namespace in namespaces}}namespace {{ namespace }} { {{ end }}
+
+#pragma region base type
+{{ type }}
+#pragma endregion
+
+#pragma region enum
+{{ enum }}
+#pragma endregion
+
+#pragma region const
+{{ const }}
+#pragma endregion
 
 template<class T>
 struct is_optional : std::false_type {};
@@ -43,25 +55,50 @@ struct is_default
 };
 
 class dsl;
-class date_range;
 
-template <typename T>
-static typename std::enable_if<{{ namespace }}is_default<T>::value, T>::type build(const Json::Value& json)
+template <typename T> static typename std::enable_if<{{ namespace }}is_default<T>::value, T>::type build(const Json::Value& json);
+template <typename T> static typename std::enable_if<std::is_enum<T>::value, T>::type build(const Json::Value& json);
+template <typename T> static typename std::enable_if<{{ namespace }}is_vector<T>::value, T>::type build(const Json::Value& json);
+template <typename T> static typename std::enable_if<{{ namespace }}is_map<T>::value, T>::type build(const Json::Value& json);
+template <typename T> static typename std::enable_if<{{ namespace }}is_optional<T>::value, T>::type build(const Json::Value& json);
+template <> static int build<int>(const Json::Value& json);
+template <> static std::string build<std::string>(const Json::Value& json);
+template <> static float build<float>(const Json::Value& json);
+template <> static double build<double>(const Json::Value& json);
+template <> static long long build<long long>(const Json::Value& json);
+template <> static bool build<bool>(const Json::Value& json);
+template <> static boost::posix_time::ptime build<boost::posix_time::ptime>(const Json::Value& json);
+template <> static std::chrono::milliseconds build<std::chrono::milliseconds>(const Json::Value& json);
+template <> static {{ namespace }}date_range build<{{ namespace }}date_range>(const Json::Value& json);
+template <> static {{ namespace }}dsl build<{{ namespace }}dsl>(const Json::Value& json);
+
+#pragma region dsl
+{{ dsl }}
+#pragma endregion
+
+#pragma region data model
+{{ class }}
+#pragma endregion
+
+#pragma region container
+{{ container }}
+#pragma endregion
+
+#pragma region build function
+template <typename T> typename std::enable_if<is_default<T>::value, T>::type build(const Json::Value& json)
 {
     return T(json);
 }
 
-template <typename T>
-static typename std::enable_if<std::is_enum<T>::value, T>::type build(const Json::Value& json)
+template <typename T> typename std::enable_if<std::is_enum<T>::value, T>::type build(const Json::Value& json)
 {
     if(json.isString())
-        return T({{ namespace }}enum_parse<T>(json.asCString()));
+        return T(enum_parse<T>(json.asCString()));
     else
         return T(json.asInt());
 }
 
-template <typename T>
-static typename std::enable_if<{{ namespace }}is_vector<T>::value, T>::type build(const Json::Value& json)
+template <typename T> typename std::enable_if<is_vector<T>::value, T>::type build(const Json::Value& json)
 {
     auto result = std::vector<typename T::value_type>();
     for (auto i = json.begin(); i != json.end(); i++)
@@ -71,14 +108,12 @@ static typename std::enable_if<{{ namespace }}is_vector<T>::value, T>::type buil
     return result;
 }
 
-template <typename T>
-static typename std::enable_if<{{ namespace }}is_map<T>::value, T>::type build(const Json::Value& json)
+template <typename T> typename std::enable_if<is_map<T>::value, T>::type build(const Json::Value& json)
 {
     return std::map<typename T::key_type, typename T::mapped_type>();
 }
 
-template <typename T>
-static typename std::enable_if<{{ namespace }}is_optional<T>::value, T>::type build(const Json::Value& json)
+template <typename T> typename std::enable_if<is_optional<T>::value, T>::type build(const Json::Value& json)
 {
     if (json.isNull())
         return std::nullopt;
@@ -86,8 +121,7 @@ static typename std::enable_if<{{ namespace }}is_optional<T>::value, T>::type bu
         return std::optional<typename T::value_type>(build<typename T::value_type>(json));
 }
 
-template <>
-static int build<int>(const Json::Value& json)
+template <> int build<int>(const Json::Value& json)
 {
     if (json.isString())
         return std::atoi(json.asCString());
@@ -95,8 +129,7 @@ static int build<int>(const Json::Value& json)
         return json.asInt();
 }
 
-template <>
-static std::string build<std::string>(const Json::Value& json)
+template <> std::string build<std::string>(const Json::Value& json)
 {
     if(json.isNull())
         return "";
@@ -104,20 +137,17 @@ static std::string build<std::string>(const Json::Value& json)
         return json.asString();
 }
 
-template <>
-static float build<float>(const Json::Value& json)
+template <> float build<float>(const Json::Value& json)
 {
     return json.asFloat();
 }
 
-template <>
-static double build<double>(const Json::Value& json)
+template <> double build<double>(const Json::Value& json)
 {
     return json.asDouble();
 }
 
-template <>
-static long long build<long long>(const Json::Value& json)
+template <> long long build<long long>(const Json::Value& json)
 {
     if (json.isString())
         return std::atoll(json.asCString());
@@ -125,14 +155,12 @@ static long long build<long long>(const Json::Value& json)
         return json.asLargestInt();
 }
 
-template <>
-static bool build<bool>(const Json::Value& json)
+template <> bool build<bool>(const Json::Value& json)
 {
     return json.asBool();
 }
 
-template <>
-static boost::posix_time::ptime build<boost::posix_time::ptime>(const Json::Value& json)
+template <> boost::posix_time::ptime build<boost::posix_time::ptime>(const Json::Value& json)
 {
     try
     {
@@ -144,8 +172,7 @@ static boost::posix_time::ptime build<boost::posix_time::ptime>(const Json::Valu
     }
 }
 
-template <>
-static std::chrono::milliseconds build<std::chrono::milliseconds>(const Json::Value& json)
+template <> std::chrono::milliseconds build<std::chrono::milliseconds>(const Json::Value& json)
 {
     static const auto regex = boost::xpressive::sregex::compile("((?P<day>\\d+)\.)?(?P<hour>\\d{1,2}):(?P<min>\\d{1,2}):(?P<sec>\\d{1,2})(?:.(?P<ms>\\d+))?");
     auto what = boost::xpressive::smatch();
@@ -167,26 +194,17 @@ static std::chrono::milliseconds build<std::chrono::milliseconds>(const Json::Va
     return std::chrono::milliseconds(count);
 }
 
-template <>
-static {{ namespace }}date_range build<{{ namespace }}date_range>(const Json::Value& json);
-
-template <>
-static {{ namespace }}dsl build<{{ namespace }}dsl>(const Json::Value& json);
-
-} }
-
-
-#include <fb/model/dsl.h>
-template <>
-{{ namespace }}dsl {{ namespace }}build<{{ namespace }}dsl>(const Json::Value& json)
+template <> dsl build<dsl>(const Json::Value& json)
 {
-    return {{ namespace }}dsl(json);
+    return dsl(json);
 }
 
-template <>
-{{ namespace }}date_range {{ namespace }}build<{{ namespace }}date_range>(const Json::Value& json)
+template <> date_range build<date_range>(const Json::Value& json)
 {
-    return {{ namespace }}date_range(build<std::optional<boost::posix_time::ptime>>(json["Begin"]), build<std::optional<boost::posix_time::ptime>>(json["End"]));
+    return date_range(build<std::optional<boost::posix_time::ptime>>(json["Begin"]), build<std::optional<boost::posix_time::ptime>>(json["End"]));
 }
+#pragma endregion
+
+{{for namespace in namespaces}}} {{ end }}
 
 #endif

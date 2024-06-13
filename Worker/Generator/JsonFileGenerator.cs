@@ -12,8 +12,6 @@ namespace ExcelTableConverter.Worker.Generator
 
         protected override IEnumerable<(string FileName, object DataSet)> OnReady()
         {
-            var xxx = Context.GetEffectiveSortedDataSetWithSheetName(Scope.Client);
-
             foreach (var scope in new[] { Scope.Server, Scope.Client })
             {
                 var dir = Path.Combine(Context.Output, Context.Config.JsonFilePath, $"{scope}".ToLower());

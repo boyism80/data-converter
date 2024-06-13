@@ -1,16 +1,3 @@
-#ifndef	__MODEL_DSL_H__
-#define	__MODEL_DSL_H__
-
-#include <fb/model/enum.h>
-#include <jsoncpp/json/json.h>
-#include <any>
-#include <optional>
-#include <chrono>
-#include <boost/xpressive/xpressive.hpp>
-#include <fb/model/type.h>
-
-namespace fb { namespace model {
-
 class dsl
 {
 public:
@@ -26,46 +13,64 @@ private:
     static std::vector<std::any> parse_params(const Json::Value& json);
 
 public:
-    dsl(const std::string& header, const std::vector<std::any>& params);
-    dsl(const Json::Value& json);
-    ~dsl();
+    dsl(const std::string& header, const std::vector<std::any>& params) : header(header), params(params)
+    { }
+    dsl(const Json::Value& json) : header(json["Type"].asString()), params(parse_params(json))
+    { }
+    ~dsl()
+    { }
 };
 
+{{~ for item in items ~}}
+class {{ namespace }}dsl::{{ item.name }}
+{
+{{~ if item.props.size > 0 ~}}
+public:
+{{~ for prop in item.props ~}}
+    const {{ prop.type }} {{ prop.name }};
+{{~ end ~}}
 
-{{~ for header in headers ~}}
-{{ header }}
+{{ end ~}}
+public:
+    {{ item.name }}({{ for prop in item.props }}{{ prop.rtype }} {{ prop.name }}{{ if !for.last }}, {{ end }}{{ end }}){{ if item.props.size > 0 }} : {{ end }}
+{{~ for prop in item.props ~}}
+        {{ prop.name }}({{ prop.name }}){{ if !for.last }},{{ end }}
+{{~ end ~}}
+    { }
+    {{ item.name }}(const Json::Value& json){{ if item.props.size > 0 }} : {{ end }}
+{{~ for props in item.props ~}}
+        {{ props.name }}({{ namespace }}build<{{ props.type }}>(json[{{ for.index }}])){{ if !for.last }},{{ end }}
+{{~ end ~}}
+    { }
+    {{ item.name }}(const std::vector<std::any>& parameters){{ if item.props.size > 0 }} : {{ end }}
+{{~ for prop in item.props ~}}
+        {{ prop.name }}({{ prop.deserialize }}){{ if !for.last }},{{ end }}
+{{~ end ~}}
+    { }
+
+public:
+    {{ namespace }}dsl to_dsl()
+    {
+        return {{ namespace }}dsl("{{ item.name }}", { {{~ for prop in item.props ~}} {{ prop.name }}{{ if !for.last }}, {{ end }} {{~ end ~}} });
+    }
+};
 {{ if !for.last }}
 {{ end }}
 {{~ end ~}}
-
-} }
-
-#include <fb/model/model.h>
 
 std::vector<std::any> {{ namespace }}dsl::parse_params(const Json::Value& json)
 {
-    auto header = json["Type"].asString();
+    static auto data = std::unordered_map<std::string, std::function<std::vector<std::any>(const Json::Value&)>>
+    {
 {{~ for dsl in dsls ~}}
-    if(header == "{{ dsl }}")
-        return {{ namespace }}dsl::{{ dsl }}(json["Parameters"]).to_dsl().params;
-
+        {"{{ dsl }}", [](const Json::Value& json) { return {{ namespace }}dsl::{{ dsl }}(json).to_dsl().params; }}{{ if !for.last }},{{ end }}
 {{~ end ~}}
-    throw std::runtime_error("invalid dsl header");
+    };
+
+    auto header = json["Type"].asString();
+    auto i = data.find(header);
+    if(i == data.end())
+        throw std::runtime_error("invalid dsl header");
+
+    return i->second(json["Parameters"]);
 }
-
-{{ namespace }}dsl::dsl(const std::string& header, const std::vector<std::any>& params) : header(header), params(params)
-{ }
-
-{{ namespace }}dsl::dsl(const Json::Value& json) : header(json["Type"].asString()), params(parse_params(json))
-{ }
-
-{{ namespace }}dsl::~dsl()
-{ }
-
-{{~ for source in sources ~}}
-{{ source }}
-{{ if !for.last }}
-{{ end }}
-{{~ end ~}}
-
-#endif

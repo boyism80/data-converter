@@ -229,40 +229,40 @@ try
     {
         Scheduler.Add(() => new JsonFileGenerator(ctx).Run());
         //Scheduler.Add(() => new DiffFileGenerator(ctx).Run());
-        Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CPP.ClassFileGenerator(ctx).Run());
-        Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CPP.BindFileGenerator(ctx).Run());
-        Scheduler.Add(() =>
-        {
-            foreach (var scope in new[] { Scope.Server, Scope.Client })
-            {
-                var result = new Dictionary<string, Dictionary<string, object>>();
-                foreach (var (tableName, constSet) in ctx.Result.Const.OrderBy(x => x.Key))
-                {
-                    var buffer = new Dictionary<string, object>();
-                    foreach (var constValue in constSet.Values)
-                    {
-                        if (constValue.Scope.HasFlag(scope) == false)
-                            continue;
+        Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CPP.ClassCodeGenerator(ctx).Run());
+        Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CPP.BindCodeGenerator(ctx).Run());
+        //Scheduler.Add(() =>
+        //{
+        //    foreach (var scope in new[] { Scope.Server, Scope.Client })
+        //    {
+        //        var result = new Dictionary<string, Dictionary<string, object>>();
+        //        foreach (var (tableName, constSet) in ctx.Result.Const.OrderBy(x => x.Key))
+        //        {
+        //            var buffer = new Dictionary<string, object>();
+        //            foreach (var constValue in constSet.Values)
+        //            {
+        //                if (constValue.Scope.HasFlag(scope) == false)
+        //                    continue;
 
-                        buffer.Add(constValue.Name, constValue.Value);
-                    }
-                    result.Add($"___{tableName}", buffer);
-                }
+        //                buffer.Add(constValue.Name, constValue.Value);
+        //            }
+        //            result.Add($"___{tableName}", buffer);
+        //        }
 
-                foreach (var p in new[] { Context.Config.JsonFilePath, Context.Config.JsonSheetFilePath })
-                {
-                    var path = Path.Combine(ctx.Output, p, $"{scope}".ToLower(), "const.json");
-                    if (Directory.Exists(Path.GetDirectoryName(path)) == false)
-                        continue;
+        //        foreach (var p in new[] { Context.Config.JsonFilePath, Context.Config.JsonSheetFilePath })
+        //        {
+        //            var path = Path.Combine(ctx.Output, p, $"{scope}".ToLower(), "const.json");
+        //            if (Directory.Exists(Path.GetDirectoryName(path)) == false)
+        //                continue;
 
-                    File.WriteAllText(path, JsonConvert.SerializeObject(result, Formatting.Indented));
-                }
-            }
-            new ExcelTableConverter.Worker.Generator.CPP.ConstFileGenerator(ctx).Run();
-        });
-        Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CPP.EnumFileGenerator(ctx).Run());
+        //            File.WriteAllText(path, JsonConvert.SerializeObject(result, Formatting.Indented));
+        //        }
+        //    }
+        //    new ExcelTableConverter.Worker.Generator.CPP.ConstFileGenerator(ctx).Run();
+        //});
+        //Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CPP.EnumCodeGenerator(ctx).Run());
         //Scheduler.Add(() => new CMPResolverGenerator(ctx).Run());
-        Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CPP.DslFileGenerator(ctx).Run());
+        Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CPP.DslCodeGenerator(ctx).Run());
         Scheduler.Add(() =>
         {
             foreach (var scope in new[] { Scope.Server, Scope.Client })

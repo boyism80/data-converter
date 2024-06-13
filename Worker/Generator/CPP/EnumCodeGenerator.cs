@@ -3,12 +3,14 @@ using Scriban;
 
 namespace ExcelTableConverter.Worker.Generator.CPP
 {
-    public class EnumFileGenerator : ParallelWorker<string, (string Name, string Code)>
+    public class EnumCodeGenerator : ParallelWorker<string, (string Name, string Code)>
     {
         private static readonly Template _template = Template.Parse(File.ReadAllText($"Template/C++/enum.txt"));
         private readonly string _dir;
 
-        public EnumFileGenerator(Context ctx) : base(ctx)
+        public string Result { get; private set; }
+
+        public EnumCodeGenerator(Context ctx) : base(ctx)
         {
             _dir = Path.Combine(ctx.Output, Context.Config.EnumCodeFilePath);
             if (Directory.Exists(_dir) == false)
@@ -42,11 +44,8 @@ namespace ExcelTableConverter.Worker.Generator.CPP
         {
             var codeList = output.OrderBy(x => x.Name).Select(x => x.Code).ToList();
             var template = Template.Parse(File.ReadAllText($"Template/C++/enum.complete.txt"));
-            var code = template.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), Codes = codeList });
-            var path = Path.Combine(_dir, $"enum.h");
-            File.WriteAllText(path, code);
-
-            Logger.Complete("열거형 코드 파일을 생성했습니다.");
+            Result = template.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), Codes = codeList });
+            
             return base.OnFinish(output);
         }
     }

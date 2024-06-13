@@ -1,21 +1,7 @@
-#ifndef __MODEL_CONST_{{ scope | string.upcase }}_H__
-#define __MODEL_CONST_{{ scope | string.upcase }}_H__
-
-{{~ if super ~}}
-#include <string>
-#include <vector>
-#include <map>
-#include <chrono>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
-#include <fb/model/enum.h>
-{{~ else ~}}
-#include <fb/model/common/const.h>
-{{~ end ~}}
-
-namespace fb { namespace model { namespace consts { {{ if super }} namespace common { {{ end }}
+namespace consts { 
 
 {{~ for item in items ~}}
-class {{ item.key }}{{~ if !super }} : public {{ namespace }}consts::common::{{ item.key }} {{~ end }}
+class {{ item.key }}
 {
 public:
 {{~ for prop in item.value ~}}
@@ -28,6 +14,4 @@ private:
 };
 {{~ end ~}}
 
-} } }{{ if super }} } {{ end }}
-
-#endif
+}

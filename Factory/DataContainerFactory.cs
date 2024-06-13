@@ -35,7 +35,7 @@ namespace ExcelTableConverter.Factory
             if (schema == null)
                 return null;
 
-            var scopedDatas = data.Where(x => x.Where(x => schema.ContainsKey(x.Key)).Any()).ToList();
+            var scopedDatas = data.ConvertAll(d => d.Where(p => schema.ContainsKey(p.Key)).ToDictionary(x => x.Key, x => x.Value));
             return InternalBuild(ctx, table, scopedDatas, true);
         }
     }

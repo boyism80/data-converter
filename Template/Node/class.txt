@@ -1,0 +1,16 @@
+{{~ for item in items ~}}
+    function {{ item.name }}Builder() {
+        return {
+            build: function (v) {
+                if (v == null)
+                    return null
+                    
+                return {
+{{~ for prop in item.props~}}
+                    {{ prop.name }}: {{ prop.initializer }}{{ if !for.last }},{{ end }}
+{{~ end ~}}
+                }
+            }
+        }
+    }
+{{~ end ~}}

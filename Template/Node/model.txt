@@ -1,0 +1,113 @@
+const fs = require('fs').promises;
+const path = require('path');
+const date = require('date-and-time')
+const timespan = require('timespan')
+
+module.exports = (function () {
+{{ enum }}
+
+{{ const }}
+
+    function build_timespan(v) {
+
+    }
+
+    function build_datetime(v) {
+        return date.parse(v, 'YYYY-MM-DD HH:mm:ss')
+    }
+
+    function ArrayBuilder(build_fn) {
+        return {
+            build: function (v) {
+                return v.map(e => build_fn(e))
+            }
+        }
+    }
+
+    function DictionaryBuilder(build_fn_k, build_fn_v) {
+        return {
+            build: function (v) {
+                return Object.fromEntries(Object.entries(v).map(([k, v]) => [build_fn_k(k), build_fn_v(v)]))
+            }
+        }
+    }
+
+    function DefaultBuilder() {
+        return {
+            build: function (v) {
+                return v
+            }
+        }
+    }
+
+    function EnumBuilder(type) {
+        return {
+            build: function (v) {
+                return $enum[type][v]
+            }
+        }
+    }
+
+    function TimeSpanBuilder() {
+        return {
+            build: function (v) {
+                return v
+            }
+        }
+    }
+
+    function DateTimeBuilder() {
+        return {
+            build: function (v) {
+                if(v == null)
+                    return null
+
+                return date.parse(v, 'YYYY-MM-DD HH:mm:ss')
+            }
+        }
+    }
+
+    function DateRangeBuilder() {
+        return {
+            build: function (v) {
+                if(v == null)
+                    return null
+                
+                return {
+                    Start: DateTimeBuilder().build(v.Start),
+                    End: DateTimeBuilder().build(v.End)
+                }
+            }
+        }
+    }
+
+    function DslBuilder() {
+        return {
+            build: function (v) {
+                return v
+            }
+        }
+    }
+
+{{ class }}
+
+    return {
+        table: {
+{{ bind }}
+
+            load: async function (root) {
+{{~ for table in tables ~}}
+                this.{{ table }} = this.{{ table }}.build(JSON.parse(await fs.readFile(path.join(root, '{{ table }}.json'))))
+{{~ end ~}}
+                console.log(this)
+            }
+        },
+
+        enum: $enum,
+        const: $const,
+
+        load: async function (root) {
+            await this.table.load(root)
+        }
+    }
+})()

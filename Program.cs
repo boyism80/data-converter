@@ -235,7 +235,7 @@ try
         switch (lang.ToLower())
         {
             case "c++":
-                Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CPP.ClassCodeGenerator(ctx).Run());
+                Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CPP.ClassFileGenerator(ctx).Run());
                 break;
 
             case "c#":
@@ -290,8 +290,7 @@ try
                 break;
 
             case "node":
-                Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.Node.EnumCodeGenerator(ctx).Run());
-                Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.Node.ConstCodeGenerator(ctx).Run());
+                Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.Node.ClassFileGenerator(ctx).Run());
                 break;
         }
         Scheduler.Add(() =>

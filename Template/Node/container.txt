@@ -1,0 +1,9 @@
+{{~ for table in tables ~}}
+            {{ table.name }}: {
+                build: function (v) {
+                    return {{ table.type }}(v)
+                }
+            },
+{{ if !for.last }}
+{{ end }}
+{{~ end ~}}

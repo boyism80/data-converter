@@ -1,3 +1,8 @@
 ﻿.vs
 obj
 bin
+Template/C++
+Worker/Generator/CPP
+Factory/CPP
+Model/CPP
+Util/CPP

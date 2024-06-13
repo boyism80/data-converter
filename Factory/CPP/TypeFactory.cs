@@ -30,7 +30,7 @@ namespace ExcelTableConverter.Factory.CPP
 
         protected override string DateRangeType(object value, string root, bool nullable, DataFormatOption option)
         {
-            var result = WithNullable("fb::model::date_range", nullable);
+            var result = WithNullable($"{Util.CPP.Namespace.Access(Context.Config.Namespace)}date_range", nullable);
             if (option.Get<bool>("rvalue"))
                 result = $"const {result}&";
             return result;
@@ -60,15 +60,15 @@ namespace ExcelTableConverter.Factory.CPP
 
         protected override string DslType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable("fb::model::dsl", nullable);
+            return WithNullable($"{Util.CPP.Namespace.Access(Context.Config.Namespace)}dsl", nullable);
         }
 
         protected override string EnumType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
             if (nullable)
-                return Util.Type.MakeCPPNullable($"fb::model::{Util.Type.Nake(root)}");
+                return Util.Type.MakeCPPNullable($"{Util.CPP.Namespace.Access(Context.Config.Namespace)}{Util.Type.Nake(root)}");
             else
-                return $"fb::model::{root}";
+                return $"{Util.CPP.Namespace.Access(Context.Config.Namespace)}{root}";
         }
 
         protected override string FloatType(object value, string root, bool nullable, DataFormatOption option)

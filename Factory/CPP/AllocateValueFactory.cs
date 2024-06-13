@@ -94,7 +94,7 @@ namespace ExcelTableConverter.Factory.CPP
         {
             foreach (var (k, v) in Context.Result.Enum[root])
             {
-                return $"fb::model::{root}::{k}";
+                return $"{Util.CPP.Namespace.Access(Context.Config.Namespace)}{root}::{k}";
             }
 
             throw new LogicException($"{value}는 {root} 열거형에 존재하지 않는 값입니다.");
@@ -132,7 +132,7 @@ namespace ExcelTableConverter.Factory.CPP
             return $"std::chrono::milliseconds({(uint)ts.TotalMilliseconds} /* {ts} */)";
         }
 
-        public new string Build(string type, object value)
+        public string Build(string type, object value)
         {
             return base.Build(type, value);
         }

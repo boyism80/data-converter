@@ -1,23 +1,23 @@
-fb::model::dsl::{{ name }}::{{ name }}({{ for param in params }}{{ param.rtype }} {{ param.name }}{{ if !for.last }}, 
+{{ namespace }}dsl::{{ name }}::{{ name }}({{ for param in params }}{{ param.rtype }} {{ param.name }}{{ if !for.last }}, 
     {{ end }}{{ end }}){{ if params.size > 0 }} : {{ end }}
 {{~ for param in params ~}}
     {{ param.name }}({{ param.name }}){{ if !for.last }},{{ end }}
 {{~ end ~}}
 { }
 
-fb::model::dsl::{{ name }}::{{ name }}(const Json::Value& json){{ if params.size > 0 }} : {{ end }}
+{{ namespace }}dsl::{{ name }}::{{ name }}(const Json::Value& json){{ if params.size > 0 }} : {{ end }}
 {{~ for param in params ~}}
-    {{ param.name }}(fb::model::build<{{ param.type }}>(json[{{ for.index }}])){{ if !for.last }},{{ end }}
+    {{ param.name }}({{ namespace }}build<{{ param.type }}>(json[{{ for.index }}])){{ if !for.last }},{{ end }}
 {{~ end ~}}
 { }
 
-fb::model::dsl::{{ name }}::{{ name }}(const std::vector<std::any>& parameters){{ if params.size > 0 }} : {{ end }}
+{{ namespace }}dsl::{{ name }}::{{ name }}(const std::vector<std::any>& parameters){{ if params.size > 0 }} : {{ end }}
 {{~ for param in params ~}}
     {{ param.name }}({{ param.deserialize }}){{ if !for.last }},{{ end }}
 {{~ end ~}}
 { }
 
-fb::model::dsl fb::model::dsl::{{ name }}::to_dsl()
+{{ namespace }}dsl {{ namespace }}dsl::{{ name }}::to_dsl()
 {
-    return fb::model::dsl("{{ name }}", { {{~ for param in params ~}} {{ param.name }}{{ if !for.last }}, {{ end }} {{~ end ~}} });
+    return {{ namespace }}dsl("{{ name }}", { {{~ for param in params ~}} {{ param.name }}{{ if !for.last }}, {{ end }} {{~ end ~}} });
 };

@@ -1,9 +1,9 @@
 // {{ name }} class
-fb::model::{{ if super }}common::{{ end }}{{ name }}::{{ name }}(const Json::Value& json){{ if !super || properties.size > 0 }} : {{ end }}{{ if !super && inherit }}fb::model::common::{{ name }}(json){{ if properties.size > 0 }}, {{ end }}{{ end }}
+{{ namespace }}{{ if super }}common::{{ end }}{{ name }}::{{ name }}(const Json::Value& json){{ if !super || properties.size > 0 }} : {{ end }}{{ if !super && inherit }}{{ namespace }}common::{{ name }}(json){{ if properties.size > 0 }}, {{ end }}{{ end }}
 {{~ for property in properties ~}}
     {{ property.name }}({{ property.initializer }}){{~ if !for.last ~}},{{ end }}
 {{~ end ~}}
 { }
 
-fb::model::{{ if super }}common::{{ end }}{{ name }}::~{{ name }}()
+{{ namespace }}{{ if super }}common::{{ end }}{{ name }}::~{{ name }}()
 { }

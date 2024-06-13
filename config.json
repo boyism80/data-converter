@@ -1,4 +1,5 @@
 {
+    "Namespace": ["fb", "model"],
     "ConstFilePrefix": "_Const",
     "EnumFilePrefix": "_Enum",
     "JsonFilePath": "json",

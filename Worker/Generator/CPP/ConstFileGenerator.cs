@@ -53,7 +53,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 items.Add(groupName, properties);
             }
 
-            var code = _template.Render(new { Super = scope == Scope.Common, Scope = scope, Items = items });
+            var code = _template.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), Super = scope == Scope.Common, Scope = scope, Items = items });
             var path = Path.Combine(_dir, $"{scope}".ToLower(), "const.h");
             File.WriteAllText(path, code, Encoding.UTF8);
             yield return true;

@@ -1,4 +1,4 @@
-class fb::model::dsl::{{ name }}
+class {{ namespace }}dsl::{{ name }}
 {
 {{~ if params.size > 0 ~}}
 public:
@@ -13,5 +13,5 @@ public:
     {{ name }}(const std::vector<std::any>& parameters);
 
 public:
-    fb::model::dsl to_dsl();
+    {{ namespace }}dsl to_dsl();
 };

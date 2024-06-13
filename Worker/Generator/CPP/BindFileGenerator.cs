@@ -43,7 +43,8 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 if (ftdSchemaSet.Count == 0)
                     continue;
 
-                var modelName = $"fb::model::{tableName}";
+                var ns = Util.CPP.Namespace.Access(Context.Config.Namespace);
+                var modelName = $"{ns}{tableName}";
 
                 var containerType = string.Empty;
                 var genericType = string.Empty;
@@ -51,22 +52,22 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 var gk = ftdSchemaSet.FirstOrDefault(x => Util.Type.IsGroupKey(x.Type, out _));
                 if (gk != null && pk != null)
                 {
-                    containerType = "fb::model::kv_container";
-                    genericType = $"{new TypeFactory(Context).Build(gk.Type)}, fb::model::kv_container<{new TypeFactory(Context).Build(pk.Type)}, {modelName}>";
+                    containerType = $"{ns}kv_container";
+                    genericType = $"{new TypeFactory(Context).Build(gk.Type)}, {ns}kv_container<{new TypeFactory(Context).Build(pk.Type)}, {modelName}>";
                 }
                 else if (pk != null)
                 {
-                    containerType = "fb::model::kv_container";
+                    containerType = $"{ns}kv_container";
                     genericType = $"{new TypeFactory(Context).Build(pk.Type)}, {modelName}";
                 }
                 else if (gk != null)
                 {
-                    containerType = "fb::model::kv_container";
-                    genericType = $"{new TypeFactory(Context).Build(gk.Type)}, fb::model::array_container<{modelName}>";
+                    containerType = $"{ns}kv_container";
+                    genericType = $"{new TypeFactory(Context).Build(gk.Type)}, {ns}array_container<{modelName}>";
                 }
                 else
                 {
-                    containerType = "fb::model::array_container";
+                    containerType = $"{ns}array_container";
                     genericType = modelName;
                 }
 
@@ -78,7 +79,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 });
             }
 
-            File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", "include", "container.h"), _template.Render(new { Scope = scope, Tables = buffer }));
+            File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", "include", "container.h"), _template.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), Scope = scope, Tables = buffer }));
             yield return true;
         }
 

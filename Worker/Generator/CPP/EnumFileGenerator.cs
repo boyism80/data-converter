@@ -28,7 +28,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 
         protected override IEnumerable<(string, string)> OnWork(string enumName)
         {
-            var code = _template.Render(new { Name = enumName, Properties = Context.Result.Enum[enumName].OrderBy(x => x.Value) });
+            var code = _template.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), Name = enumName, Properties = Context.Result.Enum[enumName].OrderBy(x => x.Value) });
             yield return (enumName, code);
         }
 
@@ -42,7 +42,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
         {
             var codeList = output.OrderBy(x => x.Name).Select(x => x.Code).ToList();
             var template = Template.Parse(File.ReadAllText($"Template/C++/enum.complete.txt"));
-            var code = template.Render(new { Codes = codeList });
+            var code = template.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), Codes = codeList });
             var path = Path.Combine(_dir, $"enum.h");
             File.WriteAllText(path, code);
 

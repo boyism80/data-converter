@@ -2,7 +2,7 @@
 {{~ if super ~}}
 class {{ name }}
 {{~ else ~}}
-class {{ name }}{{ if inherit }} : public fb::model::common::{{ name }}{{ end }}
+class {{ name }}{{ if inherit }} : public {{ namespace }}common::{{ name }}{{ end }}
 {{~ end ~}}
 {
 {{~ if properties.size > 0 ~}}

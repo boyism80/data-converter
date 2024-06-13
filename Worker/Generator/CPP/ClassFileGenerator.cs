@@ -65,8 +65,8 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 if (!inherit && p.Count == 0)
                     continue;
 
-                var header = _headerTemplate.Render(new { Scope = scope, Name = tableName, Properties = p, Super = super, Inherit = inherit });
-                var source = _sourceTemplate.Render(new { Scope = scope, Name = tableName, Properties = p, Super = super, Inherit = inherit });
+                var header = _headerTemplate.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), Scope = scope, Name = tableName, Properties = p, Super = super, Inherit = inherit });
+                var source = _sourceTemplate.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), Scope = scope, Name = tableName, Properties = p, Super = super, Inherit = inherit });
                 yield return (scope, tableName, header, source);
             }
         }
@@ -78,8 +78,8 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 
         protected override IReadOnlyList<(Scope Scope, string Name, string Header, string Source)> OnFinish(IReadOnlyList<(Scope Scope, string Name, string Header, string Source)> output)
         {
-            File.WriteAllText(Path.Combine(_dir, "include", $"model.h"), Template.Parse(File.ReadAllText("Template/C++/model.txt")).Render());
-            File.WriteAllText(Path.Combine(_dir, "include", $"type.h"), Template.Parse(File.ReadAllText("Template/C++/type.txt")).Render());
+            File.WriteAllText(Path.Combine(_dir, "include", $"model.h"), Template.Parse(File.ReadAllText("Template/C++/model.txt")).Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace) }));
+            File.WriteAllText(Path.Combine(_dir, "include", $"type.h"), Template.Parse(File.ReadAllText("Template/C++/type.txt")).Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace) }));
 
             var template = Template.Parse(File.ReadAllText("Template/C++/class.txt"));
             foreach (var g in output.GroupBy(x => x.Scope))

@@ -13,7 +13,7 @@ namespace ExcelTableConverter.Factory.CPP
             if (nullable)
                 root = $"std::optional<{root}>";
 
-            return $"fb::model::build<{root}>(json[\"{value}\"])";
+            return $"{Util.CPP.Namespace.Access(Context.Config.Namespace)}build<{root}>(json[\"{value}\"])";
         }
 
         protected override string ArrayType(object value, string root, string e, DataFormatOption option)
@@ -28,7 +28,7 @@ namespace ExcelTableConverter.Factory.CPP
 
         protected override string DateRangeType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable("fb::model::date_range", value, nullable);
+            return WithNullable($"{Util.CPP.Namespace.Access(Context.Config.Namespace)}date_range", value, nullable);
         }
 
         protected override string DateTimeType(object value, string root, bool nullable, DataFormatOption option)
@@ -53,7 +53,7 @@ namespace ExcelTableConverter.Factory.CPP
 
         protected override string EnumType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            return WithNullable($"fb::model::{Util.Type.Nake(root)}", value, nullable);
+            return WithNullable($"{Util.CPP.Namespace.Access(Context.Config.Namespace)}{Util.Type.Nake(root)}", value, nullable);
         }
 
         protected override string FloatType(object value, string root, bool nullable, DataFormatOption option)

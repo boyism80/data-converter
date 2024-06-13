@@ -70,7 +70,7 @@ class container
 {
 public:
 {{~ for table in tables ~}}
-    fb::model::__{{ table.name }} {{ table.name }};
+    {{ namespace }}__{{ table.name }} {{ table.name }};
 {{~ end ~}}
 
 public:
@@ -122,17 +122,17 @@ public:
 
 {{~ if !super ~}}
 template <typename K, typename V>
-fb::model::kv_container<K, V>::kv_container(const std::string& fname) : _fname(fname)
+{{ namespace }}kv_container<K, V>::kv_container(const std::string& fname) : _fname(fname)
 { }
 
 template <typename K, typename V>
-fb::model::kv_container<K, V>::kv_container(const Json::Value& json)
+{{ namespace }}kv_container<K, V>::kv_container(const Json::Value& json)
 {
     this->load(json);
 }
 
 template <typename K, typename V>
-void fb::model::kv_container<K, V>::load(const std::string& fname)
+void {{ namespace }}kv_container<K, V>::load(const std::string& fname)
 {
     Json::Value             json;
     std::ifstream           ifstream;
@@ -152,32 +152,32 @@ void fb::model::kv_container<K, V>::load(const std::string& fname)
 }
 
 template <typename K, typename V>
-void fb::model::kv_container<K, V>::load(const Json::Value& json)
+void {{ namespace }}kv_container<K, V>::load(const Json::Value& json)
 {
     for (auto i = json.begin(); i != json.end(); i++)
     {
-        std::map<K, V>::insert({ fb::model::build<K>(i.key()), fb::model::build<V>(*i) });
+        std::map<K, V>::insert({ {{ namespace }}build<K>(i.key()), {{ namespace }}build<V>(*i) });
     }
 }
 
 template <typename K, typename V>
-void fb::model::kv_container<K, V>::load()
+void {{ namespace }}kv_container<K, V>::load()
 {
     this->load(this->_fname);
 }
 
 template <typename T>
-fb::model::array_container<T>::array_container(const std::string& fname) : _fname(fname)
+{{ namespace }}array_container<T>::array_container(const std::string& fname) : _fname(fname)
 { }
 
 template <typename T>
-fb::model::array_container<T>::array_container(const Json::Value& json)
+{{ namespace }}array_container<T>::array_container(const Json::Value& json)
 {
     this->load(json);
 }
 
 template <typename T>
-void fb::model::array_container<T>::load(const std::string& fname)
+void {{ namespace }}array_container<T>::load(const std::string& fname)
 {
     Json::Value             json;
     std::ifstream           ifstream;
@@ -197,16 +197,16 @@ void fb::model::array_container<T>::load(const std::string& fname)
 }
 
 template <typename T>
-void fb::model::array_container<T>::load(const Json::Value& json)
+void {{ namespace }}array_container<T>::load(const Json::Value& json)
 {
     for (auto i = json.begin(); i != json.end(); i++)
     {
-        std::vector<T>::push_back(fb::model::build<T>(*i));
+        std::vector<T>::push_back({{ namespace }}build<T>(*i));
     }
 }
 
 template <typename T>
-void fb::model::array_container<T>::load()
+void {{ namespace }}array_container<T>::load()
 {
     this->load(this->_fname);
 }

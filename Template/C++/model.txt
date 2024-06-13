@@ -37,16 +37,16 @@ struct is_default
 {
     static constexpr bool value =
         !std::is_enum<T>::value &&
-        !fb::model::is_vector<T>::value &&
-        !fb::model::is_map<T>::value &&
-        !fb::model::is_optional<T>::value;
+        !{{ namespace }}is_vector<T>::value &&
+        !{{ namespace }}is_map<T>::value &&
+        !{{ namespace }}is_optional<T>::value;
 };
 
 class dsl;
 class date_range;
 
 template <typename T>
-static typename std::enable_if<fb::model::is_default<T>::value, T>::type build(const Json::Value& json)
+static typename std::enable_if<{{ namespace }}is_default<T>::value, T>::type build(const Json::Value& json)
 {
     return T(json);
 }
@@ -55,13 +55,13 @@ template <typename T>
 static typename std::enable_if<std::is_enum<T>::value, T>::type build(const Json::Value& json)
 {
     if(json.isString())
-        return T(fb::model::enum_parse<T>(json.asCString()));
+        return T({{ namespace }}enum_parse<T>(json.asCString()));
     else
         return T(json.asInt());
 }
 
 template <typename T>
-static typename std::enable_if<fb::model::is_vector<T>::value, T>::type build(const Json::Value& json)
+static typename std::enable_if<{{ namespace }}is_vector<T>::value, T>::type build(const Json::Value& json)
 {
     auto result = std::vector<typename T::value_type>();
     for (auto i = json.begin(); i != json.end(); i++)
@@ -72,13 +72,13 @@ static typename std::enable_if<fb::model::is_vector<T>::value, T>::type build(co
 }
 
 template <typename T>
-static typename std::enable_if<fb::model::is_map<T>::value, T>::type build(const Json::Value& json)
+static typename std::enable_if<{{ namespace }}is_map<T>::value, T>::type build(const Json::Value& json)
 {
     return std::map<typename T::key_type, typename T::mapped_type>();
 }
 
 template <typename T>
-static typename std::enable_if<fb::model::is_optional<T>::value, T>::type build(const Json::Value& json)
+static typename std::enable_if<{{ namespace }}is_optional<T>::value, T>::type build(const Json::Value& json)
 {
     if (json.isNull())
         return std::nullopt;
@@ -168,25 +168,25 @@ static std::chrono::milliseconds build<std::chrono::milliseconds>(const Json::Va
 }
 
 template <>
-static fb::model::date_range build<fb::model::date_range>(const Json::Value& json);
+static {{ namespace }}date_range build<{{ namespace }}date_range>(const Json::Value& json);
 
 template <>
-static fb::model::dsl build<fb::model::dsl>(const Json::Value& json);
+static {{ namespace }}dsl build<{{ namespace }}dsl>(const Json::Value& json);
 
 } }
 
 
 #include <fb/model/dsl.h>
 template <>
-fb::model::dsl fb::model::build<fb::model::dsl>(const Json::Value& json)
+{{ namespace }}dsl {{ namespace }}build<{{ namespace }}dsl>(const Json::Value& json)
 {
-    return fb::model::dsl(json);
+    return {{ namespace }}dsl(json);
 }
 
 template <>
-fb::model::date_range fb::model::build<fb::model::date_range>(const Json::Value& json)
+{{ namespace }}date_range {{ namespace }}build<{{ namespace }}date_range>(const Json::Value& json)
 {
-    return fb::model::date_range(build<std::optional<boost::posix_time::ptime>>(json["Begin"]), build<std::optional<boost::posix_time::ptime>>(json["End"]));
+    return {{ namespace }}date_range(build<std::optional<boost::posix_time::ptime>>(json["Begin"]), build<std::optional<boost::posix_time::ptime>>(json["End"]));
 }
 
 #endif

@@ -46,8 +46,8 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 };
             }).ToList();
 
-            var header = _headerTemplate.Render(new { Name = name, Params = properties });
-            var source = _sourceTemplate.Render(new { Name = name, Params = properties });
+            var header = _headerTemplate.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), Name = name, Params = properties });
+            var source = _sourceTemplate.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), Name = name, Params = properties });
             yield return (name, header, source);
         }
 
@@ -63,6 +63,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             var template = Template.Parse(File.ReadAllText($"Template/C++/dsl.txt"));
             var parameters = new 
             {
+                Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), 
                 Headers = codes.Select(x => x.Header).ToList(), 
                 Sources = codes.Select(x => x.Source).ToList(), 
                 Dsls = _prototypes.Keys.OrderBy(x => x).ToList() 

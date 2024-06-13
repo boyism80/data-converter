@@ -30,7 +30,7 @@ namespace ExcelTableConverter.Factory.CPP
 
         protected override string DateRangeType(object obj, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable(obj, $"fb::model::date_range", nullable);
+            return WithNullable(obj, $"{Util.CPP.Namespace.Access(Context.Config.Namespace)}date_range", nullable);
         }
 
         protected override string DateTimeType(object obj, string root, bool nullable, DataFormatOption option)

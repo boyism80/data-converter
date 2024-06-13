@@ -73,14 +73,6 @@ namespace ExcelTableConverter.Util
             return $"{type}?";
         }
 
-        public static string MakeCPPNullable(string type)
-        {
-            if (IsNullable(type))
-                return type;
-
-            return $"std::optional<{type}>";
-        }
-
         public static bool IsString(string type)
         {
             return Nake(type) == "string";

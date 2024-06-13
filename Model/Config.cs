@@ -15,6 +15,6 @@
         public string CMPResolverCodeFilePath { get; set; }
         public string DslCodeFilePath { get; set; }
         public List<string> SharedJsonFiles { get; set; }
-        public List<string> PartitionJsonTables { get; set; }
+        public HashSet<string> PartitionJsonTables { get; set; }
     }
 }

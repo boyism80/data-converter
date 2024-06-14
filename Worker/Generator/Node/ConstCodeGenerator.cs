@@ -38,6 +38,9 @@ namespace ExcelTableConverter.Worker.Generator.Node
                     });
                 }
 
+                if (props.Count == 0)
+                    continue;
+
                 items.Add(new 
                 {
                     Name = groupName,
@@ -45,7 +48,7 @@ namespace ExcelTableConverter.Worker.Generator.Node
                 });
             }
 
-            yield return _template.Render(new { Items = items }); ;
+            yield return _template.Render(new { Items = items });
         }
 
         protected override void OnWorked(Scope input, string output, int percent)

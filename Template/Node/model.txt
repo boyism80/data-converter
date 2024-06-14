@@ -87,6 +87,17 @@ module.exports = (function () {
     }
 
     function DslBuilder() {
+        
+        function ParseDsl(type, params) {
+            if (type == null)
+                return null
+
+            if (params == null)
+                return null
+
+            return $dsl_parser[type](params)
+        }
+
         return {
             build: function (v) {
                 if (v == null)
@@ -99,16 +110,6 @@ module.exports = (function () {
                 }
             }
         }
-    }
-
-    function ParseDsl(type, params) {
-        if (type == null)
-            return null
-
-        if (params == null)
-            return null
-
-        return this.$dsl_parser[type](params)
     }
 
 {{ class }}

@@ -63,6 +63,9 @@ namespace ExcelTableConverter.Worker.Generator.Node
 
             foreach (var (scope, props) in result)
             {
+                if (props.Count == 0)
+                    continue;
+
                 yield return (scope, tableName, props);
             }
         }
@@ -91,9 +94,7 @@ namespace ExcelTableConverter.Worker.Generator.Node
             foreach (var g in output.GroupBy(x => x.Scope))
             {
                 var scope = g.Key;
-
                 
-
                 File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", $"model.js"), modelTemplate.Render(new
                 {
                     Enum = enumCodeGenerator.Result,

@@ -1,0 +1,11 @@
+    const $dsl_parser = {
+{{~ for item in items ~}}
+        {{ item.name }}: function (v) {
+            return {
+{{~ for prop in item.props ~}}
+                {{ prop.name }}: {{ prop.initializer }}(v[{{ for.index }}]){{ if !for.last }},{{ end }}
+{{~ end ~}}
+            }
+        }{{ if !for.last }},{{ end }}
+{{~ end ~}}
+    }

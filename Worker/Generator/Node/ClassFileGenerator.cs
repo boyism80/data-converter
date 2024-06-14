@@ -77,8 +77,8 @@ namespace ExcelTableConverter.Worker.Generator.Node
             var enumCodeGenerator = new EnumCodeGenerator(Context);
             enumCodeGenerator.Run();
 
-            //var dslCodeGenerator = new DslCodeGenerator(Context);
-            //dslCodeGenerator.Run();
+            var dslCodeGenerator = new DslCodeGenerator(Context);
+            dslCodeGenerator.Run();
 
             var constCodeGenerator = new ConstCodeGenerator(Context);
             constCodeGenerator.Run();
@@ -87,7 +87,6 @@ namespace ExcelTableConverter.Worker.Generator.Node
             bindCodeGenerator.Run();
 
             var classTemplate = Template.Parse(File.ReadAllText("Template/Node/class.txt"));
-            //var baseTypeTemplate = Template.Parse(File.ReadAllText("Template/Node/type.txt"));
             var modelTemplate = Template.Parse(File.ReadAllText("Template/Node/model.txt"));
             foreach (var g in output.GroupBy(x => x.Scope))
             {
@@ -97,11 +96,8 @@ namespace ExcelTableConverter.Worker.Generator.Node
 
                 File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", $"model.js"), modelTemplate.Render(new
                 {
-                    //Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace),
-                    //Namespaces = Context.Config.Namespace,
                     Enum = enumCodeGenerator.Result,
-                    //Dsl = dslCodeGenerator.Result,
-                    //Type = baseTypeTemplate.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace) }),
+                    Dsl = dslCodeGenerator.Result,
                     Const = constCodeGenerator.Result[scope],
                     Class = classTemplate.Render(new { Items = g.OrderBy(x => x.Name).Select(x => new { x.Name, x.Props }).ToList() }),
                     Bind = bindCodeGenerator.Result[scope],

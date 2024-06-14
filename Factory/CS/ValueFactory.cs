@@ -179,12 +179,32 @@ namespace ExcelTableConverter.Factory.CS
 
         protected override object FloatType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return DoubleType(value, root, nullable, option);
+            var casted = DoubleType(value, root, nullable, option);
+            if (casted != null)
+            {
+                if ((double)casted < float.MinValue)
+                    throw new LogicException($"{root} 타입의 최소값보다 작은 값입니다.");
+
+                if ((double)casted > float.MaxValue)
+                    throw new LogicException($"{root} 타입의 최대값보다 큰 값입니다.");
+            }
+
+            return casted;
         }
 
         protected override object IntType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return LongType(value, root, nullable, option);
+            var casted = LongType(value, root, nullable, option);
+            if (casted != null)
+            {
+                if ((long)casted < int.MinValue)
+                    throw new LogicException($"{root} 타입의 최소값보다 작은 값입니다.");
+
+                if ((long)casted > int.MaxValue)
+                    throw new LogicException($"{root} 타입의 최대값보다 큰 값입니다.");
+            }
+
+            return casted;
         }
 
         protected override object LongType(object value, string root, bool nullable, DataFormatOption option)
@@ -199,17 +219,182 @@ namespace ExcelTableConverter.Factory.CS
 
             switch (value)
             {
-                case double d:
-                    return DP(root, value, (long)d);
+                case long v:
+                    return DP(root, value, v);
 
-                case long l:
-                    return DP(root, value, l);
+                case ulong v:
+                    if(v > long.MaxValue)
+                        throw new LogicException($"{root} 타입의 최대값보다 큰 값입니다.");
 
-                case int i:
-                    return DP(root, value, (long)i);
+                    return DP(root, value, v);
+
+                case uint v:
+                    return DP(root, value, (long)v);
+
+                case ushort v:
+                    return DP(root, value, (long)v);
+
+                case byte v:
+                    return DP(root, value, (long)v);
+
+                case float v:
+                    return DP(root, value, (long)v);
+
+                case double v:
+                    return DP(root, value, (long)v);
+
+                case sbyte v:
+                    return DP(root, value, (long)v);
+
+                case short v:
+                    return DP(root, value, (long)v);
+
+                case int v:
+                    return DP(root, value, (long)v);
 
                 default:
                     if (long.TryParse($"{value}", out var result) == false)
+                        throw new TypeCastException(value, root);
+
+                    return DP(root, value, result);
+            }
+        }
+
+        protected override object ByteType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            var casted = UlongType(value, root, nullable, option);
+            if (casted != null)
+            {
+                if ((ulong)casted < byte.MinValue)
+                    throw new LogicException($"{root} 타입의 최소값보다 작은 값입니다.");
+
+                if ((ulong)casted > byte.MaxValue)
+                    throw new LogicException($"{root} 타입의 최대값보다 큰 값입니다.");
+            }
+
+            return casted;
+        }
+
+        protected override object SbyteType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            var casted = LongType(value, root, nullable, option);
+            if (casted != null)
+            {
+                if ((long)casted < sbyte.MinValue)
+                    throw new LogicException($"{root} 타입의 최소값보다 작은 값입니다.");
+
+                if ((long)casted > sbyte.MaxValue)
+                    throw new LogicException($"{root} 타입의 최대값보다 큰 값입니다.");
+            }
+
+            return casted;
+        }
+
+        protected override object ShortType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            var casted = LongType(value, root, nullable, option);
+            if (casted != null)
+            {
+                if ((long)casted < short.MinValue)
+                    throw new LogicException($"{root} 타입의 최소값보다 작은 값입니다.");
+
+                if ((long)casted > short.MaxValue)
+                    throw new LogicException($"{root} 타입의 최대값보다 큰 값입니다.");
+            }
+
+            return casted;
+        }
+
+        protected override object UshortType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            var casted = UlongType(value, root, nullable, option);
+            if (casted != null)
+            {
+                if ((ulong)casted < ushort.MinValue)
+                    throw new LogicException($"{root} 타입의 최소값보다 작은 값입니다.");
+
+                if ((ulong)casted > ushort.MaxValue)
+                    throw new LogicException($"{root} 타입의 최대값보다 큰 값입니다.");
+            }
+
+            return casted;
+        }
+
+        protected override object UintType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            var casted = UlongType(value, root, nullable, option);
+            if (casted != null)
+            {
+                if ((ulong)casted < uint.MinValue)
+                    throw new LogicException($"{root} 타입의 최소값보다 작은 값입니다.");
+
+                if ((ulong)casted > uint.MaxValue)
+                    throw new LogicException($"{root} 타입의 최대값보다 큰 값입니다.");
+            }
+
+            return casted;
+        }
+
+        protected override object UlongType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            if (Util.Value.IsNull(value))
+            {
+                if (nullable == false)
+                    throw new NullValueException(root);
+
+                return DP(root, value, null);
+            }
+
+            switch (value)
+            {
+                case ulong v:
+                    return DP(root, value, v);
+
+                case uint v:
+                    return DP(root, value, (ulong)v);
+
+                case ushort v:
+                    return DP(root, value, (ulong)v);
+
+                case byte v:
+                    return DP(root, value, (ulong)v);
+
+                case float v:
+                    if (v < 0)
+                        throw new LogicException($"{root} 타입의 최소값보다 작은 값입니다.");
+
+                    return DP(root, value, (ulong)v);
+
+                case double v:
+                    if (v < 0)
+                        throw new LogicException($"{root} 타입의 최소값보다 작은 값입니다.");
+
+                    return DP(root, value, (ulong)v);
+
+                case long v:
+                    if (v < 0)
+                        throw new LogicException($"{root} 타입의 최소값보다 작은 값입니다.");
+
+                    return DP(root, value, v);
+
+                case sbyte v:
+                    if(v < 0)
+                        throw new LogicException($"{root} 타입의 최소값보다 작은 값입니다.");
+                    return DP(root, value, (ulong)v);
+
+                case short v:
+                    if (v < 0)
+                        throw new LogicException($"{root} 타입의 최소값보다 작은 값입니다.");
+                    return DP(root, value, (ulong)v);
+
+                case int v:
+                    if (v < 0)
+                        throw new LogicException($"{root} 타입의 최소값보다 작은 값입니다.");
+
+                    return DP(root, value, (ulong)v);
+
+                default:
+                    if (ulong.TryParse($"{value}", out var result) == false)
                         throw new TypeCastException(value, root);
 
                     return DP(root, value, result);
@@ -320,7 +505,7 @@ namespace ExcelTableConverter.Factory.CS
             }
         }
 
-        public new object Build(string type, object value)
+        public object Build(string type, object value)
         {
             return base.Build(type, value);
         }

@@ -1,5 +1,4 @@
 ﻿using ExcelTableConverter.Model;
-using Org.BouncyCastle.Asn1.Cmp;
 
 namespace ExcelTableConverter.Factory.CS
 {
@@ -69,6 +68,36 @@ namespace ExcelTableConverter.Factory.CS
         }
 
         protected override string LongType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return root;
+        }
+
+        protected override string ByteType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return root;
+        }
+
+        protected override string SbyteType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return root;
+        }
+
+        protected override string ShortType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return root;
+        }
+
+        protected override string UshortType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return root;
+        }
+
+        protected override string UintType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return root;
+        }
+
+        protected override string UlongType(object value, string root, bool nullable, DataFormatOption option)
         {
             return root;
         }

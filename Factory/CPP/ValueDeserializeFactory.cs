@@ -1,5 +1,4 @@
 ﻿using ExcelTableConverter.Model;
-using System.Reflection.Emit;
 
 namespace ExcelTableConverter.Factory.CPP
 {
@@ -10,77 +9,107 @@ namespace ExcelTableConverter.Factory.CPP
 
         }
 
-        private static string WithNullable(object obj, string type, bool nullable)
+        private static string WithOptional(object obj, string type, bool nullable)
         {
-            if (nullable)
-                return $"any_cast<std::optional<{type}>>({obj})";
+            if(nullable && type.EndsWith('&') == false)
+                return $"any_cast<{type}&>({obj})";
             else
                 return $"any_cast<{type}>({obj})";
         }
 
         protected override string ArrayType(object obj, string root, string e, DataFormatOption option)
         {
-            return WithNullable(obj, $"std::vector<{new TypeFactory(Context).Build(e)}>", false);
+            return WithOptional(obj, new TypeFactory(Context).Build(root, amp: true), false);
         }
 
         protected override string BooleanType(object obj, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable(obj, $"bool", nullable);
+            return WithOptional(obj, new TypeFactory(Context).Build(root, amp: false), nullable);
         }
 
         protected override string DateRangeType(object obj, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable(obj, $"{Util.CPP.Namespace.Access(Context.Config.Namespace)}date_range", nullable);
+            return WithOptional(obj, new TypeFactory(Context).Build(root, amp: true), nullable);
         }
 
         protected override string DateTimeType(object obj, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable(obj, $"boost::posix_time::ptime", nullable);
+            return WithOptional(obj, new TypeFactory(Context).Build(root, amp: true), nullable);
         }
 
         protected override string DictionaryType(object obj, string root, string k, string v, DataFormatOption option)
         {
-            return WithNullable(obj, $"std::map<{new TypeFactory(Context).Build(k)}, {new TypeFactory(Context).Build(v)}>", false);
+            return WithOptional(obj, new TypeFactory(Context).Build(root, amp: true), false);
         }
 
         protected override string DoubleType(object obj, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable(obj, $"double", nullable);
+            return WithOptional(obj, new TypeFactory(Context).Build(root, amp: false), nullable);
         }
 
         protected override string DslType(object obj, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable(obj, $"dsl", false);
+            return WithOptional(obj, new TypeFactory(Context).Build(root, amp: true), nullable);
         }
 
         protected override string EnumType(object obj, string root, string e, bool nullable, DataFormatOption option)
         {
-            return WithNullable(obj, $"{new TypeFactory(Context).Build(root)}", false);
+            return WithOptional(obj, new TypeFactory(Context).Build(root, amp: false), nullable);
         }
 
         protected override string FloatType(object obj, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable(obj, $"float", nullable);
+            return WithOptional(obj, new TypeFactory(Context).Build(root, amp: false), nullable);
         }
 
         protected override string IntType(object obj, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable(obj, $"int", nullable);
+            return WithOptional(obj, new TypeFactory(Context).Build(root, amp: false), nullable);
         }
 
         protected override string LongType(object obj, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable(obj, $"long long", nullable);
+            return WithOptional(obj, new TypeFactory(Context).Build(root, amp: false), nullable);
+        }
+
+        protected override string ByteType(object obj, string root, bool nullable, DataFormatOption option)
+        {
+            return WithOptional(obj, new TypeFactory(Context).Build(root, amp: false), nullable);
+        }
+
+        protected override string SbyteType(object obj, string root, bool nullable, DataFormatOption option)
+        {
+            return WithOptional(obj, new TypeFactory(Context).Build(root, amp: false), nullable);
+        }
+
+        protected override string ShortType(object obj, string root, bool nullable, DataFormatOption option)
+        {
+            return WithOptional(obj, new TypeFactory(Context).Build(root, amp: false), nullable);
+        }
+
+        protected override string UshortType(object obj, string root, bool nullable, DataFormatOption option)
+        {
+            return WithOptional(obj, new TypeFactory(Context).Build(root, amp: false), nullable);
+        }
+
+        protected override string UintType(object obj, string root, bool nullable, DataFormatOption option)
+        {
+            return WithOptional(obj, new TypeFactory(Context).Build(root, amp: false), nullable);
+        }
+
+        protected override string UlongType(object obj, string root, bool nullable, DataFormatOption option)
+        {
+            return WithOptional(obj, new TypeFactory(Context).Build(root, amp: false), nullable);
         }
 
         protected override string StringType(object obj, string root, DataFormatOption option)
         {
-            return WithNullable(obj, $"std::string", false);
+            return WithOptional(obj, new TypeFactory(Context).Build(root, amp: true), false);
         }
 
         protected override string TimeSpanType(object obj, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable(obj, $"std::chrono::milliseconds", nullable);
+            return WithOptional(obj, new TypeFactory(Context).Build(root, amp: true), nullable);
         }
 
         public string Build(string type, string value)

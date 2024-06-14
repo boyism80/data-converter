@@ -63,6 +63,36 @@ namespace ExcelTableConverter.Factory.Node
             return $"DefaultBuilder().build";
         }
 
+        protected override string ByteType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return $"DefaultBuilder().build";
+        }
+
+        protected override string SbyteType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return $"DefaultBuilder().build";
+        }
+
+        protected override string ShortType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return $"DefaultBuilder().build";
+        }
+
+        protected override string UshortType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return $"DefaultBuilder().build";
+        }
+
+        protected override string UintType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return $"DefaultBuilder().build";
+        }
+
+        protected override string UlongType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return $"DefaultBuilder().build";
+        }
+
         protected override string StringType(object value, string root, DataFormatOption option)
         {
             return $"DefaultBuilder().build";

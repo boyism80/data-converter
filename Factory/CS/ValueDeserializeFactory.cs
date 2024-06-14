@@ -90,6 +90,60 @@ namespace ExcelTableConverter.Factory.CS
             return WithNullable(obj as string, result, nullable);
         }
 
+        protected override string ByteType(object obj, string root, bool nullable, DataFormatOption option)
+        {
+            var result = $"(byte){obj}";
+            if (nullable)
+                result = $"(byte?){result}";
+
+            return WithNullable(obj as string, result, nullable);
+        }
+
+        protected override string SbyteType(object obj, string root, bool nullable, DataFormatOption option)
+        {
+            var result = $"(ubyte){obj}";
+            if (nullable)
+                result = $"(ubyte?){result}";
+
+            return WithNullable(obj as string, result, nullable);
+        }
+
+        protected override string ShortType(object obj, string root, bool nullable, DataFormatOption option)
+        {
+            var result = $"(short){obj}";
+            if (nullable)
+                result = $"(short?){result}";
+
+            return WithNullable(obj as string, result, nullable);
+        }
+
+        protected override string UshortType(object obj, string root, bool nullable, DataFormatOption option)
+        {
+            var result = $"(ushort){obj}";
+            if (nullable)
+                result = $"(ushort?){result}";
+
+            return WithNullable(obj as string, result, nullable);
+        }
+
+        protected override string UintType(object obj, string root, bool nullable, DataFormatOption option)
+        {
+            var result = $"(uint){obj}";
+            if (nullable)
+                result = $"(uint?){result}";
+
+            return WithNullable(obj as string, result, nullable);
+        }
+
+        protected override string UlongType(object obj, string root, bool nullable, DataFormatOption option)
+        {
+            var result = $"(ulong){obj}";
+            if (nullable)
+                result = $"(ulong?){result}";
+
+            return WithNullable(obj as string, result, nullable);
+        }
+
         protected override string StringType(object obj, string root, DataFormatOption option)
         {
             return $"{obj}?.ToString()";

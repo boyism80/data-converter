@@ -25,11 +25,10 @@ namespace ExcelTableConverter.Worker.Generator.CPP
         protected override IEnumerable<string> OnWork(Scope scope)
         {
             var items = new Dictionary<string, List<object>>();
-            var scopes = new[] { scope, Scope.Common };
             foreach (var (groupName, constSet) in Context.Result.Const.OrderBy(x => x.Key))
             {
                 var props = new List<object>();
-                foreach (var constData in constSet.Values.Where(x => scopes.Contains(x.Scope)))
+                foreach (var constData in constSet.Values.Where(x => x.Scope.HasFlag(scope)))
                 {
                     props.Add(new
                     {

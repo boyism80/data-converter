@@ -35,11 +35,23 @@ namespace ExcelTableConverter.Factory
             return true;
         }
 
+        protected abstract T ByteType(object value, string root, bool nullable, DataFormatOption option);
+
+        protected abstract T SbyteType(object value, string root, bool nullable, DataFormatOption option);
+
+        protected abstract T ShortType(object value, string root, bool nullable, DataFormatOption option);
+
+        protected abstract T UshortType(object value, string root, bool nullable, DataFormatOption option);
+
         protected abstract T BooleanType(object value, string root, bool nullable, DataFormatOption option);
 
         protected abstract T IntType(object value, string root, bool nullable, DataFormatOption option);
 
+        protected abstract T UintType(object value, string root, bool nullable, DataFormatOption option);
+        
         protected abstract T LongType(object value, string root, bool nullable, DataFormatOption option);
+
+        protected abstract T UlongType(object value, string root, bool nullable, DataFormatOption option);
 
         protected abstract T DoubleType(object value, string root, bool nullable, DataFormatOption option);
 
@@ -99,14 +111,32 @@ namespace ExcelTableConverter.Factory
 
             switch (naked)
             {
+                case "byte":
+                    return ByteType(value, root, nullable, option);
+
+                case "sbyte":
+                    return SbyteType(value, root, nullable, option);
+
+                case "short":
+                    return ShortType(value, root, nullable, option);
+
+                case "ushort":
+                    return UshortType(value, root, nullable, option);
+
                 case "bool":
                     return BooleanType(value, root, nullable, option);
 
                 case "int":
                     return IntType(value, root, nullable, option);
 
+                case "uint":
+                    return UintType(value, root, nullable, option);
+
                 case "long":
                     return LongType(value, root, nullable, option);
+
+                case "ulong":
+                    return UlongType(value, root, nullable, option);
 
                 case "double":
                     return DoubleType(value, root, nullable, option);

@@ -7,12 +7,16 @@ namespace ExcelTableConverter.Factory.CPP
         public TypeFactory(Context ctx) : base(ctx)
         { }
 
-        private string WithNullable(string type, bool nullable)
+        private string WithNullable(string type, bool nullable, DataFormatOption option)
         {
-            if (nullable)
-                return $"std::optional<{Util.Type.Nake(type)}>";
-            else
-                return type;
+            var amp = option.Get<bool>("amp");
+            var result = nullable ?
+                $"std::optional<{Util.Type.Nake(type)}>" : type;
+
+            if(amp && type.EndsWith('&') == false)
+                result = $"{result}&";
+
+            return result;
         }
 
         protected override string ArrayType(object value, string root, string e, DataFormatOption option)
@@ -25,12 +29,12 @@ namespace ExcelTableConverter.Factory.CPP
 
         protected override string BooleanType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable(root, nullable);
+            return WithNullable(root, nullable, option);
         }
 
         protected override string DateRangeType(object value, string root, bool nullable, DataFormatOption option)
         {
-            var result = WithNullable($"{Util.CPP.Namespace.Access(Context.Config.Namespace)}date_range", nullable);
+            var result = WithNullable($"{Util.CPP.Namespace.Access(Context.Config.Namespace)}date_range", nullable, option);
             if (option.Get<bool>("rvalue"))
                 result = $"const {result}&";
             return result;
@@ -38,7 +42,7 @@ namespace ExcelTableConverter.Factory.CPP
 
         protected override string DateTimeType(object value, string root, bool nullable, DataFormatOption option)
         {
-            var result = WithNullable("boost::posix_time::ptime", nullable);
+            var result = WithNullable("boost::posix_time::ptime", nullable, option);
             if (option.Get<bool>("rvalue"))
                 result = $"const {result}&";
             return result;
@@ -55,51 +59,82 @@ namespace ExcelTableConverter.Factory.CPP
 
         protected override string DoubleType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable(root, nullable);
+            return WithNullable(root, nullable, option);
         }
 
         protected override string DslType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable($"{Util.CPP.Namespace.Access(Context.Config.Namespace)}dsl", nullable);
+            return WithNullable($"{Util.CPP.Namespace.Access(Context.Config.Namespace)}dsl", nullable, option);
         }
 
         protected override string EnumType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            return WithNullable($"{Util.CPP.Namespace.Access(Context.Config.Namespace)}{Util.Type.Nake(root)}", nullable);
+            return WithNullable($"{Util.CPP.Namespace.Access(Context.Config.Namespace)}{Util.Type.Nake(root)}", nullable, option);
         }
 
         protected override string FloatType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable(root, nullable);
+            return WithNullable(root, nullable, option);
         }
 
         protected override string IntType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable(root, nullable);
+            return WithNullable(root, nullable, option);
         }
 
         protected override string LongType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable("long long", nullable);
+            return WithNullable("int64_t", nullable, option);
+        }
+
+        protected override string ByteType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return WithNullable("uint8_t", nullable, option);
+        }
+
+        protected override string SbyteType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return WithNullable("int8_t", nullable, option);
+        }
+
+        protected override string ShortType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return WithNullable("int16_t", nullable, option);
+        }
+
+        protected override string UshortType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return WithNullable("uint16_t", nullable, option);
+        }
+
+        protected override string UintType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return WithNullable("uint32_t", nullable, option);
+        }
+
+        protected override string UlongType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return WithNullable("uint64_t", nullable, option);
         }
 
         protected override string StringType(object value, string root, DataFormatOption option)
         {
-            return option.Get<bool>("rvalue") ? "const std::string&" : "std::string";
+            return WithNullable(option.Get<bool>("rvalue") ? "const std::string&" : "std::string", false, option);
         }
 
         protected override string TimeSpanType(object value, string root, bool nullable, DataFormatOption option)
         {
-            var result = WithNullable("std::chrono::milliseconds", nullable);
+            var result = WithNullable("std::chrono::milliseconds", nullable, option);
             if (option.Get<bool>("rvalue"))
                 result = $"const {result}&";
             return result;
         }
 
-        public string Build(string type, bool rvalue = false)
+        public string Build(string type, bool rvalue = false, bool amp = false)
         {
             var option = new DataFormatOption();
             option.Add("rvalue", rvalue);
+            option.Add("amp", amp);
             return Build(type, null, option);
         }
     }

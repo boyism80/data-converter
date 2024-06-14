@@ -50,14 +50,12 @@ namespace ExcelTableConverter.Worker.Generator.Node
                     Initializer = new InitValueFactory(Context).Build(property.Type, property.Name)
                 };
 
-                if (property.Scope == Scope.Common)
+                foreach (var scope in new[] { Scope.Server, Scope.Client })
                 {
-                    result[Scope.Server].Add(ccgp);
-                    result[Scope.Client].Add(ccgp);
-                }
-                else
-                {
-                    result[property.Scope].Add(ccgp);
+                    if (property.Scope.HasFlag(scope))
+                    {
+                        result[scope].Add(ccgp);
+                    }
                 }
             }
 

@@ -1,3 +1,5 @@
+@ECHO OFF
+
 SET DEST=C:\Users\cshyeon\fb
 
 CALL dotnet publish -c Release -o "bin"

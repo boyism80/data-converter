@@ -63,6 +63,36 @@ namespace ExcelTableConverter.Factory.Node
             return $"{new TypeBuilderFactory(Context).Build(root)}(v.{value})";
         }
 
+        protected override string ByteType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return $"{new TypeBuilderFactory(Context).Build(root)}(v.{value})";
+        }
+
+        protected override string SbyteType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return $"{new TypeBuilderFactory(Context).Build(root)}(v.{value})";
+        }
+
+        protected override string ShortType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return $"{new TypeBuilderFactory(Context).Build(root)}(v.{value})";
+        }
+
+        protected override string UshortType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return $"{new TypeBuilderFactory(Context).Build(root)}(v.{value})";
+        }
+
+        protected override string UintType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return $"{new TypeBuilderFactory(Context).Build(root)}(v.{value})";
+        }
+
+        protected override string UlongType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return $"{new TypeBuilderFactory(Context).Build(root)}(v.{value})";
+        }
+
         protected override string StringType(object value, string root, DataFormatOption option)
         {
             return $"{new TypeBuilderFactory(Context).Build(root)}(v.{value})";

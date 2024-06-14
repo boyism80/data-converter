@@ -68,7 +68,37 @@ namespace ExcelTableConverter.Factory.CPP
 
         protected override string LongType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable("long long", value, nullable);
+            return WithNullable("int64_t", value, nullable);
+        }
+
+        protected override string ByteType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return WithNullable("uint8_t", value, nullable);
+        }
+
+        protected override string SbyteType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return WithNullable("int8_t", value, nullable);
+        }
+
+        protected override string ShortType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return WithNullable("int16_t", value, nullable);
+        }
+
+        protected override string UshortType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return WithNullable("uint16_t", value, nullable);
+        }
+
+        protected override string UintType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return WithNullable("uint32_t", value, nullable);
+        }
+
+        protected override string UlongType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return WithNullable("uint64_t", value, nullable);
         }
 
         protected override string StringType(object value, string root, DataFormatOption option)

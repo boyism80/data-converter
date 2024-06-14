@@ -13,7 +13,7 @@ using Newtonsoft.Json;
 try
 {
     var dir = Path.Combine("..", "..", "..", "..");
-    var lang = "node";
+    var lang = "c++";
     var options = new OptionSet
     {
         { "d|dir=", "input directory", v => dir = v },
@@ -314,7 +314,7 @@ try
     File.WriteAllText("ElapsedTime.txt", ElapsedTimeMeasurer.Display());
     File.WriteAllText(Context.ERROR_CACHE_PATH, JsonConvert.SerializeObject(Logger.ErrorFiles));
 
-    if (isComplete == false)
+    if (!isComplete || Scheduler.Suspended)
         Environment.Exit(1);
 }
 catch (LogicException e)

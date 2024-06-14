@@ -115,6 +115,36 @@ namespace ExcelTableConverter.Factory.Node
             return $"{value}";
         }
 
+        protected override string ByteType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return $"{value}";
+        }
+
+        protected override string SbyteType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return $"{value}";
+        }
+
+        protected override string ShortType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return $"{value}";
+        }
+
+        protected override string UshortType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return $"{value}";
+        }
+
+        protected override string UintType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return $"{value}";
+        }
+
+        protected override string UlongType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return $"{value}";
+        }
+
         protected override string StringType(object value, string root, DataFormatOption option)
         {
             var s = value as string;

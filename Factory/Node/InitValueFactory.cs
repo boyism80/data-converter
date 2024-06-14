@@ -8,14 +8,6 @@ namespace ExcelTableConverter.Factory.Node
         {
         }
 
-        private static string WithNullable(string root, object value, bool nullable)
-        {
-            if (nullable)
-                root = $"std::optional<{root}>";
-
-            return $"{Util.CPP.Namespace.Access(Context.Config.Namespace)}build<{root}>(json[\"{value}\"])";
-        }
-
         protected override string ArrayType(object value, string root, string e, DataFormatOption option)
         {
             return $"{new TypeBuilderFactory(Context).Build(root)}(v.{value})";

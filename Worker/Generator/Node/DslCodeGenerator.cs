@@ -1,9 +1,9 @@
-﻿using ExcelTableConverter.Factory.CPP;
+﻿using ExcelTableConverter.Factory.Node;
 using ExcelTableConverter.Model;
 using Newtonsoft.Json;
 using Scriban;
 
-namespace ExcelTableConverter.Worker.Generator.CPP
+namespace ExcelTableConverter.Worker.Generator.Node
 {
     public class DslCodeGenerator : ParallelWorker<KeyValuePair<string, List<DSLParameter>>, (string Name, List<object> Props)>
     {
@@ -29,9 +29,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 return new
                 {
                     Name = prototype.Name,
-                    Type = new TypeFactory(Context).Build(prototype.Type),
-                    RType = new TypeFactory(Context).Build(prototype.Type, true),
-                    Deserialize = new ValueDeserializeFactory(Context).Build(prototype.Type, $"parameters[{i}]")
+                    Initializer = new TypeBuilderFactory(Context).Build(prototype.Type)
                 } as object;
             }).ToList();
 
@@ -45,12 +43,10 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 
         protected override IReadOnlyList<(string Name, List<object> Props)> OnFinish(IReadOnlyList<(string Name, List<object> Props)> output)
         {
-            var template = Template.Parse(File.ReadAllText($"Template/C++/dsl.txt"));
-            var parameters = new 
+            var template = Template.Parse(File.ReadAllText($"Template/Node/dsl.txt"));
+            var parameters = new
             {
-                Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), 
-                Items = output.OrderBy(x => x.Name).Select(x => new { x.Name, x.Props }),
-                Dsls = _prototypes.Keys.OrderBy(x => x).ToList() 
+                Items = output.OrderBy(x => x.Name).Select(x => new { x.Name, x.Props })
             };
 
             Result = template.Render(parameters);

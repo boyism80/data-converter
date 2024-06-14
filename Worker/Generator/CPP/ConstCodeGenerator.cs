@@ -28,18 +28,21 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             var scopes = new[] { scope, Scope.Common };
             foreach (var (groupName, constSet) in Context.Result.Const.OrderBy(x => x.Key))
             {
-                var properties = new List<object>();
+                var props = new List<object>();
                 foreach (var constData in constSet.Values.Where(x => scopes.Contains(x.Scope)))
                 {
-                    properties.Add(new
+                    props.Add(new
                     {
                         Name = constData.Name,
                         Type = new TypeFactory(Context).Build(constData.Type),
                         Value = new AllocateValueFactory(Context).Build(constData.Type, constData.Value),
                     });
                 }
+                
+                if (props.Count == 0)
+                    continue;
 
-                items.Add(groupName, properties);
+                items.Add(groupName, props);
             }
 
             yield return _template.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), Super = scope == Scope.Common, Scope = scope, Items = items });

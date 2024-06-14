@@ -64,6 +64,9 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 
             foreach (var (scope, props) in result)
             {
+                if (props.Count == 0)
+                    continue;
+
                 yield return (scope, tableName, props);
             }
         }

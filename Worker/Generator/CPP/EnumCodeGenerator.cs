@@ -23,7 +23,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 
         protected override IEnumerable<(string, object)> OnWork(string enumName)
         {
-            var props = Context.Result.Enum[enumName].OrderBy(x => x.Value).Select(x => new 
+            var props = Context.Result.Enum[enumName].Select(x => new 
             {
                 Name = x.Key,
                 Value = x.Value

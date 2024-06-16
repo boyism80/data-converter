@@ -3,7 +3,7 @@ using Scriban;
 
 namespace ExcelTableConverter.Worker.Generator.Node
 {
-    public class EnumCodeGenerator : ParallelWorker<string, (string Name, List<KeyValuePair<string, int>> Props)>
+    public class EnumCodeGenerator : ParallelWorker<string, (string Name, List<KeyValuePair<string, List<object>>> Props)>
     {
         private static readonly Template _template = Template.Parse(File.ReadAllText($"Template/Node/enum.txt"));
 
@@ -21,17 +21,17 @@ namespace ExcelTableConverter.Worker.Generator.Node
             }
         }
 
-        protected override IEnumerable<(string Name, List<KeyValuePair<string, int>> Props)> OnWork(string value)
+        protected override IEnumerable<(string Name, List<KeyValuePair<string, List<object>>> Props)> OnWork(string value)
         {
             yield return (value, Context.Result.Enum[value].OrderBy(x => x.Value).ToList());
         }
 
-        protected override void OnWorked(string input, (string Name, List<KeyValuePair<string, int>> Props) output, int percent)
+        protected override void OnWorked(string input, (string Name, List<KeyValuePair<string, List<object>>> Props) output, int percent)
         {
             base.OnWorked(input, output, percent);
         }
 
-        protected override IReadOnlyList<(string Name, List<KeyValuePair<string, int>> Props)> OnFinish(IReadOnlyList<(string Name, List<KeyValuePair<string, int>> Props)> output)
+        protected override IReadOnlyList<(string Name, List<KeyValuePair<string, List<object>>> Props)> OnFinish(IReadOnlyList<(string Name, List<KeyValuePair<string, List<object>>> Props)> output)
         {
             Result = _template.Render(new
             {
@@ -41,7 +41,7 @@ namespace ExcelTableConverter.Worker.Generator.Node
                     Props = x.Props.Select(x => new
                     {
                         Name = x.Key,
-                        x.Value
+                        Value = x.Value
                     }).ToList()
                 }).ToList()
             });

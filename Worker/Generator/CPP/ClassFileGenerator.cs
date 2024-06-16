@@ -89,9 +89,32 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             var classTemplate = Template.Parse(File.ReadAllText("Template/C++/class.txt"));
             var baseTypeTemplate = Template.Parse(File.ReadAllText("Template/C++/type.txt"));
             var modelTemplate = Template.Parse(File.ReadAllText("Template/C++/model.txt"));
-            foreach (var g in output.GroupBy(x => x.Scope))
+
+            var g = output.GroupBy(x => x.Scope).ToDictionary(x => x.Key, x =>
             {
-                var scope = g.Key;
+                return x.OrderBy(x => x.Name).Select(x => new
+                {
+                    x.Name,
+                    x.Props
+                } as object).ToList();
+            });
+
+            if (g.ContainsKey(Scope.Server) == false)
+                g.Add(Scope.Server, new List<object>());
+
+            if (g.ContainsKey(Scope.Client) == false)
+                g.Add(Scope.Client, new List<object>());
+
+            foreach (var (scope, items) in g)
+            {
+                if (constCodeGenerator.Result.ContainsKey(scope) == false)
+                { 
+                }
+
+                if (bindCodeGenerator.Result.ContainsKey(scope) == false)
+                { 
+                }
+
                 File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", $"model.h"), modelTemplate.Render(new
                 {
                     Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace),
@@ -100,7 +123,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                     Dsl = dslCodeGenerator.Result,
                     Type = baseTypeTemplate.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace) }),
                     Const = constCodeGenerator.Result[scope],
-                    Class = classTemplate.Render(new { Items = g.OrderBy(x => x.Name).Select(x => new { x.Name, x.Props }).ToList() }),
+                    Class = classTemplate.Render(new { Items = items }),
                     Container = bindCodeGenerator.Result[scope]
                 }));
             }

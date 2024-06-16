@@ -1,5 +1,7 @@
 ﻿using ExcelTableConverter.Model;
+using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
+using System.Text.RegularExpressions;
 
 namespace ExcelTableConverter.Worker.Loader
 {
@@ -9,9 +11,55 @@ namespace ExcelTableConverter.Worker.Loader
         {
         }
 
+        public static List<object> ParseValue(ICell cell)
+        {
+            var regex = new Regex(@"^(?<value>(?:~?[a-zA-Z_]+[a-zA-Z0-9]*)|\d+|[&\|])");
+            var value = cell.CellType == CellType.Numeric ? $"{cell.NumericCellValue}" :  cell.StringCellValue.Replace(" ", string.Empty);
+            var index = 0;
+            var stack = new Stack<List<object>>();
+            stack.Push(new List<object>());
+
+            while (index < value.Length)
+            {
+                var substr = value.Substring(index);
+
+                if (substr.StartsWith('('))
+                {
+                    stack.Push(new List<object>());
+                    index++;
+                }
+                else if (substr.StartsWith(')'))
+                {
+                    var array = stack.Pop();
+                    if(stack.Count == 0)
+                        throw new LogicException("구문이 잘못됐습니다.");
+
+                    stack.Peek().Add(array);
+                    index++;
+                }
+                else
+                {
+                    var matched = regex.Match(substr);
+                    if (matched.Success == false)
+                        throw new LogicException("구문이 잘못됐습니다.");
+
+                    stack.Peek().Add(matched.Groups["value"].Value);
+                    index += matched.Groups["value"].Value.Length;
+                }
+            }
+
+            if(stack.TryPop(out var result) == false)
+                throw new LogicException("구문이 잘못됐습니다.");
+
+            if(stack.Count > 0)
+                throw new LogicException("구문이 잘못됐습니다.");
+
+            return result;
+        }
+
         protected override IEnumerable<RawEnum> OnWork(Sheet sheet)
         {
-            var values = new Dictionary<string, int>();
+            var values = new Dictionary<string, List<object>>();
             foreach (XSSFRow row in sheet.Raw)
             {
                 var line = ReadLine(row);
@@ -19,7 +67,7 @@ namespace ExcelTableConverter.Worker.Loader
                     continue;
 
                 var name = line[0].StringCellValue.Trim();
-                var value = (int)line[1].NumericCellValue;
+                var value = ParseValue(line[1]);
 
                 if (values.ContainsKey(name))
                     throw new LogicException($"{sheet.FullName}에 {name}이 중복 정의되었습니다.");

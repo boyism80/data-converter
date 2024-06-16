@@ -1,3 +1,30 @@
+{{ func render_enum(v)
+    if object.typeof(v) == 'array'
+        $result = ''
+        $index = 0
+        if v.size > 1
+            $result += '('
+        end
+        
+        for x in v
+            $index = $index + 1
+            $result += render_enum(x)
+
+            if $index < v.size
+                $result += ' '
+            end
+        end
+        
+        if v.size > 1
+            $result += ')'
+        end
+
+        ret $result
+    else
+        ret v
+    end
+end }}
+
 template <typename T>
 T enum_parse(const std::string k)
 {
@@ -8,7 +35,7 @@ T enum_parse(const std::string k)
 enum class {{ item.name }}
 {
 {{~ for prop in item.props ~}}
-    {{ prop.name }} = {{ prop.value }}{{ if !for.last }}, {{ end }}
+    {{ prop.name }} = {{ render_enum(prop.value) }}{{ if !for.last }}, {{ end }}
 {{~ end ~}}
 };
 

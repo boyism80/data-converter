@@ -89,16 +89,30 @@ namespace ExcelTableConverter.Worker.Generator.Node
 
             var classTemplate = Template.Parse(File.ReadAllText("Template/Node/class.txt"));
             var modelTemplate = Template.Parse(File.ReadAllText("Template/Node/model.txt"));
-            foreach (var g in output.GroupBy(x => x.Scope))
+
+            var g = output.Count > 0 ?
+                output.GroupBy(x => x.Scope).ToDictionary(x => x.Key, x =>
+                {
+                    return x.OrderBy(x => x.Name).Select(x => new
+                    {
+                        x.Name,
+                        x.Props
+                    } as object).ToList();
+                }) :
+                new Dictionary<Scope, List<object>>
+                {
+                    [Scope.Server] = new List<object>(),
+                    [Scope.Client] = new List<object>()
+                };
+
+            foreach (var (scope, items) in g)
             {
-                var scope = g.Key;
-                
                 File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", $"model.js"), modelTemplate.Render(new
                 {
                     Enum = enumCodeGenerator.Result,
                     Dsl = dslCodeGenerator.Result,
                     Const = constCodeGenerator.Result[scope],
-                    Class = classTemplate.Render(new { Items = g.OrderBy(x => x.Name).Select(x => new { x.Name, x.Props }).ToList() }),
+                    Class = classTemplate.Render(new { Items = items }),
                     Bind = bindCodeGenerator.Result[scope],
                     Tables = Context.Result.Schema.Where(x =>
                     {

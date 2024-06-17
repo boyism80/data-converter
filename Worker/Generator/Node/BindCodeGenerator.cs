@@ -4,7 +4,7 @@ using Scriban;
 
 namespace ExcelTableConverter.Worker.Generator.Node
 {
-    public class BindCodeGenerator : ParallelWorker<Scope, bool>
+    public class BindCodeGenerator : ParallelWorker<Scope, KeyValuePair<Scope, string>>
     {
         private static readonly Template _template = Template.Parse(File.ReadAllText($"Template/Node/container.txt"));
 
@@ -22,7 +22,7 @@ namespace ExcelTableConverter.Worker.Generator.Node
             }
         }
 
-        protected override IEnumerable<bool> OnWork(Scope scope)
+        protected override IEnumerable<KeyValuePair<Scope, string>> OnWork(Scope scope)
         {
             var buffer = new List<object>();
             foreach (var (tableName, schemaSet) in Context.Result.Schema.OrderBy(x => x.Key))
@@ -59,16 +59,17 @@ namespace ExcelTableConverter.Worker.Generator.Node
                 });
             }
 
-            Result.Add(scope, _template.Render(new { Scope = scope, Tables = buffer }));
-            yield return true;
+            var code = _template.Render(new { Scope = scope, Tables = buffer });
+            yield return new KeyValuePair<Scope, string>(scope, code);
         }
 
-        protected override void OnWorked(Scope input, bool output, int percent)
+        protected override void OnWorked(Scope input, KeyValuePair<Scope, string> output, int percent)
         {
+            Result.Add(output.Key, output.Value);
             base.OnWorked(input, output, percent);
         }
 
-        protected override IReadOnlyList<bool> OnFinish(IReadOnlyList<bool> output)
+        protected override IReadOnlyList<KeyValuePair<Scope, string>> OnFinish(IReadOnlyList<KeyValuePair<Scope, string>> output)
         {
             return base.OnFinish(output);
         }

@@ -159,7 +159,11 @@ namespace ExcelTableConverter.Factory.Node
         protected override string TimeSpanType(object value, string root, bool nullable, DataFormatOption option)
         {
             var ts = (TimeSpan)value;
-            return $"timespan.fromMilliseconds({(long)ts.TotalMilliseconds}/*{ts}*/)";
+            var ms = (long)ts.TotalMilliseconds;
+            if (ms == 0)
+                return $"new timespan.TimeSpan()";
+            else
+                return $"timespan.fromMilliseconds({ms}/*{ts}*/)";
         }
 
         public string Build(string type, object value)

@@ -1,4 +1,5 @@
-{{ func render_enum(v)
+{{
+func enum_recursive(v)
     if object.typeof(v) == 'array'
         $result = ''
         $index = 0
@@ -8,9 +9,9 @@
         
         for x in v
             $index = $index + 1
-            $result += render_enum(x)
+            $result += enum_recursive(x)
 
-            if $index < v.size
+            if $index < v.size && x != '~'
                 $result += ' '
             end
         end
@@ -23,7 +24,18 @@
     else
         ret v
     end
-end }}
+end
+
+func enum(v)
+    $result = enum_recursive(v)
+    if ($result | string.starts_with '(') && ($result | string.ends_with(')'))
+        $result = $result | string.remove_first '('
+        $result = $result | string.remove_last ')'
+    end
+
+    ret $result
+end
+}}
 
 template <typename T>
 T enum_parse(const std::string k)
@@ -35,7 +47,7 @@ T enum_parse(const std::string k)
 enum class {{ item.name }}
 {
 {{~ for prop in item.props ~}}
-    {{ prop.name }} = {{ render_enum(prop.value) }}{{ if !for.last }}, {{ end }}
+    {{ prop.name }} = {{ enum(prop.value) }}{{ if !for.last }}, {{ end }}
 {{~ end ~}}
 };
 

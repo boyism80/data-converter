@@ -35,7 +35,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
 
         protected override IEnumerable<bool> OnWork(string enumName)
         {
-            var code = _template.Render(new { Namespaces = Context.Config.Namespace, Name = enumName, Properties = Context.Result.Enum[enumName].OrderBy(x => x.Value) });
+            var code = _template.Render(new { Namespaces = Context.Config.Namespace, Name = enumName, Properties = Context.Result.Enum[enumName].OrderBy(x => x, new Util.Enum.Comparer()) });
             var path = Path.Combine(_dir, $"{enumName}.cs");
             File.WriteAllText(path, code);
             yield return true;

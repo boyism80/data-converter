@@ -56,7 +56,11 @@ module.exports = (function () {
                 const hours = parseInt(matched.groups.hour) + days * 24
                 const minutes = parseInt(matched.groups.min) + hours * 60
                 const seconds = parseInt(matched.groups.sec) + minutes * 60
-                return timespan.fromMilliseconds(seconds * 1000)
+                const milliseconds = seconds * 1000;
+                if(milliseconds == 0)
+                    return new timespan.TimeSpan();
+                else
+                    return timespan.fromMilliseconds()
             }
         }
     }

@@ -1,7 +1,6 @@
 ﻿using ExcelTableConverter.Model;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
-using System.Text.RegularExpressions;
 
 namespace ExcelTableConverter.Worker.Loader
 {
@@ -13,8 +12,15 @@ namespace ExcelTableConverter.Worker.Loader
 
         public static List<object> ParseValue(ICell cell)
         {
-            var regex = new Regex(@"^(?<value>(?:~?[a-zA-Z_]+[a-zA-Z0-9]*)|\d+|[&\|])");
-            var value = cell.CellType == CellType.Numeric ? $"{cell.NumericCellValue}" :  cell.StringCellValue.Replace(" ", string.Empty);
+            var cellType = cell.CellType;
+            if (cellType == CellType.Formula)
+                cellType = cell.CachedFormulaResultType;
+
+            var value = cellType switch
+            {
+                CellType.Numeric => $"{cell.NumericCellValue}",
+                _ => cell.StringCellValue.Replace(" ", string.Empty)
+            };
             var index = 0;
             var stack = new Stack<List<object>>();
             stack.Push(new List<object>());
@@ -31,7 +37,7 @@ namespace ExcelTableConverter.Worker.Loader
                 else if (substr.StartsWith(')'))
                 {
                     var array = stack.Pop();
-                    if(stack.Count == 0)
+                    if (stack.Count == 0)
                         throw new LogicException("구문이 잘못됐습니다.");
 
                     stack.Peek().Add(array);
@@ -39,19 +45,38 @@ namespace ExcelTableConverter.Worker.Loader
                 }
                 else
                 {
-                    var matched = regex.Match(substr);
+                    var matched = Util.Enum.Parse(substr);
                     if (matched.Success == false)
                         throw new LogicException("구문이 잘못됐습니다.");
 
-                    stack.Peek().Add(matched.Groups["value"].Value);
-                    index += matched.Groups["value"].Value.Length;
+                    var array = stack.Peek();
+                    var current = string.Empty;
+                    if (matched.Groups["value"].Success)
+                    {
+                        current = matched.Groups["value"].Value;
+                    }
+                    else if (matched.Groups["op"].Success)
+                    {
+                        current = matched.Groups["op"].Value;
+                    }
+                    else if (matched.Groups["inv"].Success)
+                    {
+                        current = matched.Groups["inv"].Value;
+                    }
+                    else
+                    {
+                        throw new Exception();
+                    }
+
+                    stack.Peek().Add(current);
+                    index += current.Length;
                 }
             }
 
-            if(stack.TryPop(out var result) == false)
+            if (stack.TryPop(out var result) == false)
                 throw new LogicException("구문이 잘못됐습니다.");
 
-            if(stack.Count > 0)
+            if (stack.Count > 0)
                 throw new LogicException("구문이 잘못됐습니다.");
 
             return result;

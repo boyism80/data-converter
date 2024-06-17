@@ -15,7 +15,7 @@ private:
 public:
     dsl(const std::string& header, const std::vector<std::any>& params) : header(header), params(params)
     { }
-    dsl(const Json::Value& json) : header(json["Type"].asString()), params(parse_params(json))
+    dsl(const Json::Value& json) : header(build<std::string>(json["Type"])), params(parse_params(json))
     { }
     ~dsl()
     { }
@@ -67,7 +67,7 @@ inline std::vector<std::any> {{ namespace }}dsl::parse_params(const Json::Value&
 {{~ end ~}}
     };
 
-    auto header = json["Type"].asString();
+    auto header = build<std::string>(json["Type"]);
     auto i = data.find(header);
     if(i == data.end())
         throw std::runtime_error("invalid dsl header");

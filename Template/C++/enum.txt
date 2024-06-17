@@ -37,7 +37,7 @@ func enum(v)
 end
 ~}}
 template <typename T>
-T enum_parse(const std::string k)
+inline T enum_parse(const std::string k)
 {
     throw std::runtime_error("cannot parse enum value");
 }
@@ -51,7 +51,7 @@ enum class {{ item.name }}
 };
 
 template <>
-{{ item.name }} enum_parse<{{ item.name }}>(const std::string k)
+inline {{ item.name }} enum_parse<{{ item.name }}>(const std::string k)
 {
     static const std::unordered_map<std::string, {{ item.name }}> enums
     {

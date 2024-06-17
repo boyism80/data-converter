@@ -183,10 +183,10 @@ namespace ExcelTableConverter.Factory.CS
             if (casted != null)
             {
                 if ((double)casted < float.MinValue)
-                    throw new LogicException($"{root} 타입의 최소값보다 작은 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.");
 
                 if ((double)casted > float.MaxValue)
-                    throw new LogicException($"{root} 타입의 최대값보다 큰 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.");
             }
 
             return casted;
@@ -198,10 +198,10 @@ namespace ExcelTableConverter.Factory.CS
             if (casted != null)
             {
                 if ((long)casted < int.MinValue)
-                    throw new LogicException($"{root} 타입의 최소값보다 작은 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.");
 
                 if ((long)casted > int.MaxValue)
-                    throw new LogicException($"{root} 타입의 최대값보다 큰 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.");
             }
 
             return casted;
@@ -224,7 +224,7 @@ namespace ExcelTableConverter.Factory.CS
 
                 case ulong v:
                     if(v > long.MaxValue)
-                        throw new LogicException($"{root} 타입의 최대값보다 큰 값입니다.");
+                        throw new LogicException($"{v}는 {root} 타입의 최대값보다 큰 값입니다.");
 
                     return DP(root, value, v);
 
@@ -266,10 +266,10 @@ namespace ExcelTableConverter.Factory.CS
             if (casted != null)
             {
                 if ((ulong)casted < byte.MinValue)
-                    throw new LogicException($"{root} 타입의 최소값보다 작은 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.");
 
                 if ((ulong)casted > byte.MaxValue)
-                    throw new LogicException($"{root} 타입의 최대값보다 큰 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.");
             }
 
             return casted;
@@ -281,10 +281,10 @@ namespace ExcelTableConverter.Factory.CS
             if (casted != null)
             {
                 if ((long)casted < sbyte.MinValue)
-                    throw new LogicException($"{root} 타입의 최소값보다 작은 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.");
 
                 if ((long)casted > sbyte.MaxValue)
-                    throw new LogicException($"{root} 타입의 최대값보다 큰 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.");
             }
 
             return casted;
@@ -296,10 +296,10 @@ namespace ExcelTableConverter.Factory.CS
             if (casted != null)
             {
                 if ((long)casted < short.MinValue)
-                    throw new LogicException($"{root} 타입의 최소값보다 작은 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.");
 
                 if ((long)casted > short.MaxValue)
-                    throw new LogicException($"{root} 타입의 최대값보다 큰 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.");
             }
 
             return casted;
@@ -311,10 +311,10 @@ namespace ExcelTableConverter.Factory.CS
             if (casted != null)
             {
                 if ((ulong)casted < ushort.MinValue)
-                    throw new LogicException($"{root} 타입의 최소값보다 작은 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.");
 
                 if ((ulong)casted > ushort.MaxValue)
-                    throw new LogicException($"{root} 타입의 최대값보다 큰 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.");
             }
 
             return casted;
@@ -326,10 +326,10 @@ namespace ExcelTableConverter.Factory.CS
             if (casted != null)
             {
                 if ((ulong)casted < uint.MinValue)
-                    throw new LogicException($"{root} 타입의 최소값보다 작은 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.");
 
                 if ((ulong)casted > uint.MaxValue)
-                    throw new LogicException($"{root} 타입의 최대값보다 큰 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.");
             }
 
             return casted;
@@ -361,35 +361,35 @@ namespace ExcelTableConverter.Factory.CS
 
                 case float v:
                     if (v < 0)
-                        throw new LogicException($"{root} 타입의 최소값보다 작은 값입니다.");
+                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.");
 
                     return DP(root, value, (ulong)v);
 
                 case double v:
                     if (v < 0)
-                        throw new LogicException($"{root} 타입의 최소값보다 작은 값입니다.");
+                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.");
 
                     return DP(root, value, (ulong)v);
 
                 case long v:
                     if (v < 0)
-                        throw new LogicException($"{root} 타입의 최소값보다 작은 값입니다.");
+                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.");
 
                     return DP(root, value, v);
 
                 case sbyte v:
                     if(v < 0)
-                        throw new LogicException($"{root} 타입의 최소값보다 작은 값입니다.");
+                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.");
                     return DP(root, value, (ulong)v);
 
                 case short v:
                     if (v < 0)
-                        throw new LogicException($"{root} 타입의 최소값보다 작은 값입니다.");
+                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.");
                     return DP(root, value, (ulong)v);
 
                 case int v:
                     if (v < 0)
-                        throw new LogicException($"{root} 타입의 최소값보다 작은 값입니다.");
+                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.");
 
                     return DP(root, value, (ulong)v);
 

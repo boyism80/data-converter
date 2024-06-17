@@ -106,7 +106,8 @@ namespace ExcelTableConverter.Model
                             Scope = column.Scope
                         });
                     }
-                    result.Add($"{table}Attribute", schemaSet);
+                    
+                    result.Add(string.Format(Config.ParentTableFormat, table), schemaSet);
                 }
 
                 if (normalColumns != null)
@@ -115,10 +116,10 @@ namespace ExcelTableConverter.Model
                     if (boldColumns != null)
                     {
                         var parentKeyColumn = boldColumns.FirstOrDefault(x => Util.Type.IsPrimaryKey(x.Type, out _));
-                        schemaSet.Add("Parent", new Model.SchemaData
+                        schemaSet.Add(Config.ParentPropName, new Model.SchemaData
                         {
-                            Name = "Parent",
-                            Type = $"(${table}Attribute)",
+                            Name = Config.ParentPropName,
+                            Type = $"(${string.Format(Config.ParentTableFormat, table)})",
                             Scope = parentKeyColumn.Scope
                         });
                     }
@@ -228,7 +229,7 @@ namespace ExcelTableConverter.Model
         {
             Result.Enum = RawEnum.SelectMany(x => x.Value).GroupBy(x => x.Table).ToDictionary(x => x.Key, x => x.SelectMany(x => x.Values).ToDictionary(x => x.Key, x => x.Value));
             var dslFunctionTypes = new Dictionary<string, List<object>>();
-            Result.Enum.Add("DslFunctionType", dslFunctionTypes);
+            Result.Enum.Add(Config.DslTypeEnumName, dslFunctionTypes);
             int i = 0;
             foreach (var dsl in DSL)
             {

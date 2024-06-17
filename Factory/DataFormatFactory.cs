@@ -112,30 +112,38 @@ namespace ExcelTableConverter.Factory
             switch (naked)
             {
                 case "byte":
+                case "uint8_t":
                     return ByteType(value, root, nullable, option);
 
                 case "sbyte":
+                case "int8_t":
                     return SbyteType(value, root, nullable, option);
 
                 case "short":
+                case "int16_t":
                     return ShortType(value, root, nullable, option);
 
                 case "ushort":
+                case "uint16_t":
                     return UshortType(value, root, nullable, option);
 
                 case "bool":
                     return BooleanType(value, root, nullable, option);
 
                 case "int":
+                case "int32_t":
                     return IntType(value, root, nullable, option);
 
                 case "uint":
+                case "uint32_t":
                     return UintType(value, root, nullable, option);
 
                 case "long":
+                case "int64_t":
                     return LongType(value, root, nullable, option);
 
                 case "ulong":
+                case "uint64_t":
                     return UlongType(value, root, nullable, option);
 
                 case "double":

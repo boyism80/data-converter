@@ -1,7 +1,7 @@
 {
     "Namespace": ["fb", "model"],
-    "ConstFilePrefix": "_Const",
-    "EnumFilePrefix": "_Enum",
+    "ConstFilePrefix": "const",
+    "EnumFilePrefix": "enum",
     "JsonFilePath": "json",
     "JsonSheetFilePath":  "json_sheet",
     "DiffFilePath": "diff",
@@ -12,5 +12,8 @@
     "CMPResolverCodeFilePath": "resolver",
     "DslCodeFilePath": "dsl",
     "SharedJsonFiles": [],
-    "PartitionJsonTables": []
+    "PartitionJsonTables": [],
+    "ParentTableFormat": "{0}_attribute",
+    "ParentPropName": "parent",
+    "DslTypeEnumName": "dsl_type"
 }

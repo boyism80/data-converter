@@ -58,7 +58,7 @@ public:
 {{ end }}
 {{~ end ~}}
 
-std::vector<std::any> {{ namespace }}dsl::parse_params(const Json::Value& json)
+inline std::vector<std::any> {{ namespace }}dsl::parse_params(const Json::Value& json)
 {
     static auto data = std::unordered_map<std::string, std::function<std::vector<std::any>(const Json::Value&)>>
     {

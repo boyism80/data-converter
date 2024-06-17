@@ -25,7 +25,7 @@ namespace {{for namespace in namespaces}}{{namespace}}.{{end}}Types.Dsl.Paramete
         {
             return new Dsl
             {
-                Type = DslFunctionType.{{ header }},
+                Type = {{ dslFunctionType }}.{{ header }},
                 Parameters = new object[]
                 {
 {{~ for prop in props ~}}

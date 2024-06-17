@@ -1,5 +1,44 @@
 // Generated code. DO NOT MODIFY DIRECTLY
 
+{{
+func enum_recursive(v)
+    if object.typeof(v) == 'array'
+        $result = ''
+        $index = 0
+        if v.size > 1
+            $result += '('
+        end
+        
+        for x in v
+            $index = $index + 1
+            $result += enum_recursive(x)
+
+            if $index < v.size && x != '~'
+                $result += ' '
+            end
+        end
+        
+        if v.size > 1
+            $result += ')'
+        end
+
+        ret $result
+    else
+        ret v
+    end
+end
+
+func enum(v)
+    $result = enum_recursive(v)
+    if ($result | string.starts_with '(') && ($result | string.ends_with(')'))
+        $result = $result | string.remove_first '('
+        $result = $result | string.remove_last ')'
+    end
+
+    ret $result
+end
+}}
+
 using System;
 using System.Collections.Generic;
 using {{for namespace in namespaces}}{{namespace}}.{{end}}Types;
@@ -11,7 +50,7 @@ namespace {{for namespace in namespaces}}{{namespace}}.{{end}}Types
     public enum {{ name }}
     {
 {{~ for pair in properties ~}}
-        {{ pair.key }} = {{ pair.value }}{{ if !for.last }}, {{ end }}
+        {{ pair.key }} = {{ enum(pair.value) }}{{ if !for.last }}, {{ end }}
 {{~ end ~}}
     }
 }

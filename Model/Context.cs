@@ -4,7 +4,6 @@ using ExcelTableConverter.Util;
 using ExcelTableConverter.Worker;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NPOI.SS.UserModel;
 using System.Collections.Concurrent;
 using System.Reflection;
 
@@ -12,7 +11,7 @@ namespace ExcelTableConverter.Model
 {
     using ConstContainer = Dictionary<string, Dictionary<string, ConstData>>;
     using DataContainer = Dictionary<string, Dictionary<string, List<DataConvertResult>>>;
-    using EnumContainer = Dictionary<string, Dictionary<string, int>>;
+    using EnumContainer = Dictionary<string, Dictionary<string, List<object>>>;
     using RawConstContainer = Dictionary<string, List<RawConst>>;
     using RawDataContainer = Dictionary<string, List<RawSheetData>>;
     using RawEnumContainer = Dictionary<string, List<RawEnum>>;
@@ -228,12 +227,12 @@ namespace ExcelTableConverter.Model
         public void Arrange()
         {
             Result.Enum = RawEnum.SelectMany(x => x.Value).GroupBy(x => x.Table).ToDictionary(x => x.Key, x => x.SelectMany(x => x.Values).ToDictionary(x => x.Key, x => x.Value));
-            var dslFunctionTypes = new Dictionary<string, int>();
+            var dslFunctionTypes = new Dictionary<string, List<object>>();
             Result.Enum.Add("DslFunctionType", dslFunctionTypes);
             int i = 0;
             foreach (var dsl in DSL)
             {
-                dslFunctionTypes.Add(dsl.Key, i++);
+                dslFunctionTypes.Add(dsl.Key, new List<object> { i++ });
             }
             Result.Schema = GetSchema();
             Result.Data = new DataTypeCaster(this).Run().GroupBy(x => x.FileName).ToDictionary(x => x.Key, x => 

@@ -206,6 +206,7 @@ try
     Scheduler.Add(() => new NameValidator(ctx, processFiles).Run());
     Scheduler.Add(() => new SchemaValidator(ctx).Run());
     Scheduler.Add(() => new KeyValidator(ctx).Run());
+    Scheduler.Add(() => new EnumValidator(ctx).Run());
     Scheduler.Add(() => new DslValidator(ctx).Run());
     Scheduler.Add(() => new RelationTypeValidator(ctx).Run());
 

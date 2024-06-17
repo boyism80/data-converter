@@ -1,4 +1,4 @@
-{{
+{{~
 func enum_recursive(v)
     if object.typeof(v) == 'array'
         $result = ''
@@ -39,8 +39,7 @@ func enum(v)
 
     ret $result
 end
-}}
-
+~}}
     const $enum = {
 {{~ for item in items ~}}
         {{ item.name }}: {

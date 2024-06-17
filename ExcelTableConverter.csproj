@@ -10,10 +10,13 @@
   <ItemGroup>
     <Compile Remove="Converter\**" />
     <Compile Remove="output\**" />
+    <Compile Remove="Template\C++\**" />
     <EmbeddedResource Remove="Converter\**" />
     <EmbeddedResource Remove="output\**" />
+    <EmbeddedResource Remove="Template\C++\**" />
     <None Remove="Converter\**" />
     <None Remove="output\**" />
+    <None Remove="Template\C++\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,10 +37,6 @@
     <None Include=".\Template\**" LinkBase="Template">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Template\C++\" />
   </ItemGroup>
 
 </Project>

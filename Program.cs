@@ -25,7 +25,16 @@ try
     Console.Clear();
 #endif
 
-    var cached = File.Exists(Context.RAW_CACHE_PATH) ? ZipUtil.Unzip<Context>(File.ReadAllBytes(Context.RAW_CACHE_PATH)) : new Context();
+    Context cached;
+    try
+    {
+        cached = File.Exists(Context.RAW_CACHE_PATH) ? ZipUtil.Unzip<Context>(File.ReadAllBytes(Context.RAW_CACHE_PATH)) : new Context();
+    }
+    catch (Exception)
+    {
+        cached = new Context();
+    }
+
     if (cached.BuildVersion != Context.BUILD_VERSION)
     {
         cached = new Context();

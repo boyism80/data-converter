@@ -1,4 +1,4 @@
-{{
+{{~
 func enum_recursive(v)
     if object.typeof(v) == 'array'
         $result = ''
@@ -35,8 +35,7 @@ func enum(v)
 
     ret $result
 end
-}}
-
+~}}
 template <typename T>
 T enum_parse(const std::string k)
 {

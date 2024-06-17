@@ -1,6 +1,5 @@
 // Generated code. DO NOT MODIFY DIRECTLY
-
-{{
+{{~
 func enum_recursive(v)
     if object.typeof(v) == 'array'
         $result = ''
@@ -37,7 +36,7 @@ func enum(v)
 
     ret $result
 end
-}}
+~}}
 
 using System;
 using System.Collections.Generic;

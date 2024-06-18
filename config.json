@@ -18,5 +18,8 @@
     ],
     "PartitionJsonTables": [
         "Text", "TalkScript"
-    ]
+    ],
+    "ParentTableFormat": "{0}Attribute",
+    "ParentPropName": "Parent",
+    "DslTypeEnumName": "DslFunctionType"
 }

@@ -1,11 +1,48 @@
-namespace consts { 
+{{~
+func namespace_scope_begin(namespaces)
+    
+    $result = ''
+    for namespace in namespaces
+        $result += 'namespace ' + namespace + ' { '
+    end
+
+    ret $result | string.rstrip
+end
+
+func namespace_scope_end(namespaces)
+    $result = ''
+    for namespace in namespaces
+        $result += '} '
+    end
+
+    ret $result | string.rstrip
+end
+
+func namespace_access(namespaces)
+    if namespaces.size > 0
+        ret (namespaces | array.join "::") + "::"
+    else
+        ret ''
+    end
+end
+
+func const_keyword(t)
+    compile_const_type = ['int8_t', 'uint8_t', 'int16_t', 'uint16_t', 'int32_t', 'uint32_t', 'int64_t', 'uint64_t', 'char*', 'float', 'double']
+    if compile_const_type | array.contains t
+        ret 'constexpr const'
+    else
+        ret 'const'
+    end
+end
+~}}
+{{ namespace_scope_begin(const_namespace) }}
 
 {{~ for item in items ~}}
 class {{ item.key }}
 {
 public:
 {{~ for prop in item.value ~}}
-    inline static const {{ prop.type }} {{ prop.name }} = {{ prop.value }};
+    inline static {{ const_keyword(prop.type) }} {{ prop.type }} {{ prop.name }} = {{ prop.value }};
 {{~ end ~}}
 
 private:
@@ -14,4 +51,4 @@ private:
 };
 {{~ end ~}}
 
-}
+{{ namespace_scope_end(const_namespace) }}

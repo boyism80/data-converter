@@ -44,7 +44,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 x.Props
             } as object).ToList();
 
-            Result = _template.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), Items = items });
+            Result = _template.Render(new { Namespace = Context.Config.Namespace, EnumNamespace = Context.Config.EnumNamespace, Items = items });
             
             return base.OnFinish(output);
         }

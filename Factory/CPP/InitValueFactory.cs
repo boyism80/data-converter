@@ -53,7 +53,7 @@ namespace ExcelTableConverter.Factory.CPP
 
         protected override string EnumType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            return WithNullable($"{Util.CPP.Namespace.Access(Context.Config.Namespace)}{Util.Type.Nake(root)}", value, nullable);
+            return WithNullable($"{Util.CPP.Namespace.Access(Context.Config.Namespace)}{Util.CPP.Namespace.Access(Context.Config.EnumNamespace)}{Util.Type.Nake(root)}", value, nullable);
         }
 
         protected override string FloatType(object value, string root, bool nullable, DataFormatOption option)

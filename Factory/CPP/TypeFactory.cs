@@ -69,7 +69,7 @@ namespace ExcelTableConverter.Factory.CPP
 
         protected override string EnumType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            return WithNullable($"{Util.CPP.Namespace.Access(Context.Config.Namespace)}{Util.Type.Nake(root)}", nullable, option);
+            return WithNullable($"{Util.CPP.Namespace.Access(Context.Config.Namespace)}{Util.CPP.Namespace.Access(Context.Config.EnumNamespace)}{Util.Type.Nake(root)}", nullable, option);
         }
 
         protected override string FloatType(object value, string root, bool nullable, DataFormatOption option)
@@ -119,7 +119,10 @@ namespace ExcelTableConverter.Factory.CPP
 
         protected override string StringType(object value, string root, DataFormatOption option)
         {
-            return WithNullable(option.Get<bool>("rvalue") ? "const std::string&" : "std::string", false, option);
+            if(option.Get<bool>("raw"))
+                return WithNullable(option.Get<bool>("rvalue") ? "const char*" : "char*", false, option);
+            else
+                return WithNullable(option.Get<bool>("rvalue") ? "const std::string&" : "std::string", false, option);
         }
 
         protected override string TimeSpanType(object value, string root, bool nullable, DataFormatOption option)
@@ -130,11 +133,12 @@ namespace ExcelTableConverter.Factory.CPP
             return result;
         }
 
-        public string Build(string type, bool rvalue = false, bool amp = false)
+        public string Build(string type, bool rvalue = false, bool amp = false, bool raw = false)
         {
             var option = new DataFormatOption();
             option.Add("rvalue", rvalue);
             option.Add("amp", amp);
+            option.Add("raw", raw);
             return Build(type, null, option);
         }
     }

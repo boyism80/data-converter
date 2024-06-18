@@ -107,18 +107,11 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 
             foreach (var (scope, items) in g)
             {
-                if (constCodeGenerator.Result.ContainsKey(scope) == false)
-                { 
-                }
-
-                if (bindCodeGenerator.Result.ContainsKey(scope) == false)
-                { 
-                }
-
                 File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", $"model.h"), modelTemplate.Render(new
                 {
-                    Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace),
-                    Namespaces = Context.Config.Namespace,
+                    Namespace = Context.Config.Namespace,
+                    EnumNamespace = Context.Config.EnumNamespace,
+                    ConstNamespace = Context.Config.ConstNamespace,
                     Enum = enumCodeGenerator.Result,
                     Dsl = dslCodeGenerator.Result,
                     Type = baseTypeTemplate.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace) }),

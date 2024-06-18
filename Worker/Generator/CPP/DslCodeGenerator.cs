@@ -48,7 +48,9 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             var template = Template.Parse(File.ReadAllText($"Template/C++/dsl.txt"));
             var parameters = new 
             {
-                Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), 
+                Namespace = Context.Config.Namespace, 
+                EnumNamespace = Context.Config.EnumNamespace,
+                ConstNamespace = Context.Config.ConstNamespace,
                 DslFunctionType = Context.Config.DslTypeEnumName,
                 Items = output.OrderBy(x => x.Name).Select(x => new { x.Name, x.Props }),
                 Dsls = _prototypes.Keys.OrderBy(x => x).ToList() 

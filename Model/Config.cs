@@ -3,6 +3,8 @@
     public class Config
     {
         public List<string> Namespace { get; set; }
+        public List<string> EnumNamespace { get; set; }
+        public List<string> ConstNamespace { get; set; }
         public string ConstFilePrefix { get; set; }
         public string EnumFilePrefix { get; set; }
         public string JsonFilePath { get; set; }

@@ -33,7 +33,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                     props.Add(new
                     {
                         Name = constData.Name,
-                        Type = new TypeFactory(Context).Build(constData.Type),
+                        Type = new TypeFactory(Context).Build(constData.Type, raw: true),
                         Value = new AllocateValueFactory(Context).Build(constData.Type, constData.Value),
                     });
                 }
@@ -44,7 +44,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 items.Add(groupName, props);
             }
 
-            yield return _template.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), Super = scope == Scope.Common, Scope = scope, Items = items });
+            yield return _template.Render(new { Namespace = Context.Config.Namespace, ConstNamespace = Context.Config.ConstNamespace, Super = scope == Scope.Common, Scope = scope, Items = items });
         }
 
         protected override void OnWorked(Scope input, string output, int percent)

@@ -1,12 +1,13 @@
 @ECHO OFF
 
+SET SOURCE=C:\Users\cshyeon\fb\resources\table
 SET DEST=C:\Users\cshyeon\fb
 
 CALL dotnet publish -c Release -o "bin"
 if ERRORLEVEL 1 GOTO END
 
 PUSHD bin
-CALL ExcelTableConverter.exe --dir=../sample --lang=c++
+CALL ExcelTableConverter.exe --dir=%SOURCE% --lang=c++
 POPD
 
 if ERRORLEVEL 1 GOTO END

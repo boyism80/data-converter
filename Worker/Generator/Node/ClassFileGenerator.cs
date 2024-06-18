@@ -107,14 +107,6 @@ namespace ExcelTableConverter.Worker.Generator.Node
 
             foreach (var (scope, items) in g)
             {
-                if (constCodeGenerator.Result.ContainsKey(scope) == false)
-                {
-                }
-
-                if (bindCodeGenerator.Result.ContainsKey(scope) == false)
-                {
-                }
-
                 File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", $"model.js"), modelTemplate.Render(new
                 {
                     Enum = enumCodeGenerator.Result,

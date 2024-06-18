@@ -11,10 +11,10 @@ public:
 public:
     {{ item.name }}(const Json::Value& json){{ if item.props.size > 0 }} : {{ end }}
 {{~ for prop in item.props ~}}
-    	{{ prop.name }}({{ prop.initializer }}){{~ if !for.last ~}},{{ end }}
+        {{ prop.name }}({{ prop.initializer }}){{~ if !for.last ~}},{{ end }}
 {{~ end ~}}
-	{ }
+    { }
     ~{{ item.name }}()
-	{ }
+    { }
 };
 {{~ end ~}}

@@ -15,5 +15,5 @@
     "PartitionJsonTables": [],
     "ParentTableFormat": "{0}_attribute",
     "ParentPropName": "parent",
-    "DslTypeEnumName": "dsl_type"
+    "DslTypeEnumName": "DSL"
 }

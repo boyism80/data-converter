@@ -6,16 +6,16 @@ public:
 {{~ end ~}}
 
 public:
-    const std::string header;
+    {{ namespace }}dsl_type header;
     const std::vector<std::any> params;
 
 private:
     static std::vector<std::any> parse_params(const Json::Value& json);
 
 public:
-    dsl(const std::string& header, const std::vector<std::any>& params) : header(header), params(params)
+    dsl({{ namespace }}dsl_type header, const std::vector<std::any>& params) : header(header), params(params)
     { }
-    dsl(const Json::Value& json) : header(build<std::string>(json["Type"])), params(parse_params(json))
+    dsl(const Json::Value& json) : header(build<{{ namespace }}dsl_type>(json["Type"])), params(parse_params(json))
     { }
     ~dsl()
     { }
@@ -51,7 +51,7 @@ public:
 public:
     {{ namespace }}dsl to_dsl()
     {
-        return {{ namespace }}dsl("{{ item.name }}", { {{~ for prop in item.props ~}} {{ prop.name }}{{ if !for.last }}, {{ end }} {{~ end ~}} });
+        return {{ namespace }}dsl({{ namespace }}dsl_type::{{ item.name }}, { {{~ for prop in item.props ~}} {{ prop.name }}{{ if !for.last }}, {{ end }} {{~ end ~}} });
     }
 };
 {{ if !for.last }}
@@ -60,14 +60,14 @@ public:
 
 inline std::vector<std::any> {{ namespace }}dsl::parse_params(const Json::Value& json)
 {
-    static auto data = std::unordered_map<std::string, std::function<std::vector<std::any>(const Json::Value&)>>
+    static auto data = std::unordered_map<{{ namespace }}dsl_type, std::function<std::vector<std::any>(const Json::Value&)>>
     {
 {{~ for dsl in dsls ~}}
-        {"{{ dsl }}", [](const Json::Value& json) { return {{ namespace }}dsl::{{ dsl }}(json).to_dsl().params; }}{{ if !for.last }},{{ end }}
+        { {{~ namespace }}dsl_type::{{ dsl }}, [](const Json::Value& json) { return {{ namespace }}dsl::{{ dsl }}(json).to_dsl().params; }}{{ if !for.last }},{{ end }}
 {{~ end ~}}
     };
 
-    auto header = build<std::string>(json["Type"]);
+    auto header = build<{{ namespace }}dsl_type>(json["Type"]);
     auto i = data.find(header);
     if(i == data.end())
         throw std::runtime_error("invalid dsl header");

@@ -50,7 +50,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
                 } as object;
             }).ToList();
 
-            var code = _template.Render(new { Namespaces = Context.Config.Namespace, Header = header, Props = props });
+            var code = _template.Render(new { Namespaces = Context.Config.Namespace, DslFunctionType = Context.Config.DslTypeEnumName, Header = header, Props = props });
             var path = Path.Combine(_dir, $"{header}.cs");
             File.WriteAllText(path, code);
             yield return true;

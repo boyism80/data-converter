@@ -49,6 +49,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             var parameters = new 
             {
                 Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), 
+                DslFunctionType = Context.Config.DslTypeEnumName,
                 Items = output.OrderBy(x => x.Name).Select(x => new { x.Name, x.Props }),
                 Dsls = _prototypes.Keys.OrderBy(x => x).ToList() 
             };

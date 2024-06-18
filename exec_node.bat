@@ -2,8 +2,10 @@ SET DEST=C:\Users\cshyeon\Desktop\node table
 CALL dotnet publish -c Release -o "bin"
 if ERRORLEVEL 1 GOTO END
 
+SET SOURCE=C:\Users\cshyeon\fb\resources\table
+
 PUSHD bin
-CALL ExcelTableConverter.exe --dir=../sample --lang=node
+CALL ExcelTableConverter.exe --dir=%SOURCE% --lang=node
 POPD
 
 if ERRORLEVEL 1 GOTO END

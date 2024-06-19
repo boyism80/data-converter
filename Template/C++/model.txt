@@ -63,6 +63,12 @@ template<class T>
 struct is_optional<std::optional<T>> : std::true_type {};
 
 template<class T>
+struct is_unique : std::false_type {};
+
+template<class T>
+struct is_unique<std::unique_ptr<T>> : std::true_type {};
+
+template<class T>
 struct is_vector : std::false_type {};
 
 template<class T>
@@ -79,18 +85,22 @@ struct is_default
 {
     static constexpr bool value =
         !std::is_enum<T>::value &&
+        !std::is_pointer<T>::value &&
         !{{ namespace_access(namespace) }}is_vector<T>::value &&
         !{{ namespace_access(namespace) }}is_map<T>::value &&
-        !{{ namespace_access(namespace) }}is_optional<T>::value;
+        !{{ namespace_access(namespace) }}is_optional<T>::value &&
+        !{{ namespace_access(namespace) }}is_unique<T>::value;
 };
 
 class dsl;
 
 template <typename T> static typename std::enable_if<{{ namespace_access(namespace) }}is_default<T>::value, T>::type build(const Json::Value& json);
 template <typename T> static typename std::enable_if<std::is_enum<T>::value, T>::type build(const Json::Value& json);
+template <typename T> static typename std::enable_if<std::is_pointer<T>::value, T>::type build(const Json::Value& json);
 template <typename T> static typename std::enable_if<{{ namespace_access(namespace) }}is_vector<T>::value, T>::type build(const Json::Value& json);
 template <typename T> static typename std::enable_if<{{ namespace_access(namespace) }}is_map<T>::value, T>::type build(const Json::Value& json);
 template <typename T> static typename std::enable_if<{{ namespace_access(namespace) }}is_optional<T>::value, T>::type build(const Json::Value& json);
+template <typename T> static typename std::enable_if<{{ namespace_access(namespace) }}is_unique<T>::value, T>::type build(const Json::Value& json);
 template <> static int8_t build<int8_t>(const Json::Value& json);
 template <> static uint8_t build<uint8_t>(const Json::Value& json);
 template <> static int16_t build<int16_t>(const Json::Value& json);
@@ -134,6 +144,14 @@ template <typename T> typename std::enable_if<std::is_enum<T>::value, T>::type b
         return T(json.asInt());
 }
 
+template <typename T> typename std::enable_if<std::is_pointer<T>::value, T>::type build(const Json::Value& json)
+{
+    if(json.isNull())
+        return nullptr;
+    else
+        return new typename std::pointer_traits<T>::element_type(json);
+}
+
 template <typename T> typename std::enable_if<is_vector<T>::value, T>::type build(const Json::Value& json)
 {
     auto result = std::vector<typename T::value_type>();
@@ -155,6 +173,14 @@ template <typename T> typename std::enable_if<is_optional<T>::value, T>::type bu
         return std::nullopt;
     else
         return std::optional<typename T::value_type>(build<typename T::value_type>(json));
+}
+
+template <typename T> typename std::enable_if<is_unique<T>::value, T>::type build(const Json::Value& json)
+{
+    if (json.isNull())
+        return std::unique_ptr<typename std::pointer_traits<T>::element_type>();
+    else
+        return std::unique_ptr<typename std::pointer_traits<T>::element_type>(build<typename std::pointer_traits<T>::element_type*>(json));
 }
 
 template <> int8_t build<int8_t>(const Json::Value& json)

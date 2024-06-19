@@ -46,10 +46,16 @@ namespace ExcelTableConverter.Worker.Validator
                 var basedSheet = Context.RawData.SelectMany(x => x.Value).FirstOrDefault(x => x.TableName == pivot.Based) ??
                     throw new LogicException($"{pivot.Based}는 존재하지 않는 테이블입니다.", pivot);
 
-                foreach (var (name, scope) in basedSheet.Schema.Select(x => (Name: x.Name, Scope: x.Scope)))
+                foreach (var (name, type, scope) in basedSheet.Schema.Select(x => (Name: x.Name, Type: x.Type, Scope: x.Scope)))
                 {
-                    if (pivot.Schema.Any(x => x.Name == name && x.Scope.HasFlag(scope)) == false)
+                    var inherited = pivot.Schema.FirstOrDefault(x => x.Name == name) ??
                         throw new LogicException($"{pivot.TableName} 테이블에 {basedSheet.TableName} 테이블의 {name} 컬럼이 정의되지 않았습니다.", pivot);
+
+                    if (inherited.Type != type)
+                        throw new LogicException($"{inherited.Name}의 타입({inherited.Type})이 {basedSheet.TableName}에 정의된 타입({type})과 다릅니다.", pivot);
+
+                    if (inherited.Scope.HasFlag(scope) == false)
+                        throw new LogicException($"{inherited.Name}의 스코프({inherited.Scope})가 {basedSheet.TableName}에 정의된 스코프({scope})에 포함되지 않습니다.", pivot);
                 }
             }
             yield return true;

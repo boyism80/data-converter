@@ -25,6 +25,10 @@ func namespace_access(namespaces)
         ret ''
     end
 end
+
+func containable(table)
+    ret table.name == table.json
+end
 ~}}
 template <typename T>
 class hook_funcs
@@ -66,13 +70,20 @@ private:
         std::ifstream           ifstream;
         ifstream.open(fname);
         if (ifstream.is_open() == false)
-            throw std::runtime_error("cannot find json file");
+        {
+            auto sstream = std::stringstream();
+            sstream << "cannot find json file : " << fname;
+            throw std::runtime_error(sstream.str());
+        }
 
         Json::Reader            reader;
         if (reader.parse(ifstream, json) == false)
         {
             ifstream.close();
-            throw std::runtime_error("cannot parse json file");
+
+            auto sstream = std::stringstream();
+            sstream << "cannot parse json file : " << fname;
+            throw std::runtime_error(sstream.str());
         }
 
         ifstream.close();
@@ -204,13 +215,20 @@ private:
         std::ifstream           ifstream;
         ifstream.open(fname);
         if (ifstream.is_open() == false)
-            throw std::runtime_error("cannot find json file");
+        {
+            auto sstream = std::stringstream();
+            sstream << "cannot find json file : " << fname;
+            throw std::runtime_error(sstream.str());
+        }
 
         Json::Reader            reader;
         if (reader.parse(ifstream, json) == false)
         {
             ifstream.close();
-            throw std::runtime_error("cannot parse json file");
+
+            auto sstream = std::stringstream();
+            sstream << "cannot parse json file : " << fname;
+            throw std::runtime_error(sstream.str());
         }
 
         ifstream.close();
@@ -304,7 +322,7 @@ const typename array_container<T>::iterator array_container<T>::cend() const
     return array_container<T>::iterator(std::vector<std::unique_ptr<std::unique_ptr<T>>>::cend());
 }
 
-{{~ for table in tables ~}}
+{{~ for table in tables | array.filter @containable ~}}
 class __{{ table.name }} : public {{ table.type }}<{{ table.generic }}>
 {
 public:
@@ -321,16 +339,16 @@ public:
 class container
 {
 public:
-{{~ for table in tables ~}}
+{{~ for table in tables | array.filter @containable ~}}
     {{ namespace_access(namespace) }}__{{ table.name }} {{ table.name }};
 {{~ end ~}}
 
 public:
-    void load(const std::function<void(float)>& callback)
+    void load(const std::function<void(float)>& callback, const std::function<void(const std::string&)>& error)
     {
         std::queue<std::function<void()>> queue;
 #pragma region enqueue
-{{~ for table in tables ~}}
+{{~ for table in tables | array.filter @containable ~}}
         queue.push([this]() { this->{{ table.name }}.load(); });
 {{~ end ~}}
 #pragma endregion
@@ -352,7 +370,18 @@ public:
                     queue.pop();
                 }
                 
-                job();
+                try
+                {
+                    job();
+                }
+                catch(std::exception& e)
+                {
+                    error(e.what());
+                }
+                catch(...)
+                {
+                    error("unhandled exception");
+                }
 
                 {
                     auto _ = std::lock_guard(mutex);

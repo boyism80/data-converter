@@ -63,7 +63,8 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 {
                     Name = tableName,
                     Type = containerType,
-                    Generic = genericType
+                    Generic = genericType,
+                    Json = Context.Result.Schema[tableName].Json,
                 });
             }
 

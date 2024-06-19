@@ -32,6 +32,7 @@ end
 #include <string>
 #include <map>
 #include <vector>
+#include <queue>
 #include <any>
 #include <optional>
 #include <chrono>
@@ -42,6 +43,10 @@ end
 {{~ for header in additional_header_files ~}}
 #include <{{ header }}>
 {{~ end ~}}
+
+#ifdef ROOT_PREPROCESSOR
+ROOT_PREPROCESSOR
+#endif
 
 {{ namespace_scope_begin(namespace) }}
 

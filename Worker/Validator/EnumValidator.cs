@@ -51,7 +51,10 @@ namespace ExcelTableConverter.Worker.Validator
                     if (matched.Groups["value"].Success)
                     {
                         var value = matched.Groups["value"].Value;
-                        if (int.TryParse(value, out _) == false)
+                        var isHex = false;
+                        try { Convert.ToUInt32(value, 16); isHex = true; } catch { }
+
+                        if (!isHex && int.TryParse(value, out _) == false)
                         {
                             var table = tracker.GetTableName();
                             if (_merge[table].ContainsKey(value) == false)

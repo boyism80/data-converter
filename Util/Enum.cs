@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 namespace ExcelTableConverter.Util
 {
@@ -7,7 +6,7 @@ namespace ExcelTableConverter.Util
     {
         public static Match Parse(string value)
         {
-            var regex = new Regex(@"^(?<value>[a-zA-Z_]+[a-zA-Z0-9]*|\d+)|(?<op>[&\|])|(?<inv>~)");
+            var regex = new Regex(@"^(?<value>[a-zA-Z_]+[a-zA-Z0-9]*|(?:0x)?\d+)|(?<op>[&\|])|(?<inv>~)");
             var matched = regex.Match(value);
             return matched;
         }
@@ -17,8 +16,25 @@ namespace ExcelTableConverter.Util
             public int Compare(KeyValuePair<string, List<object>> val1, KeyValuePair<string, List<object>> val2)
             {
                 int num1 = 0, num2 = 0;
-                var isNumeric1 = val1.Value.Count == 1 && int.TryParse($"{val1.Value[0]}", out num1);
-                var isNumeric2 = val2.Value.Count == 1 && int.TryParse($"{val2.Value[0]}", out num2);
+                bool isNumeric1 = false, isNumeric2 = false;
+                try
+                {
+                    if (val1.Value.Count == 1)
+                    {
+                        num1 = Convert.ToInt32($"{val1.Value[0]}", 16);
+                        isNumeric1 = true;
+                    }
+                }
+                catch { }
+                try
+                {
+                    if (val2.Value.Count == 1)
+                    {
+                        num2 = Convert.ToInt32($"{val2.Value[0]}", 16);
+                        isNumeric2 = true;
+                    }
+                }
+                catch { }
 
                 if (isNumeric1 && isNumeric2)
                     return num1.CompareTo(num2);
@@ -27,7 +43,7 @@ namespace ExcelTableConverter.Util
                 else if (isNumeric2)
                     return 1;
                 else
-                    return val1.Key.CompareTo(val2.Key);
+                    return string.Join(string.Empty, val1.Value).CompareTo(string.Join(string.Empty, val2.Value));
             }
         }
     }

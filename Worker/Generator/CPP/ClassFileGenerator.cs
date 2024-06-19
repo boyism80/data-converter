@@ -72,7 +72,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 
             foreach (var (scope, props) in result)
             {
-                if (props.Count == 0)
+                if (props.Count == 0 && schemaSet.Based == null)
                     continue;
 
                 yield return (scope, tableName, props);
@@ -120,6 +120,9 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 
             foreach (var (scope, items) in g)
             {
+                var typeCode = baseTypeTemplate.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace) });
+                var classCode = classTemplate.Render(new { Namespace = Context.Config.Namespace, Items = items });
+
                 File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", $"model.h"), modelTemplate.Render(new
                 {
                     Namespace = Context.Config.Namespace,
@@ -127,9 +130,9 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                     ConstNamespace = Context.Config.ConstNamespace,
                     Enum = enumCodeGenerator.Result,
                     Dsl = dslCodeGenerator.Result,
-                    Type = baseTypeTemplate.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace) }),
+                    Type = typeCode,
                     Const = constCodeGenerator.Result[scope],
-                    Class = classTemplate.Render(new { Namespace = Context.Config.Namespace, Items = items }),
+                    Class = classCode,
                     Container = bindCodeGenerator.Result[scope],
                     AdditionalHeaderFiles = Context.Config.AdditionalHeaderFiles
                 }));

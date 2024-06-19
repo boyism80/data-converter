@@ -249,7 +249,6 @@ try
                 break;
 
             case "c#":
-                Scheduler.Add(() => new JsonSheetFileGenerator(ctx).Run());
                 Scheduler.Add(() =>
                 {
                     foreach (var file in Context.Config.SharedJsonFiles)

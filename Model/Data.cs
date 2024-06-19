@@ -73,6 +73,7 @@ namespace ExcelTableConverter.Model
     {
         private string _root, _sheetName, _tableName, _fileName;
         public string Based { get; set; }
+        public string Json { get; set; }
         public List<RawDataColumns> Columns { get; set; } = new List<RawDataColumns>();
 
         public string Root

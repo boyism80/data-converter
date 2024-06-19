@@ -6,37 +6,32 @@ namespace ExcelTableConverter.Factory
     {
         private readonly Scope _scope;
 
-        public DataContainerFactory(Scope scope)
+        public DataContainerFactory()
         {
-            _scope = scope;
+            
         }
 
-        private object InternalBuild(Context ctx, string table, List<Dictionary<string, object>> data, bool chainParent)
+        private object InternalBuild(Context ctx, string table, List<Dictionary<string, object>> rows, bool chainParent)
         {
-            var schema = ctx.GetScopeSchema(table, _scope, ScopeFilterType.Contains);
+            var schema = ctx.Result.Schema[table];
             var gk = chainParent ? schema.Values.FirstOrDefault(x => Util.Type.IsGroupKey(x.Type, out _)) : null;
             if (gk != null)
             {
-                return data.GroupBy(x => x[gk.Name]).ToDictionary(g => g.Key, g => InternalBuild(ctx, table, g.ToList(), false));
+                return rows.GroupBy(x => x[gk.Name]).ToDictionary(g => g.Key, g => InternalBuild(ctx, table, g.ToList(), false));
             }
 
             var pk = schema.Values.FirstOrDefault(x => Util.Type.IsPrimaryKey(x.Type, out _));
             if (pk != null)
             {
-                return data.ToDictionary(x => x[pk.Name]);
+                return rows.ToDictionary(x => x[pk.Name]);
             }
 
-            return data;
+            return rows;
         }
 
-        public object Build(Context ctx, string table, List<Dictionary<string, object>> data)
+        public object Build(Context ctx, string table, List<Dictionary<string, object>> rows)
         {
-            var schema = ctx.GetScopeSchema(table, _scope, ScopeFilterType.Contains);
-            if (schema == null)
-                return null;
-
-            var scopedDatas = data.ConvertAll(d => d.Where(p => schema.ContainsKey(p.Key)).ToDictionary(x => x.Key, x => x.Value));
-            return InternalBuild(ctx, table, scopedDatas, true);
+            return InternalBuild(ctx, table, rows, true);
         }
     }
 }

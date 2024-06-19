@@ -1,4 +1,6 @@
 ﻿using ExcelTableConverter.Model;
+using ExcelTableConverter.Util;
+using NPOI.SS.Formula.Functions;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using System.Collections;
@@ -8,6 +10,8 @@ namespace ExcelTableConverter.Worker.Loader
 {
     public class RawDataLoader : ParallelSheetLoader<RawSheetData>
     {
+        private static List<string> KEYWORDS = new List<string> { "based", "json" };
+
         public RawDataLoader(Context ctx, IReadOnlyList<Sheet> sheets) : base(ctx, sheets)
         {
         }
@@ -24,6 +28,12 @@ namespace ExcelTableConverter.Worker.Loader
 
                 var sheetRow = enumerator.Current as XSSFRow;
                 var line = ReadLine(sheetRow);
+                if (line.Count == 1)
+                {
+                    if (GetKeyword(line.Values.First(), out _) != null)
+                        continue;
+                }
+
                 if (line.Count > 0)
                 {
                     if (predicate == null || predicate.Invoke(line))
@@ -35,36 +45,54 @@ namespace ExcelTableConverter.Worker.Loader
             }
         }
 
-        private string GetBased(Sheet sheet, out IEnumerator e)
+        private string GetKeyword(ICell cell, out string keyword)
         {
-            e = sheet.Raw.GetRowEnumerator();
-
-            var enumerator = sheet.Raw.GetRowEnumerator();
-            enumerator.MoveNext();
-            var sheetRow = enumerator.Current as XSSFRow;
-            var line = ReadLine(sheetRow);
-            if (line.Count != 1)
-                return null;
-
-            if (line.TryGetValue(0, out var cell) == false)
-                return null;
-
+            keyword = null;
             if (cell.CellType != CellType.String)
                 return null;
 
             var value = cell.StringCellValue;
-            var regex = new Regex(@"based\s*:\s*(?<based>[a-zA-Z_][a-zA-Z0-9_]*)");
-            var match = regex.Match(value);
-            if (match.Success == false)
-                return null;
+            foreach (var k in KEYWORDS)
+            {
+                var regex = new Regex($"{k}\\s*:\\s*(?<keyword>[a-zA-Z_][a-zA-Z0-9_]*)");
+                var match = regex.Match(value);
+                if (match.Success)
+                {
+                    keyword = k;
+                    return match.Groups["keyword"].Value;
+                }
+            }
 
-            e = enumerator;
-            return match.Groups["based"].Value;
+            return null;
+        }
+
+        private string ReadKeyword(Sheet sheet, string keyword)
+        {
+            var e = sheet.Raw.GetEnumerator();
+            while (e.MoveNext())
+            {
+                var sheetRow = e.Current as XSSFRow;
+                var line = ReadLine(sheetRow);
+                if (line.Count != 1)
+                    return null;
+
+                if (line.TryGetValue(0, out var cell) == false)
+                    return null;
+
+                var result = GetKeyword(cell, out var k);
+                if (result != null && keyword == k)
+                    return result;
+            }
+
+            return null;
         }
 
         protected override IEnumerable<RawSheetData> OnWork(Sheet sheet)
         {
-            var based = GetBased(sheet, out var enumerator);
+            var based = ReadKeyword(sheet, "based");
+            var json = ReadKeyword(sheet, "json");
+
+            var enumerator = sheet.Raw.GetRowEnumerator();
             var names = ReadLineUntilValid(enumerator, out _);
             var types = ReadLineUntilValid(enumerator, out _);
             var scopes = ReadLineUntilValid(enumerator, out _);
@@ -110,7 +138,8 @@ namespace ExcelTableConverter.Worker.Loader
             { 
                 Parent = sheet,
                 Columns = columns.Values.ToList(),
-                Based = based
+                Based = based,
+                Json = json ?? sheet.GetTableName(),
             };
         }
 

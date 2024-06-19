@@ -48,7 +48,7 @@ namespace ExcelTableConverter.Worker.Validator
                     if (Context.ContainsColumn(tableName, columnName) == false)
                         throw new LogicException($"{columnName}은 {tableName}의 멤버가 아닙니다.", value.Tracker);
 
-                    var hash = _refs.GetOrAdd((tableName, columnName), _ => Context.GetValues(tableName, columnName).Select(x => $"{x}").ToHashSet());
+                    var hash = _refs.GetOrAdd((tableName, columnName), _ => Context.GetValuesFromJson(tableName, columnName).Select(x => $"{x}").ToHashSet());
 
                     if (hash.Contains($"{value.Value}") == false)
                         throw new LogicException($"{value.Name}의 값 '{value.Value}'는 {refer} 테이블에 존재하지 않습니다.", value.Tracker);

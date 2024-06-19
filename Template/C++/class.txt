@@ -40,7 +40,7 @@ public:
 
 {{~ end ~}}
 public:
-    {{ item.name }}(const Json::Value& json){{ if item.based || item.props.size > 0 }} : {{ end }}{{ if item.based }}{{ namespace_access(namespace) }}{{ item.based }}(json),{{ else }}
+    {{ item.name }}(const Json::Value& json){{ if item.based || item.props.size > 0 }} : {{ end }}{{ if item.based }}{{ namespace_access(namespace) }}{{ item.based }}(json){{ if item.props.size > 0 }},{{ end }}{{ else }}
 #ifdef DECLARE_{{ item.name | string.upcase }}_CONSTRUCTOR
 DECLARE_{{ item.name | string.upcase }}_CONSTRUCTOR
 #endif{{ end }}
@@ -48,10 +48,10 @@ DECLARE_{{ item.name | string.upcase }}_CONSTRUCTOR
         {{ prop.name }}({{ prop.initializer }}){{~ if !for.last ~}},{{ end }}
 {{~ end ~}}
     { }
-    ~{{ item.name }}()
+    virtual ~{{ item.name }}()
     { }
 #ifdef DECLARE_{{ item.name | string.upcase }}_EXTENSION
 DECLARE_{{ item.name | string.upcase }}_EXTENSION
-#endif{{ end }}
+#endif
 };
 {{~ end ~}}

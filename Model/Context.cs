@@ -4,8 +4,10 @@ using ExcelTableConverter.Util;
 using ExcelTableConverter.Worker;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Org.BouncyCastle.Asn1.Pkcs;
+using NPOI.SS.Formula.Functions;
+using NPOI.SS.UserModel;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Reflection;
 
 namespace ExcelTableConverter.Model
@@ -93,12 +95,15 @@ namespace ExcelTableConverter.Model
             foreach (var (table, sheets) in group)
             {
                 var based = sheets.FirstOrDefault()?.Based;
+                var json = sheets.FirstOrDefault()?.Json;
                 var columns = sheets.FirstOrDefault()?.Columns;
                 var (boldColumns, normalColumns) = columns.Split();
+                
+                var root = string.Format(Config.ParentTableFormat, table);
 
                 if (boldColumns != null)
                 {
-                    var schemaSet = new SchemaSet(based);
+                    var schemaSet = new SchemaSet(null, root);
                     foreach (var column in boldColumns)
                     {
                         schemaSet.Add(column.Name, new Model.SchemaData
@@ -114,14 +119,14 @@ namespace ExcelTableConverter.Model
 
                 if (normalColumns != null)
                 {
-                    var schemaSet = new SchemaSet(based);
+                    var schemaSet = new SchemaSet(based, json);
                     if (boldColumns != null)
                     {
                         var parentKeyColumn = boldColumns.FirstOrDefault(x => Util.Type.IsPrimaryKey(x.Type, out _));
                         schemaSet.Add(Config.ParentPropName, new Model.SchemaData
                         {
                             Name = Config.ParentPropName,
-                            Type = $"(${string.Format(Config.ParentTableFormat, table)})",
+                            Type = $"(${root})",
                             Scope = parentKeyColumn.Scope
                         });
                     }
@@ -221,7 +226,7 @@ namespace ExcelTableConverter.Model
             if (filter.Count == 0)
                 return null;
 
-            var schemaSet = new SchemaSet(schema.Based);
+            var schemaSet = new SchemaSet(schema.Based, schema.Json);
             foreach (var (k, v) in filter)
             {
                 schemaSet.Add(k, v);
@@ -259,25 +264,38 @@ namespace ExcelTableConverter.Model
 
         public Dictionary<string, object> GetEffectiveSortedDataSet(Scope scope) // TableName:DataSet
         {
-            return Result.Data.SelectMany(x => x.Value).GroupBy(x => x.Key).ToDictionary(x => x.Key, x =>
+            var rowset = Result.Data.SelectMany(x => x.Value).GroupBy(x => x.Key).ToDictionary(x => x.Key, x =>
             {
                 var table = x.Key;
-                var dataSet = x.SelectMany(x => x.Value).SelectMany(x => x.Rows).ToList();
-                return new DataContainerFactory(scope).Build(this, table, dataSet);
-            }).Where(pair => pair.Value != null)
-            .ToDictionary(x => x.Key, x => x.Value);
-        }
-
-        public Dictionary<string, Dictionary<string, object>> GetEffectiveSortedDataSetWithSheetName(Scope scope) // SheetName:{TableName:DataSet}
-        {
-            return Result.Data.SelectMany(x => x.Value.SelectMany(x => x.Value)).GroupBy(x => x.SheetName).ToDictionary(x => x.Key, x =>
-            {
-                return x.GroupBy(x => x.TableName).ToDictionary(x => x.Key, x => 
-                {
-                    var dataSet = x.SelectMany(x => x.Rows).ToList();
-                    return new DataContainerFactory(scope).Build(this, x.Key, dataSet);
-                }).Where(pair => pair.Value != null).ToDictionary(x => x.Key, x => x.Value);
+                var rows = x.SelectMany(x => x.Value).SelectMany(x => x.Rows).ToList();
+                return rows;
             });
+
+            var result = new Dictionary<string/*json*/, List<Dictionary<string/*column*/, object/*value*/>>>();
+            foreach (var g in Result.Schema.GroupBy(x => x.Value.Json))
+            {
+                var json = g.Key;
+                var rows = new List<Dictionary<string, object>>();
+                foreach (var tableName in g.Select(x => x.Key))
+                {
+                    var schema = Result.Schema[tableName].Values.Where(x => x.Scope.HasFlag(scope));
+                    var columns = schema.Select(x => x.Name).ToHashSet();
+                    if (columns.Count == 0)
+                        continue;
+
+                    var tableRows = rowset[tableName].Select(row => row.Where(x => columns.Contains(x.Key)).ToDictionary(x => x.Key, x => x.Value)).Where(x => x.Count > 0).ToList();
+                    rows.AddRange(tableRows);
+                }
+
+                result.Add(json, rows);
+            }
+
+            return result.ToDictionary(x => x.Key, x =>
+            {
+                var json = x.Key;
+                var rows = x.Value;
+                return new DataContainerFactory().Build(this, json, rows);
+            }).Where(pair => pair.Value != null).ToDictionary(x => x.Key, x => x.Value);
         }
 
         public static string GetCacheFilePath(string fileName)
@@ -320,8 +338,6 @@ namespace ExcelTableConverter.Model
             var key = $"GetValues_{tableName}";
             return _dp.GetOrAdd(key, _ => 
             {
-                //RawData.SelectMany(x => x.Value).Where(x => x.TableName == tableName).SelectMany(x => x.Columns).GroupBy(x => x.Name).
-
                 return Result.Data
                 .SelectMany(x => x.Value)
                 .Where(x => x.Key == tableName)
@@ -331,10 +347,32 @@ namespace ExcelTableConverter.Model
             }) as List<Dictionary<string, object>>;
         }
 
+        public IEnumerable<string> GetTableNamesFromJson(string json)
+        {
+            foreach (var (tableName, schema) in Result.Schema)
+            {
+                if (schema.Json == json)
+                    yield return tableName;
+            }
+        }
+
         public IReadOnlyList<object> GetValues(string tableName, string columnName)
         {
             var key = $"GetValues_{tableName}_{columnName}";
             return _dp.GetOrAdd(key, _ => GetValues(tableName).Select(x => x[columnName]).ToList()) as List<object>;
+        }
+
+        public IReadOnlyList<object> GetValuesFromJson(string jsonName, string columnName)
+        {
+            var key = $"GetValuesFromJson_{jsonName}_{columnName}";
+            return _dp.GetOrAdd(key, _ => 
+            {
+                var tableNames = GetTableNamesFromJson(jsonName).ToList();
+                return tableNames.SelectMany(tableName =>
+                {
+                    return GetValues(tableName).Select(x => x[columnName]).ToList();
+                }).ToList();
+            }) as List<object>;
         }
 
         public SchemaData GetKey(string tableName)

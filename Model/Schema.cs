@@ -24,10 +24,12 @@
     public class SchemaSet : Dictionary<string, SchemaData>
     {
         public string Based { get; private set; }
+        public string Json { get; private set; }
 
-        public SchemaSet(string based)
+        public SchemaSet(string based, string json)
         {
             Based = based;
+            Json = json;
         }
 
         public string Key

@@ -27,7 +27,43 @@
         {
             "name": "max",
             "type": "uint8_t?",
-            "desc": "maximum level"
+            "desc": "maximum level",
+            "default": null
+        }
+    ],
+    "sex": [
+        {
+            "name": "value",
+            "type": "SEX",
+            "desc": "sex type"
+        }
+    ],
+    "strength": [
+        {
+            "name": "value",
+            "type": "uint8_t",
+            "desc": "strength"
+        }
+    ],
+    "intelligence": [
+        {
+            "name": "value",
+            "type": "uint8_t",
+            "desc": "intelligence"
+        }
+    ],
+    "dexteritry": [
+        {
+            "name": "value",
+            "type": "uint8_t",
+            "desc": "dexteritry"
+        }
+    ],
+    "promotion": [
+        {
+            "name": "value",
+            "type": "uint8_t",
+            "desc": "promotion"
         }
     ]
 }

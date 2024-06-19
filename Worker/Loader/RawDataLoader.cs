@@ -1,8 +1,8 @@
 ﻿using ExcelTableConverter.Model;
-using NPOI.SS.Formula.Functions;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using System.Collections;
+using System.Text.RegularExpressions;
 
 namespace ExcelTableConverter.Worker.Loader
 {
@@ -12,7 +12,7 @@ namespace ExcelTableConverter.Worker.Loader
         {
         }
 
-        private IReadOnlyDictionary<int, ICell> ReadLineUntilValid(IEnumerator enumerator, out int row)
+        private IReadOnlyDictionary<int, ICell> ReadLineUntilValid(IEnumerator enumerator, out int row, Func<IReadOnlyDictionary<int, ICell>, bool> predicate = null)
         {
             while (true)
             {
@@ -26,15 +26,45 @@ namespace ExcelTableConverter.Worker.Loader
                 var line = ReadLine(sheetRow);
                 if (line.Count > 0)
                 {
-                    row = sheetRow.RowNum;
-                    return line;
+                    if (predicate == null || predicate.Invoke(line))
+                    {
+                        row = sheetRow.RowNum;
+                        return line;
+                    }
                 }
             }
         }
 
+        private string GetBased(Sheet sheet, out IEnumerator e)
+        {
+            e = sheet.Raw.GetRowEnumerator();
+
+            var enumerator = sheet.Raw.GetRowEnumerator();
+            enumerator.MoveNext();
+            var sheetRow = enumerator.Current as XSSFRow;
+            var line = ReadLine(sheetRow);
+            if (line.Count != 1)
+                return null;
+
+            if (line.TryGetValue(0, out var cell) == false)
+                return null;
+
+            if (cell.CellType != CellType.String)
+                return null;
+
+            var value = cell.StringCellValue;
+            var regex = new Regex(@"based\s*:\s*(?<based>[a-zA-Z_][a-zA-Z0-9_]*)");
+            var match = regex.Match(value);
+            if (match.Success == false)
+                return null;
+
+            e = enumerator;
+            return match.Groups["based"].Value;
+        }
+
         protected override IEnumerable<RawSheetData> OnWork(Sheet sheet)
         {
-            var enumerator = sheet.Raw.GetRowEnumerator();
+            var based = GetBased(sheet, out var enumerator);
             var names = ReadLineUntilValid(enumerator, out _);
             var types = ReadLineUntilValid(enumerator, out _);
             var scopes = ReadLineUntilValid(enumerator, out _);
@@ -79,7 +109,8 @@ namespace ExcelTableConverter.Worker.Loader
             yield return new RawSheetData
             { 
                 Parent = sheet,
-                Columns = columns.Values.ToList()
+                Columns = columns.Values.ToList(),
+                Based = based
             };
         }
 

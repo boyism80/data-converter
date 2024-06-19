@@ -17,5 +17,6 @@
     "PartitionJsonTables": [],
     "ParentTableFormat": "{0}_attribute",
     "ParentPropName": "parent",
-    "DslTypeEnumName": "DSL"
+    "DslTypeEnumName": "DSL",
+    "AdditionalHeaderFiles": ["fb/game/lua.h", "fb/game/model.preprocessor.h"]
 }

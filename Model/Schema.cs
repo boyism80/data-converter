@@ -18,10 +18,18 @@
         public string Name { get; set; }
         public string Type { get; set; }
         public Scope Scope { get; set; }
+        public bool Inherited { get; set; }
     }
 
     public class SchemaSet : Dictionary<string, SchemaData>
     {
+        public string Based { get; private set; }
+
+        public SchemaSet(string based)
+        {
+            Based = based;
+        }
+
         public string Key
         {
             get

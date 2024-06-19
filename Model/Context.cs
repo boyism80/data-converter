@@ -4,6 +4,7 @@ using ExcelTableConverter.Util;
 using ExcelTableConverter.Worker;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Org.BouncyCastle.Asn1.Pkcs;
 using System.Collections.Concurrent;
 using System.Reflection;
 
@@ -88,15 +89,16 @@ namespace ExcelTableConverter.Model
         private SchemaContainer GetSchema()
         {
             var result = new SchemaContainer();
-            foreach (var g in RawData.SelectMany(x => x.Value).GroupBy(x => x.TableName))
+            var group = RawData.SelectMany(x => x.Value).GroupBy(x => x.TableName).ToDictionary(x => x.Key, x => x.ToList());
+            foreach (var (table, sheets) in group)
             {
-                var table = g.Key;
-                var columns = g.Select(x => x.Columns).First();
+                var based = sheets.FirstOrDefault()?.Based;
+                var columns = sheets.FirstOrDefault()?.Columns;
                 var (boldColumns, normalColumns) = columns.Split();
 
                 if (boldColumns != null)
                 {
-                    var schemaSet = new SchemaSet();
+                    var schemaSet = new SchemaSet(based);
                     foreach (var column in boldColumns)
                     {
                         schemaSet.Add(column.Name, new Model.SchemaData
@@ -112,7 +114,7 @@ namespace ExcelTableConverter.Model
 
                 if (normalColumns != null)
                 {
-                    var schemaSet = new SchemaSet();
+                    var schemaSet = new SchemaSet(based);
                     if (boldColumns != null)
                     {
                         var parentKeyColumn = boldColumns.FirstOrDefault(x => Util.Type.IsPrimaryKey(x.Type, out _));
@@ -126,11 +128,14 @@ namespace ExcelTableConverter.Model
 
                     foreach (var column in normalColumns)
                     {
+                        var inherited = string.IsNullOrEmpty(based) == false && (group[based].FirstOrDefault()?.Columns.Select(x => x.Name).Contains(column.Name) ?? false);
+
                         schemaSet.Add(column.Name, new Model.SchemaData
                         {
                             Name = column.Name,
                             Type = column.Type,
-                            Scope = column.Scope
+                            Scope = column.Scope,
+                            Inherited = inherited
                         });
                     }
                     result.Add(table, schemaSet);
@@ -216,7 +221,7 @@ namespace ExcelTableConverter.Model
             if (filter.Count == 0)
                 return null;
 
-            var schemaSet = new SchemaSet();
+            var schemaSet = new SchemaSet(schema.Based);
             foreach (var (k, v) in filter)
             {
                 schemaSet.Add(k, v);

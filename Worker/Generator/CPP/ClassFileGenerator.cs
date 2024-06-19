@@ -27,6 +27,15 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             }
         }
 
+        private int GetInheritanceLevel(string tableName)
+        {
+            var based = Context.Result.Schema[tableName].Based;
+            if (string.IsNullOrEmpty(based))
+                return 0;
+
+            return 1 + GetInheritanceLevel(based);
+        }
+
         protected override IEnumerable<string> OnReady()
         {
             foreach (var tableName in Context.Result.Schema.Keys)
@@ -43,6 +52,9 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             for (int i = 0; i < properties.Count; i++)
             {
                 var property = properties[i];
+                if (property.Inherited)
+                    continue;
+
                 var ccgp = new
                 {
                     Key = Util.Type.IsKey(property.Type, out _),
@@ -92,10 +104,11 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 
             var g = output.GroupBy(x => x.Scope).ToDictionary(x => x.Key, x =>
             {
-                return x.OrderBy(x => x.Name).Select(x => new
+                return x.OrderBy(x => GetInheritanceLevel(x.Name)).ThenBy(x => x.Name).Select(x => new
                 {
                     x.Name,
-                    x.Props
+                    x.Props,
+                    Context.Result.Schema[x.Name].Based
                 } as object).ToList();
             });
 
@@ -116,8 +129,9 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                     Dsl = dslCodeGenerator.Result,
                     Type = baseTypeTemplate.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace) }),
                     Const = constCodeGenerator.Result[scope],
-                    Class = classTemplate.Render(new { Items = items }),
-                    Container = bindCodeGenerator.Result[scope]
+                    Class = classTemplate.Render(new { Namespace = Context.Config.Namespace, Items = items }),
+                    Container = bindCodeGenerator.Result[scope],
+                    AdditionalHeaderFiles = Context.Config.AdditionalHeaderFiles
                 }));
             }
 

@@ -72,7 +72,9 @@ namespace ExcelTableConverter.Model
     public class RawSheetData : IExcelFileTrackable
     {
         private string _root, _sheetName, _tableName, _fileName;
+        public string Based { get; set; }
         public List<RawDataColumns> Columns { get; set; } = new List<RawDataColumns>();
+
         public string Root
         {
             get => Parent?.FullName ?? _root;

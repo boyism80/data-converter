@@ -39,6 +39,9 @@ end
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/xpressive/xpressive.hpp>
 #include <unordered_map>
+{{~ for header in additional_header_files ~}}
+#include <{{ header }}>
+{{~ end ~}}
 
 {{ namespace_scope_begin(namespace) }}
 
@@ -122,7 +125,7 @@ template <> static {{ namespace_access(namespace) }}dsl build<{{ namespace_acces
 {{ dsl }}
 #pragma endregion
 
-#pragma region data model
+#pragma region class model
 {{ class }}
 #pragma endregion
 

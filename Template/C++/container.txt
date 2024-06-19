@@ -1,3 +1,38 @@
+{{~
+func namespace_scope_begin(namespaces)
+    
+    $result = ''
+    for namespace in namespaces
+        $result += 'namespace ' + namespace + ' { '
+    end
+
+    ret $result | string.rstrip
+end
+
+func namespace_scope_end(namespaces)
+    $result = ''
+    for namespace in namespaces
+        $result += '} '
+    end
+
+    ret $result | string.rstrip
+end
+
+func namespace_access(namespaces)
+    if namespaces.size > 0
+        ret (namespaces | array.join "::") + "::"
+    else
+        ret ''
+    end
+end
+~}}
+template <typename T>
+class hook_funcs
+{
+public:
+    std::function<T*(const Json::Value&)> build;
+};
+
 template <typename K, typename V>
 class kv_container : private std::unordered_map<K, std::unique_ptr<V>>
 {
@@ -6,6 +41,9 @@ public:
 
 private:
     const std::string _fname;
+
+public:
+    hook_funcs<V> hook;
 
 public:
     using std::unordered_map<K,std::unique_ptr<V>>::size;
@@ -44,7 +82,13 @@ private:
     {
         for (auto i = json.begin(); i != json.end(); i++)
         {
-            std::unordered_map<K, std::unique_ptr<V>>::insert({ {{ namespace }}build<K>(i.key()), {{ namespace }}build<std::unique_ptr<V>>(*i) });
+            auto ptr = std::unique_ptr<V>();
+            if (this->hook.build != nullptr)
+                ptr.reset(this->hook.build(*i));
+            if (ptr == nullptr)
+                ptr = {{ namespace_access(namespace) }}build<std::unique_ptr<V>>(*i);
+
+            std::unordered_map<K, std::unique_ptr<V>>::insert({ {{ namespace_access(namespace) }}build<K>(i.key()), std::move(ptr)});
         }
     }
 
@@ -137,6 +181,9 @@ private:
     const std::string _fname;
 
 public:
+    hook_funcs<T> hook;
+
+public:
     using std::vector<std::unique_ptr<T>>::size;
 
 protected:
@@ -173,7 +220,13 @@ private:
     {
         for (auto i = json.begin(); i != json.end(); i++)
         {
-            std::vector<std::unique_ptr<T>>::push_back({{ namespace }}build<std::unique_ptr<T>>(*i));
+            auto ptr = std::unique_ptr<T>();
+            if (this->hook.build != nullptr)
+                ptr.reset(this->hook.build(*i));
+            if (ptr == nullptr)
+                ptr = {{ namespace_access(namespace) }}build<std::unique_ptr<T>>(*i);
+
+            std::vector<std::unique_ptr<T>>::push_back(std::move(ptr));
         }
     }
 
@@ -269,7 +322,7 @@ class container
 {
 public:
 {{~ for table in tables ~}}
-    {{ namespace }}__{{ table.name }} {{ table.name }};
+    {{ namespace_access(namespace) }}__{{ table.name }} {{ table.name }};
 {{~ end ~}}
 
 public:

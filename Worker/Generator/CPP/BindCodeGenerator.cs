@@ -67,7 +67,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 });
             }
 
-            var code = _template.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace), Scope = scope, Tables = buffer });
+            var code = _template.Render(new { Namespace = Context.Config.Namespace, Scope = scope, Tables = buffer });
             yield return new KeyValuePair<Scope, string>(scope, code);
         }
 

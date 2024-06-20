@@ -8,7 +8,7 @@ namespace ExcelTableConverter.Factory.CPP
         {
         }
 
-        private static string WithNullable(string root, object value, bool nullable)
+        private string WithNullable(string root, object value, bool nullable)
         {
             if (nullable)
                 root = $"std::optional<{root}>";

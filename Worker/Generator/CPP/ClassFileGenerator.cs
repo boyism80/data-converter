@@ -27,15 +27,6 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             }
         }
 
-        private int GetInheritanceLevel(string tableName)
-        {
-            var based = Context.Result.Schema[tableName].Based;
-            if (string.IsNullOrEmpty(based))
-                return 0;
-
-            return 1 + GetInheritanceLevel(based);
-        }
-
         protected override IEnumerable<string> OnReady()
         {
             foreach (var tableName in Context.Result.Schema.Keys)
@@ -104,7 +95,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 
             var g = output.GroupBy(x => x.Scope).ToDictionary(x => x.Key, x =>
             {
-                return x.OrderBy(x => GetInheritanceLevel(x.Name)).ThenBy(x => x.Name).Select(x => new
+                return x.OrderBy(x => Context.GetInheritanceLevel(x.Name)).ThenBy(x => x.Name).Select(x => new
                 {
                     x.Name,
                     x.Props,

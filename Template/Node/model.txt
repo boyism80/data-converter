@@ -1,3 +1,8 @@
+{{~
+func containable(table)
+    ret table.name == table.json
+end
+~}}
 const fs = require('fs').promises;
 const path = require('path');
 const date = require('date-and-time')
@@ -12,16 +17,16 @@ module.exports = (function () {
 
     function ArrayBuilder(build_fn) {
         return {
-            build: function (v) {
-                return v.map(e => build_fn(e))
+            build: function (v, hook) {
+                return v.map(e => hook?.build != null ? hook.build(v) ?? build_fn(e) : build_fn(e))
             }
         }
     }
 
     function DictionaryBuilder(build_fn_k, build_fn_v) {
         return {
-            build: function (v) {
-                return Object.fromEntries(Object.entries(v).map(([k, v]) => [build_fn_k(k), build_fn_v(v)]))
+            build: function (v, hook) {
+                return Object.fromEntries(Object.entries(v).map(([k, v]) => [build_fn_k(k), hook?.build != null ? hook.build(v) ?? build_fn_v(v) : build_fn_v(v)]))
             }
         }
     }
@@ -121,16 +126,27 @@ module.exports = (function () {
 {{ bind }}
     return {
         table: {
+            hook: { },
             load: async function (root) {
-{{~ for table in tables ~}}
-                this.{{ table }} = {{ table }}ContainerBuilder().build(JSON.parse(await fs.readFile(path.join(root, '{{ table }}.json'))))
+{{~ for table in tables | array.filter @containable ~}}
+                this.{{ table.name }} = {{ table.name }}ContainerBuilder(this.hook.{{ table.name }}).build(JSON.parse(await fs.readFile(path.join(root, '{{ table.name }}.json'))))
 {{~ end ~}}
             }
         },
 
         enum: $enum,
         const: $const,
-
+        ArrayBuilder: ArrayBuilder,
+        DictionaryBuilder: DictionaryBuilder,
+        DefaultBuilder: DefaultBuilder,
+        EnumBuilder: EnumBuilder,
+        TimeSpanBuilder: TimeSpanBuilder,
+        DateTimeBuilder: DateTimeBuilder,
+        DateRangeBuilder: DateRangeBuilder,
+        DslBuilder: DslBuilder,
+{{~ for table in tables ~}}
+        {{ table.name }}Builder: {{ table.name }}Builder,
+{{~ end ~}}
         load: async function (root) {
             await this.table.load(root)
         }

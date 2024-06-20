@@ -5,9 +5,7 @@ using ExcelTableConverter.Worker;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NPOI.SS.Formula.Functions;
-using NPOI.SS.UserModel;
 using System.Collections.Concurrent;
-using System.Linq;
 using System.Reflection;
 
 namespace ExcelTableConverter.Model
@@ -41,13 +39,13 @@ namespace ExcelTableConverter.Model
         private readonly ConcurrentDictionary<object, object> _dp = new ConcurrentDictionary<object, object>();
 
         [JsonIgnore]
-        public static Config Config { get; private set; } = JsonConvert.DeserializeObject<Config>(File.ReadAllText("config.json"));
+        public static Config Config { get; private set; } = ReadConfigFile();
 
         [JsonIgnore]
         public string Output = "output";
 
         [JsonIgnore]
-        public static JObject DSL { get; private set; } = JObject.Parse(File.ReadAllText("dsl.json"));
+        public static JObject DSL { get; private set; } = ReadDslFile();
 
         public RawConstContainer RawConst { get; private set; } = new RawConstContainer();
         public RawEnumContainer RawEnum { get; private set; } = new RawEnumContainer();
@@ -86,6 +84,41 @@ namespace ExcelTableConverter.Model
                 RawConst = ctx1.RawConst.Concat(ctx2.RawConst).ToDictionary(x => x.Key, x => x.Value),
                 CRC = ctx1.CRC.Concat(ctx2.CRC).ToDictionary(x => x.Key, x => x.Value),
             };
+        }
+
+        private static T ReadFileWithEnvironmentVariable<T>(string fname, Func<string, T> callback)
+        {
+            var file = Path.GetFileNameWithoutExtension(fname);
+            var ext = Path.GetExtension(fname);
+            var env = Environment.GetEnvironmentVariable("env");
+
+            if (!string.IsNullOrEmpty(env))
+            {
+                var envFileName = $"{file}.{env}{ext}";
+                if (File.Exists(envFileName))
+                    fname = envFileName;
+            }
+
+            if (File.Exists(fname) == false)
+                throw new FileNotFoundException();
+
+            return callback.Invoke(File.ReadAllText(fname));
+        }
+
+        private static Config ReadConfigFile()
+        {
+            return ReadFileWithEnvironmentVariable("config.json", contents => 
+            {
+                return JsonConvert.DeserializeObject<Config>(contents);
+            });
+        }
+
+        private static JObject ReadDslFile()
+        {
+            return ReadFileWithEnvironmentVariable("dsl.json", contents => 
+            {
+                return JObject.Parse(contents);
+            });
         }
 
         private SchemaContainer GetSchema()
@@ -262,16 +295,17 @@ namespace ExcelTableConverter.Model
             });
         }
 
-        public Dictionary<string, object> GetEffectiveSortedDataSet(Scope scope) // TableName:DataSet
+        public Dictionary<string, object> GetEffectiveSortedDataSet(Scope scope) // {json:container}
         {
-            var rowset = Result.Data.SelectMany(x => x.Value).GroupBy(x => x.Key).ToDictionary(x => x.Key, x =>
+            // {table:rows}
+            var tableRows = Result.Data.SelectMany(x => x.Value).GroupBy(x => x.Key).ToDictionary(x => x.Key, x =>
             {
                 var table = x.Key;
-                var rows = x.SelectMany(x => x.Value).SelectMany(x => x.Rows).ToList();
-                return rows;
+                return x.SelectMany(x => x.Value).SelectMany(x => x.Rows).ToList();
             });
 
-            var result = new Dictionary<string/*json*/, List<Dictionary<string/*column*/, object/*value*/>>>();
+            // {json:rows}
+            var jsonRows = new Dictionary<string/*json*/, List<Dictionary<string/*column*/, object/*value*/>>>();
             foreach (var g in Result.Schema.GroupBy(x => x.Value.Json))
             {
                 var json = g.Key;
@@ -283,19 +317,44 @@ namespace ExcelTableConverter.Model
                     if (columns.Count == 0)
                         continue;
 
-                    var tableRows = rowset[tableName].Select(row => row.Where(x => columns.Contains(x.Key)).ToDictionary(x => x.Key, x => x.Value)).Where(x => x.Count > 0).ToList();
-                    rows.AddRange(tableRows);
+                    var scopedRows = tableRows[tableName]
+                        .Select(row => row.Where(x => columns.Contains(x.Key)).ToDictionary(x => x.Key, x => x.Value))
+                        .Where(x => x.Count > 0)
+                        .ToList();
+                    rows.AddRange(scopedRows);
                 }
 
-                result.Add(json, rows);
+                jsonRows.Add(json, rows);
             }
 
-            return result.ToDictionary(x => x.Key, x =>
+            return jsonRows.ToDictionary(x => x.Key, x =>
             {
                 var json = x.Key;
                 var rows = x.Value;
-                return new DataContainerFactory().Build(this, json, rows);
+                return new DataContainerFactory(scope).Build(this, json, rows);
             }).Where(pair => pair.Value != null).ToDictionary(x => x.Key, x => x.Value);
+        }
+
+        public Dictionary<string, Dictionary<string, object>> GetEffectiveSortedDataSetWithSheetName(Scope scope) // {sheet:{table:container}}
+        {
+            return Result.Data.SelectMany(x => x.Value.SelectMany(x => x.Value)).GroupBy(x => x.SheetName).ToDictionary(x => x.Key, x =>
+            {
+                return x.GroupBy(x => x.TableName).ToDictionary(x => x.Key, x =>
+                {
+                    var tableName = x.Key;
+                    var schema = Result.Schema[tableName].Values.Where(x => x.Scope.HasFlag(scope));
+                    var columns = schema.Select(x => x.Name).ToHashSet();
+                    if (columns.Count == 0)
+                        return null;
+
+                    var rows = x.SelectMany(x => x.Rows)
+                        .Select(row => row.Where(x => columns.Contains(x.Key)).ToDictionary(x => x.Key, x => x.Value))
+                        .Where(x => x.Count > 0)
+                        .ToList();
+
+                    return new DataContainerFactory(scope).Build(this, x.Key, rows);
+                }).Where(pair => pair.Value != null).ToDictionary(x => x.Key, x => x.Value);
+            });
         }
 
         public static string GetCacheFilePath(string fileName)
@@ -406,6 +465,15 @@ namespace ExcelTableConverter.Model
                 prefix = $"{name} == null ? (long?)null : (long?)";
 
             return $"{prefix}(long)";
+        }
+
+        public int GetInheritanceLevel(string tableName)
+        {
+            var based = Result.Schema[tableName].Based;
+            if (string.IsNullOrEmpty(based))
+                return 0;
+
+            return 1 + GetInheritanceLevel(based);
         }
     }
 }

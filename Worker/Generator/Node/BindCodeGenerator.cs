@@ -55,7 +55,8 @@ namespace ExcelTableConverter.Worker.Generator.Node
                 buffer.Add(new
                 {
                     Name = tableName,
-                    Type = containerType
+                    Type = containerType,
+                    Json = Context.Result.Schema[tableName].Json,
                 });
             }
 

@@ -25,7 +25,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="config.c#.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="config.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="dsl.c#.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="dsl.json">

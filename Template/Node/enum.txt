@@ -22,7 +22,7 @@ func enum_recursive(v)
 
         ret $result
     else
-        $match = v | regex.match `[_a-zA-Z][_a-zA-Z0-9]`
+        $match = v | regex.match `^[_a-zA-Z][_a-zA-Z0-9]*`
         if ($match | array.size) > 0
             ret 'this.' + v
         end

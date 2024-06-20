@@ -14,13 +14,17 @@ try
 {
     var dir = Path.Combine("..", "..", "..", "..");
     var lang = "c++";
+    var env = string.Empty;
     var options = new OptionSet
     {
         { "d|dir=", "input directory", v => dir = v },
-        { "l|lang=", "code language", v => lang = v }
+        { "l|lang=", "code language", v => lang = v },
+        { "e|env=", "code language", v => env = v }
     };
 
     options.Parse(args);
+
+    Environment.SetEnvironmentVariable("env", env);
 #if !JENKINS
     Console.Clear();
 #endif
@@ -249,6 +253,7 @@ try
                 break;
 
             case "c#":
+                Scheduler.Add(() => new JsonSheetFileGenerator(ctx).Run());
                 Scheduler.Add(() =>
                 {
                     foreach (var file in Context.Config.SharedJsonFiles)

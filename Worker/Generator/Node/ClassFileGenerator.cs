@@ -35,7 +35,7 @@ namespace ExcelTableConverter.Worker.Generator.Node
             }
         }
 
-        protected override IEnumerable<(Scope, string, List<object>)> OnWork(string tableName)
+        protected override IEnumerable<(Scope Scope, string Name, List<object> Props)> OnWork(string tableName)
         {
             var schemaSet = Context.Result.Schema[tableName];
             var result = new[] { Scope.Server, Scope.Client }.ToDictionary(x => x, x => new List<object>());
@@ -43,6 +43,9 @@ namespace ExcelTableConverter.Worker.Generator.Node
             for (int i = 0; i < properties.Count; i++)
             {
                 var property = properties[i];
+                if (property.Inherited)
+                    continue;
+
                 var ccgp = new
                 {
                     Key = Util.Type.IsKey(property.Type, out _),
@@ -61,7 +64,7 @@ namespace ExcelTableConverter.Worker.Generator.Node
 
             foreach (var (scope, props) in result)
             {
-                if (props.Count == 0)
+                if (props.Count == 0 && schemaSet.Based == null)
                     continue;
 
                 yield return (scope, tableName, props);
@@ -92,10 +95,11 @@ namespace ExcelTableConverter.Worker.Generator.Node
 
             var g = output.GroupBy(x => x.Scope).ToDictionary(x => x.Key, x =>
             {
-                return x.OrderBy(x => x.Name).Select(x => new
+                return x.OrderBy(x => Context.GetInheritanceLevel(x.Name)).Select(x => new
                 {
                     x.Name,
-                    x.Props
+                    x.Props,
+                    Context.Result.Schema[x.Name].Based
                 } as object).ToList();
             });
 
@@ -119,7 +123,7 @@ namespace ExcelTableConverter.Worker.Generator.Node
                         var schemaSet = x.Value;
                         var filter = schemaSet.Values.Where(x => x.Scope.HasFlag(scope)).ToList();
                         return filter.Count > 0;
-                    }).Select(x => x.Key).OrderBy(x => x).ToList()
+                    }).Select(x => new { Name = x.Key, Json = Context.Result.Schema[x.Key].Json }).OrderBy(x => x.Name).ToList()
                 }));
             }
 

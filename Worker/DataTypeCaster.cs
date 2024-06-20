@@ -1,6 +1,5 @@
 ﻿using ExcelTableConverter.Model;
 using ExcelTableConverter.Util;
-using NPOI.SS.Formula.Functions;
 using System.Data;
 
 namespace ExcelTableConverter.Worker
@@ -9,14 +8,16 @@ namespace ExcelTableConverter.Worker
     { 
         public IExcelFileTrackable Tracker { get; set; }
         public List<RawDataColumns> Columns { get; set; }
+        public string Json { get; set; }
     }
 
-    public class DataConvertResult
+    public class DataConvertResult : IExcelFileTrackable
     {
         public string FileName { get; set; }
         public string SheetName { get; set; }
         public string TableName { get; set; }
         public List<Dictionary<string, object>> Rows {get;set;}
+        public string Json { get; set; }
     }
 
     public class DataTypeCaster : ParallelWorker<CastTypeChunkData, DataConvertResult>
@@ -52,7 +53,8 @@ namespace ExcelTableConverter.Worker
                     yield return new CastTypeChunkData
                     {
                         Tracker = sheetData,
-                        Columns = new List<RawDataColumns>()
+                        Columns = new List<RawDataColumns>(),
+                        Json = sheetData.Json
                     };
                 }
                 else
@@ -62,7 +64,8 @@ namespace ExcelTableConverter.Worker
                         yield return new CastTypeChunkData
                         {
                             Tracker = sheetData,
-                            Columns = columns
+                            Columns = columns,
+                            Json = sheetData.Json
                         };
                     }
                 }
@@ -121,7 +124,8 @@ namespace ExcelTableConverter.Worker
                     FileName = chunkData.Tracker.FileName,
                     SheetName = chunkData.Tracker.SheetName,
                     TableName = table,
-                    Rows = dataSet
+                    Rows = dataSet,
+                    Json = chunkData.Json
                 };
             }
 
@@ -172,7 +176,8 @@ namespace ExcelTableConverter.Worker
                     FileName = chunkData.Tracker.FileName,
                     SheetName = chunkData.Tracker.SheetName,
                     TableName = chunkData.Tracker.GetTableName(),
-                    Rows = dataSet
+                    Rows = dataSet,
+                    Json = chunkData.Json
                 };
             }
             else
@@ -182,7 +187,8 @@ namespace ExcelTableConverter.Worker
                     FileName = chunkData.Tracker.FileName,
                     SheetName = chunkData.Tracker.SheetName,
                     TableName = chunkData.Tracker.GetTableName(),
-                    Rows = new List<Dictionary<string, object>>()
+                    Rows = new List<Dictionary<string, object>>(),
+                    Json = chunkData.Json
                 };
             }
         }

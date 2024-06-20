@@ -6,15 +6,15 @@ namespace ExcelTableConverter.Factory
     {
         private readonly Scope _scope;
 
-        public DataContainerFactory()
+        public DataContainerFactory(Scope scope)
         {
-            
+            _scope = scope;
         }
 
         private object InternalBuild(Context ctx, string table, List<Dictionary<string, object>> rows, bool chainParent)
         {
             var schema = ctx.Result.Schema[table];
-            var gk = chainParent ? schema.Values.FirstOrDefault(x => Util.Type.IsGroupKey(x.Type, out _)) : null;
+            var gk = chainParent ? schema.Values.FirstOrDefault(x => x.Scope.HasFlag(_scope) && Util.Type.IsGroupKey(x.Type, out _)) : null;
             if (gk != null)
             {
                 return rows.GroupBy(x => x[gk.Name]).ToDictionary(g => g.Key, g => InternalBuild(ctx, table, g.ToList(), false));

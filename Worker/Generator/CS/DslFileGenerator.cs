@@ -1,6 +1,7 @@
 ﻿using ExcelTableConverter.Factory.CS;
 using ExcelTableConverter.Model;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Scriban;
 
 namespace ExcelTableConverter.Worker.Generator.CS
@@ -8,7 +9,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
     public class DslFileGenerator : ParallelWorker<KeyValuePair<string, List<DSLParameter>>, bool>
     {
         private static readonly Template _template = Template.Parse(File.ReadAllText($"Template/C#/dsl.txt"));
-        private static readonly Dictionary<string, List<DSLParameter>> _prototypes = JsonConvert.DeserializeObject<Dictionary<string, List<DSLParameter>>>(File.ReadAllText("dsl.json"));
+        private static readonly Dictionary<string, List<DSLParameter>> _prototypes = JsonConvert.DeserializeObject<Dictionary<string, List<DSLParameter>>>(Context.DSL.ToString());
         private readonly string _dir;
 
         public DslFileGenerator(Context ctx) : base(ctx)

@@ -42,6 +42,7 @@ class kv_container : private std::unordered_map<K, std::unique_ptr<V>>
 {
 public:
     class iterator;
+    class const_iterator;
 
 private:
     const std::string _fname;
@@ -129,8 +130,8 @@ public:
 
     iterator begin();
     iterator end();
-    const iterator cbegin() const;
-    const iterator cend() const;
+    const const_iterator begin() const;
+    const const_iterator end() const;
 };
 
 template <typename K, typename V>
@@ -140,11 +141,9 @@ private:
     std::unique_ptr<std::pair<K, V&>> _pair;
 
 public:
-    iterator(const typename std::unordered_map<K, std::unique_ptr<V>>::iterator& i, const std::unordered_map<K, std::unique_ptr<V>>* container) : std::unordered_map<K, std::unique_ptr<V>>::iterator(i)
-    {
-        if(i != container->end())
-            this->_pair = std::make_unique<std::pair<K,V&>>(i->first, *i->second);
-    }
+    iterator(const typename std::unordered_map<K, std::unique_ptr<V>>::iterator& i, const std::unordered_map<K, std::unique_ptr<V>>* container) : std::unordered_map<K, std::unique_ptr<V>>::iterator(i),
+        _pair(i != container->end() ? std::make_unique<std::pair<K, V&>>(i->first, *i->second) : nullptr)
+    { }
     ~iterator() = default;
 
 public:
@@ -152,6 +151,21 @@ public:
     {
         return *this->_pair;
     }
+};
+
+template <typename K, typename V>
+class kv_container<K,V>::const_iterator : public std::unordered_map<K, std::unique_ptr<V>>::const_iterator
+{
+private:
+    const std::unique_ptr<std::pair<K, V&>> _pair;
+
+public:
+    const_iterator(const typename std::unordered_map<K, std::unique_ptr<V>>::const_iterator& i, const std::unordered_map<K, std::unique_ptr<V>>* container) : std::unordered_map<K, std::unique_ptr<V>>::const_iterator(i),
+        _pair(i != container->end() ? std::make_unique<std::pair<K, V&>>(i->first, *i->second) : nullptr)
+    { }
+    ~const_iterator() = default;
+
+public:
     const std::pair<K,V&>& operator * () const
     {
         return *this->_pair;
@@ -171,15 +185,15 @@ kv_container<K,V>::iterator kv_container<K,V>::end()
 }
 
 template <typename K, typename V>
-const typename kv_container<K,V>::iterator kv_container<K,V>::cbegin() const
+const typename kv_container<K,V>::const_iterator kv_container<K,V>::begin() const
 {
-    return kv_container<K,V>::iterator(std::unordered_map<K, std::unique_ptr<V>>::cbegin(), this);
+    return kv_container<K,V>::const_iterator(std::unordered_map<K, std::unique_ptr<V>>::begin(), this);
 }
 
 template <typename K, typename V>
-const typename kv_container<K,V>::iterator kv_container<K,V>::cend() const
+const typename kv_container<K,V>::const_iterator kv_container<K,V>::end() const
 {
-    return kv_container<K,V>::iterator(std::unordered_map<K, std::unique_ptr<V>>::cend(), this);
+    return kv_container<K,V>::const_iterator(std::unordered_map<K, std::unique_ptr<V>>::end(), this);
 }
 
 template <typename T>
@@ -187,6 +201,7 @@ class array_container : private std::vector<std::unique_ptr<T>>
 {
 public:
     class iterator;
+    class const_iterator;
 
 private:
     const std::string _fname;
@@ -274,12 +289,12 @@ public:
 public:
     iterator begin();
     iterator end();
-    const iterator cbegin() const;
-    const iterator cend() const;
+    const const_iterator begin() const;
+    const const_iterator end() const;
 };
 
 template <typename T>
-class array_container<T>::iterator : public std::vector<std::unique_ptr<std::unique_ptr<T>>>
+class array_container<T>::iterator : public std::vector<std::unique_ptr<std::unique_ptr<T>>>::iterator
 {
 public:
     iterator(const typename std::vector<std::unique_ptr<std::unique_ptr<T>>>::iterator& i) : std::vector<std::unique_ptr<std::unique_ptr<T>>>::iterator(i)
@@ -291,10 +306,20 @@ public:
     {
         return std::vector<std::unique_ptr<T>>::iterator::operator*();
     }
+};
 
+template <typename T>
+class array_container<T>::const_iterator : public std::vector<std::unique_ptr<std::unique_ptr<T>>>::const_iterator
+{
+public:
+    const_iterator(const typename std::vector<std::unique_ptr<std::unique_ptr<T>>>::const_iterator& i) : std::vector<std::unique_ptr<std::unique_ptr<T>>>::const_iterator(i)
+    {}
+    ~const_iterator() = default;
+
+public:
     const T& operator * () const
     {
-        return std::vector<std::unique_ptr<T>>::iterator::operator*();
+        return std::vector<std::unique_ptr<T>>::const_iterator::operator*();
     }
 };
 
@@ -311,15 +336,15 @@ array_container<T>::iterator array_container<T>::end()
 }
 
 template <typename T>
-const typename array_container<T>::iterator array_container<T>::cbegin() const
+const typename array_container<T>::const_iterator array_container<T>::begin() const
 {
-    return array_container<T>::iterator(std::vector<std::unique_ptr<std::unique_ptr<T>>>::cbegin());
+    return array_container<T>::const_iterator(std::vector<std::unique_ptr<std::unique_ptr<T>>>::cbegin());
 }
 
 template <typename T>
-const typename array_container<T>::iterator array_container<T>::cend() const
+const typename array_container<T>::const_iterator array_container<T>::end() const
 {
-    return array_container<T>::iterator(std::vector<std::unique_ptr<std::unique_ptr<T>>>::cend());
+    return array_container<T>::const_iterator(std::vector<std::unique_ptr<std::unique_ptr<T>>>::cend());
 }
 
 {{~ for table in tables | array.filter @containable ~}}
@@ -330,6 +355,9 @@ public:
     { }
     ~__{{ table.name }}()
     { }
+#ifdef DECLARE_{{ table.name | string.upcase }}_CONTAINER_EXTENSION
+DECLARE_{{ table.name | string.upcase }}_CONTAINER_EXTENSION
+#endif
 };
 {{~ if !for.last }}
 {{ end ~}}

@@ -6,7 +6,7 @@ namespace ExcelTableConverter.Util
     {
         public static Match Parse(string value)
         {
-            var regex = new Regex(@"^(?<value>[a-zA-Z_]+[a-zA-Z0-9]*|(?:0x)?\d+)|(?<op>[&\|])|(?<inv>~)");
+            var regex = new Regex(@"^(?<value>[a-zA-Z_]+[a-zA-Z0-9]*|0x[A-F0-9]+|\d+)|(?<op>[&\|])|(?<inv>~)");
             var matched = regex.Match(value);
             return matched;
         }

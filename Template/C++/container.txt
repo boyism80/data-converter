@@ -115,7 +115,7 @@ public:
         if (i == std::unordered_map<K, std::unique_ptr<V>>::cend())
             return nullptr;
 
-        return &i->second;
+        return i->second.get();
     }
 
     const V& operator [] (const K& k) const 

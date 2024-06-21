@@ -65,5 +65,19 @@
             "type": "uint8_t",
             "desc": "promotion"
         }
+    ],
+    "class_t": [
+        {
+            "name": "value",
+            "type": "CLASS",
+            "desc": "class"
+        }
+    ],
+    "admin": [
+        {
+            "name": "value",
+            "type": "bool",
+            "desc": "is admin"
+        }
     ]
 }

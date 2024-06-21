@@ -264,6 +264,9 @@ namespace ExcelTableConverter.Factory
                 case int v:
                     return DP(root, value, (long)v);
 
+                case string v:
+                    return DP(root, value, Build(root, v.StartsWith("0x") ? Convert.ToInt64(v, 16) : long.Parse(v)));
+
                 default:
                     if (long.TryParse($"{value}", out var result) == false)
                         throw new TypeCastException(value, root);
@@ -404,6 +407,9 @@ namespace ExcelTableConverter.Factory
                         throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.");
 
                     return DP(root, value, (ulong)v);
+
+                case string v:
+                    return DP(root, value, Build(root, v.StartsWith("0x") ? Convert.ToUInt64(v, 16) : ulong.Parse(v)));
 
                 default:
                     if (ulong.TryParse($"{value}", out var result) == false)

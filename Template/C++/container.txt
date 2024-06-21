@@ -62,6 +62,7 @@ public:
     {
         this->load(json);
     }
+    kv_container(const kv_container&) = delete;
     ~kv_container() = default;
 
 private:
@@ -108,6 +109,11 @@ public:
     void load()
     {
         this->load(this->_fname);
+    }
+
+    bool contains(const K& k) const
+    {
+        return std::unordered_map<K, std::unique_ptr<V>>::find(k) != std::unordered_map<K, std::unique_ptr<V>>::cend();
     }
 
     const V* find(const K& k) const
@@ -221,6 +227,7 @@ public:
     {
         this->load(json);
     }
+    array_container(const array_container&) = delete;
     ~array_container() = default;
 
 private:
@@ -353,8 +360,8 @@ class __{{ table.name }} : public {{ table.type }}<{{ table.generic }}>
 public:
     __{{ table.name }}() : {{ table.type }}<{{ table.generic }}>(std::string("json/{{ table.name }}.json"))
     { }
-    ~__{{ table.name }}()
-    { }
+    __{{ table.name }}(const __{{ table.name }}&) = delete;
+    ~__{{ table.name }}() = default;
 #ifdef DECLARE_{{ table.name | string.upcase }}_CONTAINER_EXTENSION
 DECLARE_{{ table.name | string.upcase }}_CONTAINER_EXTENSION
 #endif
@@ -370,6 +377,11 @@ public:
 {{~ for table in tables | array.filter @containable ~}}
     {{ namespace_access(namespace) }}__{{ table.name }} {{ table.name }};
 {{~ end ~}}
+
+public:
+    container() = default;
+    container(const container&) = delete;
+    ~container() = default;
 
 public:
     void load(const std::function<void(float)>& callback, const std::function<void(const std::string&)>& error)

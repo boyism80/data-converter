@@ -2,7 +2,7 @@
   "profiles": {
     "ExcelTableConverter": {
       "commandName": "Project",
-      "commandLineArgs": "--dir=..\\\\..\\\\..\\\\sample"
+      "commandLineArgs": "--dir=C:\\Users\\cshyeon\\fb\\resources\\table --lang=c++"
     }
   }
 }

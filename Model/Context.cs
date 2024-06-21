@@ -1,5 +1,4 @@
 ﻿using ExcelTableConverter.Factory;
-using ExcelTableConverter.Factory.CS;
 using ExcelTableConverter.Util;
 using ExcelTableConverter.Worker;
 using Newtonsoft.Json;
@@ -35,7 +34,7 @@ namespace ExcelTableConverter.Model
         public readonly static string RAW_CACHE_PATH = GetCacheFilePath(RAW_CACHE_FILE);
         public readonly static string ERROR_CACHE_PATH = GetCacheFilePath(ERROR_FILE);
 
-        private readonly ValueFactory _castFactory;
+        private readonly CastValueFactory _castFactory;
         private readonly ConcurrentDictionary<object, object> _dp = new ConcurrentDictionary<object, object>();
 
         [JsonIgnore]
@@ -72,7 +71,7 @@ namespace ExcelTableConverter.Model
 
         public Context()
         {
-            _castFactory = new ValueFactory(this);
+            _castFactory = new CastValueFactory(this);
         }
 
         public static Context operator +(Context ctx1, Context ctx2)

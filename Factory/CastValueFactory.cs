@@ -2,15 +2,19 @@
 using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
+using Range = ExcelTableConverter.Model.Range;
 
-namespace ExcelTableConverter.Factory.CS
+namespace ExcelTableConverter.Factory
 {
-    public class ValueFactory : DataFormatFactory<object>
+    public class CastValueFactory : DataFormatFactory<object>
     {
         private readonly Regex _splitRgx = new Regex(@"[&|\n](?![^()]*\))", RegexOptions.Compiled);
+        private readonly Regex _pointRgx = new Regex(@"(?<x>\d+)\s*,\s*(?<y>\d+)", RegexOptions.Compiled);
+        private readonly Regex _sizeRgx = new Regex(@"(?<width>\d+)\s*,\s*(?<height>\d+)", RegexOptions.Compiled);
+        private readonly Regex _rangeRgx = new Regex(@"(?<min>\d+)\s*~\s*(?<max>\d+)", RegexOptions.Compiled);
         private readonly ConcurrentDictionary<string, ConcurrentDictionary<object, object>> _castValuesDP = new ConcurrentDictionary<string, ConcurrentDictionary<object, object>>();
 
-        public ValueFactory(Context ctx) : base(ctx)
+        public CastValueFactory(Context ctx) : base(ctx)
         {
 
         }
@@ -20,7 +24,15 @@ namespace ExcelTableConverter.Factory.CS
             value ??= "null";
 
             var castedValues = _castValuesDP.GetOrAdd(type, _ => new ConcurrentDictionary<object, object>());
-            return castedValues.GetOrAdd(value, _x => result);
+            return castedValues.GetOrAdd(value, _ => result);
+        }
+
+        private object LazyDP(string type, object value, Func<object> fn)
+        {
+            value ??= "null";
+
+            var castedValues = _castValuesDP.GetOrAdd(type, _ => new ConcurrentDictionary<object, object>());
+            return castedValues.GetOrAdd(value, _ => fn());
         }
 
         protected override object BooleanType(object value, string root, bool nullable, DataFormatOption option)
@@ -223,7 +235,7 @@ namespace ExcelTableConverter.Factory.CS
                     return DP(root, value, v);
 
                 case ulong v:
-                    if(v > long.MaxValue)
+                    if (v > long.MaxValue)
                         throw new LogicException($"{v}는 {root} 타입의 최대값보다 큰 값입니다.");
 
                     return DP(root, value, v);
@@ -378,7 +390,7 @@ namespace ExcelTableConverter.Factory.CS
                     return DP(root, value, v);
 
                 case sbyte v:
-                    if(v < 0)
+                    if (v < 0)
                         throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.");
                     return DP(root, value, (ulong)v);
 
@@ -503,6 +515,162 @@ namespace ExcelTableConverter.Factory.CS
                 default:
                     throw new TypeCastException(value, root);
             }
+        }
+
+        private object InternalPointType(object value, string root, bool nullable, DataFormatOption option, string t)
+        {
+            if (Util.Value.IsNull(value))
+            {
+                if (nullable == false)
+                    throw new NullValueException(root);
+
+                return DP(root, value, null);
+            }
+
+            switch (value)
+            {
+                case Point:
+                    return value;
+
+                case string s:
+                    return LazyDP(root, value, () =>
+                    {
+                        var match = _pointRgx.Match(s);
+                        if (match.Success == false)
+                            throw new TypeCastException(value, root);
+
+                        var x = (ulong)Build(t, match.Groups["x"].Value);
+                        var y = (ulong)Build(t, match.Groups["y"].Value);
+                        return new Point { X = x, Y = y };
+                    });
+
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        private object InternalSizeType(object value, string root, bool nullable, DataFormatOption option, string t)
+        {
+            if (Util.Value.IsNull(value))
+            {
+                if (nullable == false)
+                    throw new NullValueException(root);
+
+                return DP(root, value, null);
+            }
+
+            switch (value)
+            {
+                case Size:
+                    return value;
+
+                case string s:
+                    return LazyDP(root, value, () =>
+                    {
+                        var match = _sizeRgx.Match(s);
+                        if (match.Success == false)
+                            throw new TypeCastException(value, root);
+
+                        var width = (ulong)Build(t, match.Groups["width"].Value);
+                        var height = (ulong)Build(t, match.Groups["height"].Value);
+                        return new Size { Width = width, Height = height };
+                    });
+
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        private object InternalRangeType(object value, string root, bool nullable, DataFormatOption option, string t)
+        {
+            if (Util.Value.IsNull(value))
+            {
+                if (nullable == false)
+                    throw new NullValueException(root);
+
+                return DP(root, value, null);
+            }
+
+            switch (value)
+            {
+                case Range:
+                    return value;
+
+                case string s:
+                    return LazyDP(root, value, () =>
+                    {
+                        var match = _rangeRgx.Match(s);
+                        if (match.Success == false)
+                            throw new TypeCastException(value, root);
+
+                        var min = (ulong)Build(t, match.Groups["min"].Value);
+                        var max = (ulong)Build(t, match.Groups["max"].Value);
+                        return new Range { Min = min, Max = max };
+                    });
+
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        protected override object Point8Type(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return InternalPointType(value, root, nullable, option, "uint8_t");
+        }
+
+        protected override object Point16Type(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return InternalPointType(value, root, nullable, option, "uint16_t");
+        }
+
+        protected override object Point32Type(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return InternalPointType(value, root, nullable, option, "uint32_t");
+        }
+
+        protected override object Point64Type(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return InternalPointType(value, root, nullable, option, "uint64_t");
+        }
+
+        protected override object Size8Type(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return InternalSizeType(value, root, nullable, option, "uint8_t");
+        }
+
+        protected override object Size16Type(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return InternalSizeType(value, root, nullable, option, "uint16_t");
+        }
+
+        protected override object Size32Type(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return InternalSizeType(value, root, nullable, option, "uint32_t");
+        }
+
+        protected override object Size64Type(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return InternalSizeType(value, root, nullable, option, "uint64_t");
+        }
+
+        protected override object Range8Type(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return InternalRangeType(value, root, nullable, option, "uint8_t");
+        }
+
+        protected override object Range16Type(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return InternalRangeType(value, root, nullable, option, "uint16_t");
+        }
+
+        protected override object Range32Type(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return InternalRangeType(value, root, nullable, option, "uint32_t");
+        }
+
+        protected override object Range64Type(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return InternalRangeType(value, root, nullable, option, "uint64_t");
         }
 
         public object Build(string type, object value)

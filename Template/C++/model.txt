@@ -1,4 +1,19 @@
 {{~
+classes = [
+        {
+            name: 'point',
+            props: ['x', 'y']
+        },
+        {
+            name: 'size',
+            props: ['width', 'height']
+        },
+        {
+            name: 'range',
+            props: ['min', 'max']
+        }
+    ]
+
 func namespace_scope_begin(namespaces)
     
     $result = ''
@@ -125,6 +140,15 @@ template <> static boost::posix_time::ptime build<boost::posix_time::ptime>(cons
 template <> static std::chrono::milliseconds build<std::chrono::milliseconds>(const Json::Value& json);
 template <> static {{ namespace_access(namespace) }}date_range build<{{ namespace_access(namespace) }}date_range>(const Json::Value& json);
 template <> static {{ namespace_access(namespace) }}dsl build<{{ namespace_access(namespace) }}dsl>(const Json::Value& json);
+{{~ for class in classes ~}}
+{{~ for type in ['uint8_t', 'uint16_t', 'uint32_t', 'uint64_t'] ~}}
+{{~
+suffix = type | string.remove_first 'uint'
+name = class.name + suffix
+~}}
+template <> static struct {{ name }} build<{{ name }}>(const Json::Value& json);
+{{~ end ~}}
+{{~ end ~}}
 
 #pragma region dsl
 {{ dsl }}
@@ -307,6 +331,28 @@ template <> date_range build<date_range>(const Json::Value& json)
 {
     return date_range(build<std::optional<boost::posix_time::ptime>>(json["Begin"]), build<std::optional<boost::posix_time::ptime>>(json["End"]));
 }
+
+{{~ for class in classes ~}}
+{{~ for type in ['uint8_t', 'uint16_t', 'uint32_t', 'uint64_t'] ~}}
+{{~
+suffix = type | string.remove_first 'uint'
+name = class.name + suffix
+~}}
+template <> struct {{ name }} build<{{ name }}>(const Json::Value& json)
+{
+{{~ for prop in class.props ~}}
+    auto {{ prop }} = build<{{ type }}>(json["{{ prop }}"]);
+{{~ end ~}}
+    return {{ name }}({{ class.props | array.join ', '}});
+}
+{{~ if !for.last ~}}
+
+{{~ end ~}}
+{{~ end ~}}
+{{~ if !for.last ~}}
+
+{{~ end ~}}
+{{~ end ~}}
 #pragma endregion
 
 {{ namespace_scope_end(namespace) }}

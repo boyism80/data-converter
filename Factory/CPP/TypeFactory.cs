@@ -133,6 +133,102 @@ namespace ExcelTableConverter.Factory.CPP
             return result;
         }
 
+        protected override string Point8Type(object value, string root, bool nullable, DataFormatOption option)
+        {
+            var result = WithNullable("point8_t", nullable, option);
+            if (option.Get<bool>("rvalue"))
+                result = $"const {result}&";
+            return result;
+        }
+
+        protected override string Point16Type(object value, string root, bool nullable, DataFormatOption option)
+        {
+            var result = WithNullable("point16_t", nullable, option);
+            if (option.Get<bool>("rvalue"))
+                result = $"const {result}&";
+            return result;
+        }
+
+        protected override string Point32Type(object value, string root, bool nullable, DataFormatOption option)
+        {
+            var result = WithNullable("point32_t", nullable, option);
+            if (option.Get<bool>("rvalue"))
+                result = $"const {result}&";
+            return result;
+        }
+
+        protected override string Point64Type(object value, string root, bool nullable, DataFormatOption option)
+        {
+            var result = WithNullable("point64_t", nullable, option);
+            if (option.Get<bool>("rvalue"))
+                result = $"const {result}&";
+            return result;
+        }
+
+        protected override string Size8Type(object value, string root, bool nullable, DataFormatOption option)
+        {
+            var result = WithNullable("size8_t", nullable, option);
+            if (option.Get<bool>("rvalue"))
+                result = $"const {result}&";
+            return result;
+        }
+
+        protected override string Size16Type(object value, string root, bool nullable, DataFormatOption option)
+        {
+            var result = WithNullable("size16_t", nullable, option);
+            if (option.Get<bool>("rvalue"))
+                result = $"const {result}&";
+            return result;
+        }
+
+        protected override string Size32Type(object value, string root, bool nullable, DataFormatOption option)
+        {
+            var result = WithNullable("size32_t", nullable, option);
+            if (option.Get<bool>("rvalue"))
+                result = $"const {result}&";
+            return result;
+        }
+
+        protected override string Size64Type(object value, string root, bool nullable, DataFormatOption option)
+        {
+            var result = WithNullable("size64_t", nullable, option);
+            if (option.Get<bool>("rvalue"))
+                result = $"const {result}&";
+            return result;
+        }
+
+        protected override string Range8Type(object value, string root, bool nullable, DataFormatOption option)
+        {
+            var result = WithNullable("range8_t", nullable, option);
+            if (option.Get<bool>("rvalue"))
+                result = $"const {result}&";
+            return result;
+        }
+
+        protected override string Range16Type(object value, string root, bool nullable, DataFormatOption option)
+        {
+            var result = WithNullable("range16_t", nullable, option);
+            if (option.Get<bool>("rvalue"))
+                result = $"const {result}&";
+            return result;
+        }
+
+        protected override string Range32Type(object value, string root, bool nullable, DataFormatOption option)
+        {
+            var result = WithNullable("range32_t", nullable, option);
+            if (option.Get<bool>("rvalue"))
+                result = $"const {result}&";
+            return result;
+        }
+
+        protected override string Range64Type(object value, string root, bool nullable, DataFormatOption option)
+        {
+            var result = WithNullable("range64_t", nullable, option);
+            if (option.Get<bool>("rvalue"))
+                result = $"const {result}&";
+            return result;
+        }
+
         public string Build(string type, bool rvalue = false, bool amp = false, bool raw = false)
         {
             var option = new DataFormatOption();

@@ -1,7 +1,7 @@
 @ECHO OFF
 
-SET SOURCE=D:\Users\CSHYEON\Data\git\game\c++\fb\resources\table
-SET DEST=D:\Users\CSHYEON\Data\git\game\c++\fb
+SET SOURCE=C:\Users\cshyeon\fb\resources\table
+SET DEST=C:\Users\cshyeon\fb
 
 CALL dotnet publish -c Release -o "bin"
 if ERRORLEVEL 1 GOTO END

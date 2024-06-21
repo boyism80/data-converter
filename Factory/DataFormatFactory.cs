@@ -36,42 +36,36 @@ namespace ExcelTableConverter.Factory
         }
 
         protected abstract T ByteType(object value, string root, bool nullable, DataFormatOption option);
-
         protected abstract T SbyteType(object value, string root, bool nullable, DataFormatOption option);
-
         protected abstract T ShortType(object value, string root, bool nullable, DataFormatOption option);
-
         protected abstract T UshortType(object value, string root, bool nullable, DataFormatOption option);
-
         protected abstract T BooleanType(object value, string root, bool nullable, DataFormatOption option);
-
         protected abstract T IntType(object value, string root, bool nullable, DataFormatOption option);
-
         protected abstract T UintType(object value, string root, bool nullable, DataFormatOption option);
-        
         protected abstract T LongType(object value, string root, bool nullable, DataFormatOption option);
-
         protected abstract T UlongType(object value, string root, bool nullable, DataFormatOption option);
-
         protected abstract T DoubleType(object value, string root, bool nullable, DataFormatOption option);
-
         protected abstract T FloatType(object value, string root, bool nullable, DataFormatOption option);
-
         protected abstract T StringType(object value, string root, DataFormatOption option);
-
         protected abstract T DictionaryType(object value, string root, string k, string v, DataFormatOption option);
-
         protected abstract T ArrayType(object value, string root, string e, DataFormatOption option);
-
         protected abstract T EnumType(object value, string root, string e, bool nullable, DataFormatOption option);
-
         protected abstract T DslType(object value, string root, bool nullable, DataFormatOption option);
-
         protected abstract T TimeSpanType(object value, string root, bool nullable, DataFormatOption option);
-
         protected abstract T DateTimeType(object value, string root, bool nullable, DataFormatOption option);
-
         protected abstract T DateRangeType(object value, string root, bool nullable, DataFormatOption option);
+        protected abstract T Point8Type(object value, string root, bool nullable, DataFormatOption option);
+        protected abstract T Point16Type(object value, string root, bool nullable, DataFormatOption option);
+        protected abstract T Point32Type(object value, string root, bool nullable, DataFormatOption option);
+        protected abstract T Point64Type(object value, string root, bool nullable, DataFormatOption option);
+        protected abstract T Size8Type(object value, string root, bool nullable, DataFormatOption option);
+        protected abstract T Size16Type(object value, string root, bool nullable, DataFormatOption option);
+        protected abstract T Size32Type(object value, string root, bool nullable, DataFormatOption option);
+        protected abstract T Size64Type(object value, string root, bool nullable, DataFormatOption option);
+        protected abstract T Range8Type(object value, string root, bool nullable, DataFormatOption option);
+        protected abstract T Range16Type(object value, string root, bool nullable, DataFormatOption option);
+        protected abstract T Range32Type(object value, string root, bool nullable, DataFormatOption option);
+        protected abstract T Range64Type(object value, string root, bool nullable, DataFormatOption option);
 
         protected T Build(string type, object value, DataFormatOption option = null)
         {
@@ -112,18 +106,22 @@ namespace ExcelTableConverter.Factory
             switch (naked)
             {
                 case "byte":
+                case "uint8":
                 case "uint8_t":
                     return ByteType(value, root, nullable, option);
 
                 case "sbyte":
+                case "int8":
                 case "int8_t":
                     return SbyteType(value, root, nullable, option);
 
                 case "short":
+                case "int16":
                 case "int16_t":
                     return ShortType(value, root, nullable, option);
 
                 case "ushort":
+                case "uint16":
                 case "uint16_t":
                     return UshortType(value, root, nullable, option);
 
@@ -131,18 +129,22 @@ namespace ExcelTableConverter.Factory
                     return BooleanType(value, root, nullable, option);
 
                 case "int":
+                case "int32":
                 case "int32_t":
                     return IntType(value, root, nullable, option);
 
                 case "uint":
+                case "uint32":
                 case "uint32_t":
                     return UintType(value, root, nullable, option);
 
                 case "long":
+                case "int64":
                 case "int64_t":
                     return LongType(value, root, nullable, option);
 
                 case "ulong":
+                case "uint64":
                 case "uint64_t":
                     return UlongType(value, root, nullable, option);
 
@@ -166,6 +168,48 @@ namespace ExcelTableConverter.Factory
 
                 case "DateRange":
                     return DateRangeType(value, root, nullable, option);
+
+                case "point8":
+                case "point8_t":
+                    return Point8Type(value, root, nullable, option);
+                case "point16":
+                case "point16_t":
+                    return Point16Type(value, root, nullable, option);
+                case "point":
+                case "point32":
+                case "point32_t":
+                    return Point32Type(value, root, nullable, option);
+                case "point64":
+                case "point64_t":
+                    return Point64Type(value, root, nullable, option);
+
+                case "size8":
+                case "size8_t":
+                    return Size8Type(value, root, nullable, option);
+                case "size16":
+                case "size16_t":
+                    return Size16Type(value, root, nullable, option);
+                case "size":
+                case "size32":
+                case "size32_t":
+                    return Size32Type(value, root, nullable, option);
+                case "size64":
+                case "size64_t":
+                    return Size64Type(value, root, nullable, option);
+
+                case "range8":
+                case "range8_t":
+                    return Range8Type(value, root, nullable, option);
+                case "range16":
+                case "range16_t":
+                    return Range16Type(value, root, nullable, option);
+                case "range":
+                case "range32":
+                case "range32_t":
+                    return Range32Type(value, root, nullable, option);
+                case "range64":
+                case "range64_t":
+                    return Range64Type(value, root, nullable, option);
             }
 
             if (Util.Type.IsArray(naked, out var e))

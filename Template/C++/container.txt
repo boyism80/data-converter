@@ -138,18 +138,18 @@ template <typename K, typename V>
 class kv_container<K,V>::iterator : public std::unordered_map<K, std::unique_ptr<V>>::iterator
 {
 private:
-    std::unique_ptr<std::pair<K, V&>> _pair;
+    std::optional<std::pair<K, V&>> _pair;
 
 public:
     iterator(const typename std::unordered_map<K, std::unique_ptr<V>>::iterator& i, const std::unordered_map<K, std::unique_ptr<V>>* container) : std::unordered_map<K, std::unique_ptr<V>>::iterator(i),
-        _pair(i != container->end() ? std::make_unique<std::pair<K, V&>>(i->first, *i->second) : nullptr)
+        _pair(i != container->end() ? std::make_optional<std::pair<K, V&>>(i->first, *i->second) : std::nullopt)
     { }
     ~iterator() = default;
 
 public:
     std::pair<K,V&>& operator * ()
     {
-        return *this->_pair;
+        return this->_pair.value();
     }
 };
 
@@ -157,18 +157,18 @@ template <typename K, typename V>
 class kv_container<K,V>::const_iterator : public std::unordered_map<K, std::unique_ptr<V>>::const_iterator
 {
 private:
-    const std::unique_ptr<std::pair<K, V&>> _pair;
+    const std::optional<std::pair<K, V&>> _pair;
 
 public:
     const_iterator(const typename std::unordered_map<K, std::unique_ptr<V>>::const_iterator& i, const std::unordered_map<K, std::unique_ptr<V>>* container) : std::unordered_map<K, std::unique_ptr<V>>::const_iterator(i),
-        _pair(i != container->end() ? std::make_unique<std::pair<K, V&>>(i->first, *i->second) : nullptr)
+        _pair(i != container->end() ? std::make_optional<std::pair<K, V&>>(i->first, *i->second) : std::nullopt)
     { }
     ~const_iterator() = default;
 
 public:
     const std::pair<K,V&>& operator * () const
     {
-        return *this->_pair;
+        return this->_pair.value();
     }
 };
 

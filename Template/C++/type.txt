@@ -1,3 +1,19 @@
+{{~
+    classes = [
+        {
+            name: 'point',
+            props: ['x', 'y']
+        },
+        {
+            name: 'size',
+            props: ['width', 'height']
+        },
+        {
+            name: 'range',
+            props: ['min', 'max']
+        }
+    ]
+~}}
 class date_range
 {
 public:
@@ -10,3 +26,60 @@ public:
     {}
     ~date_range() = default;
 };
+
+{{~ for class in classes ~}}
+template <typename T>
+struct {{ class.name }}
+{
+public:
+{{~ for prop in class.props ~}}
+    T {{ prop }} = 0;
+{{~ end ~}}
+
+protected:
+    {{ class.name }}() = default;
+    {{ class.name }}({{ for prop in class.props }}T {{ prop }}{{if !for.last }}, {{ end }}{{ end }}) : {{ for prop in class.props }}{{ prop }}({{ prop }}){{ if !for.last }}, {{ end }}{{ end }}
+    { }
+
+public:
+    bool operator == (const {{ class.name }}<T>& r) const
+    {
+        return {{ for prop in class.props }}this->{{prop}} == r.{{prop}}{{if !for.last }} && {{ end }}{{ end }};
+    }
+
+    bool operator != (const {{ class.name }}<T>& r) const
+    {
+        return {{ for prop in class.props }}this->{{prop}} != r.{{prop}}{{if !for.last }} || {{ end }}{{ end }};
+    }
+#ifdef DECLARE_{{ class.name | string.upcase }}_EXTENSION
+DECLARE_{{ class.name | string.upcase }}_EXTENSION
+#endif
+};
+{{~ if !for.last ~}}
+
+{{~ end ~}}
+{{~ end ~}}
+
+{{~ for class in classes ~}}
+{{~ for type in ['uint8_t', 'uint16_t', 'uint32_t', 'uint64_t'] ~}}
+{{~
+suffix = type | string.remove_first 'uint'
+name = class.name + suffix
+~}}
+struct {{ name }} : public {{ class.name }}<{{ type }}>
+{
+public:
+    {{ name }}()
+    { }
+    {{ name }}({{ for prop in class.props }}{{ type }} {{ prop }}{{ if !for.last }},  {{ end }}{{ end }}) : {{ class.name }}<{{ type }}>({{ class.props | array.join ', '}})
+    { }
+#ifdef DECLARE_{{ name | string.upcase }}_EXTENSION
+DECLARE_{{ name | string.upcase }}_EXTENSION
+#endif
+};
+{{~ if !for.last ~}}
+
+{{~ end ~}}
+{{~ end ~}}
+{{~ end ~}}
+

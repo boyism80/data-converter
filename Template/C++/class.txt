@@ -47,6 +47,9 @@ DECLARE_{{ item.name | string.upcase }}_CONSTRUCTOR
 {{~ for prop in item.props ~}}
         {{ prop.name }}({{ prop.initializer }}){{~ if !for.last ~}},{{ end }}
 {{~ end ~}}
+#ifdef DECLARE_{{ item.name | string.upcase }}_INITIALIZER
+DECLARE_{{ item.name | string.upcase }}_INITIALIZER
+#endif
     { }
     {{ item.name }}(const {{ item.name }}&) = delete;
     virtual ~{{ item.name }}()

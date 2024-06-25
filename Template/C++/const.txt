@@ -48,6 +48,9 @@ public:
 private:
     {{ item.key }}() = default;
     ~{{ item.key }}() = default;
+#ifdef DECLARE_CONST_{{ item.key | string.upcase }}_EXTENSION
+DECLARE_CONST_{{ item.key | string.upcase }}_EXTENSION
+#endif
 };
 {{~ end ~}}
 

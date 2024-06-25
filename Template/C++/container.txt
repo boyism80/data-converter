@@ -281,7 +281,7 @@ public:
         if (i > std::vector<std::unique_ptr<T>>::size() - 1)
             return nullptr;
 
-        return &std::vector<std::unique_ptr<T>>::at(i);
+        return std::vector<std::unique_ptr<T>>::at(i).get();
     }
 
     const T& operator [] (uint32_t i) const

@@ -37,21 +37,26 @@ public:
     std::function<T*(const Json::Value&)> build;
 };
 
+class container
+{
+public:
+    virtual uint32_t size() const = 0;
+    virtual void load() = 0;
+};
+
 template <typename K, typename V>
-class kv_container : private std::unordered_map<K, std::unique_ptr<V>>
+class kv_container : public container
 {
 public:
     class iterator;
     class const_iterator;
 
 private:
+    std::unordered_map<K, std::unique_ptr<V>> _data;
     const std::string _fname;
 
 public:
     hook_funcs<V> hook;
-
-public:
-    using std::unordered_map<K,std::unique_ptr<V>>::size;
 
 protected:
     kv_container(const std::string& fname) : _fname(fname)
@@ -101,7 +106,7 @@ private:
             if (ptr == nullptr)
                 ptr = {{ namespace_access(namespace) }}build<std::unique_ptr<V>>(*i);
 
-            std::unordered_map<K, std::unique_ptr<V>>::insert({ {{ namespace_access(namespace) }}build<K>(i.key()), std::move(ptr)});
+            this->_data.insert({ {{ namespace_access(namespace) }}build<K>(i.key()), std::move(ptr)});
         }
     }
 
@@ -113,16 +118,21 @@ public:
 
     bool contains(const K& k) const
     {
-        return std::unordered_map<K, std::unique_ptr<V>>::find(k) != std::unordered_map<K, std::unique_ptr<V>>::cend();
+        return this->_data.find(k) != this->_data.cend();
     }
 
     const V* find(const K& k) const
     {
-        auto i = std::unordered_map<K, std::unique_ptr<V>>::find(k);
-        if (i == std::unordered_map<K, std::unique_ptr<V>>::cend())
+        auto i = this->_data.find(k);
+        if (i == this->_data.cend())
             return nullptr;
 
         return i->second.get();
+    }
+
+    uint32_t size() const
+    {
+        return this->_data.size();
     }
 
     const V& operator [] (const K& k) const 
@@ -147,8 +157,9 @@ private:
     std::optional<std::pair<K, V&>> _pair;
 
 public:
-    iterator(const typename std::unordered_map<K, std::unique_ptr<V>>::iterator& i, const std::unordered_map<K, std::unique_ptr<V>>* container) : std::unordered_map<K, std::unique_ptr<V>>::iterator(i),
-        _pair(i != container->end() ? std::make_optional<std::pair<K, V&>>(i->first, *i->second) : std::nullopt)
+    iterator(const typename std::unordered_map<K, std::unique_ptr<V>>::iterator& i, const std::unordered_map<K, std::unique_ptr<V>>& container) : 
+        std::unordered_map<K, std::unique_ptr<V>>::iterator(i),
+        _pair(i != container.end() ? std::make_optional<std::pair<K, V&>>(i->first, *i->second) : std::nullopt)
     { }
     ~iterator() = default;
 
@@ -166,8 +177,9 @@ private:
     const std::optional<std::pair<K, V&>> _pair;
 
 public:
-    const_iterator(const typename std::unordered_map<K, std::unique_ptr<V>>::const_iterator& i, const std::unordered_map<K, std::unique_ptr<V>>* container) : std::unordered_map<K, std::unique_ptr<V>>::const_iterator(i),
-        _pair(i != container->end() ? std::make_optional<std::pair<K, V&>>(i->first, *i->second) : std::nullopt)
+    const_iterator(const typename std::unordered_map<K, std::unique_ptr<V>>::const_iterator& i, const std::unordered_map<K, std::unique_ptr<V>>& container) : 
+        std::unordered_map<K, std::unique_ptr<V>>::const_iterator(i),
+        _pair(i != container.end() ? std::make_optional<std::pair<K, V&>>(i->first, *i->second) : std::nullopt)
     { }
     ~const_iterator() = default;
 
@@ -181,42 +193,40 @@ public:
 template <typename K, typename V>
 kv_container<K,V>::iterator kv_container<K,V>::begin()
 {
-    return kv_container<K,V>::iterator(std::unordered_map<K, std::unique_ptr<V>>::begin(), this);
+    return kv_container<K,V>::iterator(this->_data.begin(), this->_data);
 }
 
 template <typename K, typename V>
 kv_container<K,V>::iterator kv_container<K,V>::end()
 {
-    return kv_container<K,V>::iterator(std::unordered_map<K, std::unique_ptr<V>>::end(), this);
+    return kv_container<K,V>::iterator(this->_data.end(), this->_data);
 }
 
 template <typename K, typename V>
 const typename kv_container<K,V>::const_iterator kv_container<K,V>::begin() const
 {
-    return kv_container<K,V>::const_iterator(std::unordered_map<K, std::unique_ptr<V>>::begin(), this);
+    return kv_container<K,V>::const_iterator(this->_data.begin(), this->_data);
 }
 
 template <typename K, typename V>
 const typename kv_container<K,V>::const_iterator kv_container<K,V>::end() const
 {
-    return kv_container<K,V>::const_iterator(std::unordered_map<K, std::unique_ptr<V>>::end(), this);
+    return kv_container<K,V>::const_iterator(this->_data.end(), this->_data);
 }
 
 template <typename T>
-class array_container : private std::vector<std::unique_ptr<T>>
+class array_container : public container
 {
 public:
     class iterator;
     class const_iterator;
 
 private:
+    std::vector<std::unique_ptr<T>> _data;
     const std::string _fname;
 
 public:
     hook_funcs<T> hook;
-
-public:
-    using std::vector<std::unique_ptr<T>>::size;
 
 protected:
     array_container(const std::string& fname) : _fname(fname)
@@ -266,7 +276,7 @@ private:
             if (ptr == nullptr)
                 ptr = {{ namespace_access(namespace) }}build<std::unique_ptr<T>>(*i);
 
-            std::vector<std::unique_ptr<T>>::push_back(std::move(ptr));
+            this->_data.push_back(std::move(ptr));
         }
     }
 
@@ -278,10 +288,15 @@ public:
 
     const T* find(uint32_t i) const
     {
-        if (i > std::vector<std::unique_ptr<T>>::size() - 1)
+        if (i > this->_data.size() - 1)
             return nullptr;
 
-        return std::vector<std::unique_ptr<T>>::at(i).get();
+        return this->_data.at(i).get();
+    }
+
+    uint32_t size() const
+    {
+        return this->_data.size();
     }
 
     const T& operator [] (uint32_t i) const
@@ -311,7 +326,7 @@ public:
 public:
     T& operator * ()
     {
-        return std::vector<std::unique_ptr<T>>::iterator::operator*();
+        return this->_data.iterator::operator*();
     }
 };
 
@@ -326,32 +341,32 @@ public:
 public:
     const T& operator * () const
     {
-        return std::vector<std::unique_ptr<T>>::const_iterator::operator*();
+        return this->_data.const_iterator::operator*();
     }
 };
 
 template <typename T>
 array_container<T>::iterator array_container<T>::begin()
 {
-    return array_container<T>::iterator(std::vector<std::unique_ptr<std::unique_ptr<T>>>::begin());
+    return array_container<T>::iterator(this->_data.begin());
 }
 
 template <typename T>
 array_container<T>::iterator array_container<T>::end()
 {
-    return array_container<T>::iterator(std::vector<std::unique_ptr<std::unique_ptr<T>>>::end());
+    return array_container<T>::iterator(this->_data.end());
 }
 
 template <typename T>
 const typename array_container<T>::const_iterator array_container<T>::begin() const
 {
-    return array_container<T>::const_iterator(std::vector<std::unique_ptr<std::unique_ptr<T>>>::cbegin());
+    return array_container<T>::const_iterator(this->_data.cbegin());
 }
 
 template <typename T>
 const typename array_container<T>::const_iterator array_container<T>::end() const
 {
-    return array_container<T>::const_iterator(std::vector<std::unique_ptr<std::unique_ptr<T>>>::cend());
+    return array_container<T>::const_iterator(this->_data.cend());
 }
 
 {{~ for table in tables | array.filter @containable ~}}
@@ -371,17 +386,25 @@ DECLARE_{{ table.name | string.upcase }}_CONTAINER_EXTENSION
 {{~ end ~}}
 
 
-class container
+class model
 {
 public:
 {{~ for table in tables | array.filter @containable ~}}
     {{ namespace_access(namespace) }}__{{ table.name }} {{ table.name }};
 {{~ end ~}}
 
+private:
+    const std::vector<fb::model::container*> _containers = 
+    {
+{{~ for table in tables | array.filter @containable ~}}
+        &{{ table.name }}{{ if !for.last }},{{ end }}
+{{~ end ~}}
+    };
+
 public:
-    container() = default;
-    container(const container&) = delete;
-    ~container() = default;
+    model() = default;
+    model(const model&) = delete;
+    ~model() = default;
 
 public:
     void load(const std::function<void(float)>& callback, const std::function<void(const std::string&)>& error)
@@ -435,6 +458,14 @@ public:
         for(int i = 0; i < std::thread::hardware_concurrency(); i++)
         {
             tasks.push(std::async(std::launch::async, fn));
+        }
+    }
+
+    void foreach(const std::function<void(fb::model::container&)>& fn)
+    {
+        for (auto container : this->_containers)
+        {
+            fn(*container);
         }
     }
 };

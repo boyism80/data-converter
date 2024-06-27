@@ -65,7 +65,39 @@ ROOT_PREPROCESSOR
 
 {{ namespace_scope_begin(namespace) }}
 
-static inline std::function<std::string(const std::string&)> string_encoding_func;
+class option
+{
+public:
+    using encoding_func_type = std::function<std::string(const std::string&)>;
+
+public:
+    encoding_func_type                      encoding_func;
+
+private:
+    option() = default;
+
+public:
+    ~option() = default;
+
+public:
+    static option& get()
+    {
+        static std::once_flag               flag;
+        static std::unique_ptr<option>      ist;
+
+        std::call_once(flag, [] 
+        {
+            ist = std::unique_ptr<option>(new option());
+        });
+        return *ist;
+    }
+
+    static void encoding(const encoding_func_type& fn)
+    {
+        auto& ist = get();
+        ist.encoding_func = fn;
+    }
+};
 
 #pragma region base type
 {{ type }}
@@ -265,10 +297,12 @@ template <> uint64_t build<uint64_t>(const Json::Value& json)
 
 template <> std::string build<std::string>(const Json::Value& json)
 {
+    auto& encoding_func = fb::model::option::get().encoding_func;
+
     if (json.isNull())
         return "";
-    else if (string_encoding_func != nullptr)
-        return string_encoding_func(json.asString());
+    else if (encoding_func != nullptr)
+        return encoding_func(json.asString());
     else
         return json.asString();
 }

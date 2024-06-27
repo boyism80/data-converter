@@ -407,61 +407,7 @@ public:
     ~model() = default;
 
 public:
-    void load(const std::function<void(float)>& callback, const std::function<void(const std::string&)>& error)
-    {
-        std::queue<std::function<void()>> queue;
-#pragma region enqueue
-{{~ for table in tables | array.filter @containable ~}}
-        queue.push([this]() { this->{{ table.name }}.load(); });
-{{~ end ~}}
-#pragma endregion
-
-        auto size = queue.size();
-        auto process = 0;
-        auto mutex = std::mutex();
-        auto fn = [&]() 
-        {
-            while (true)
-            {
-                std::function<void()> job;
-                {
-                    auto _ = std::lock_guard(mutex);
-                    if(queue.empty())
-                        break;
-
-                    job = queue.front();
-                    queue.pop();
-                }
-                
-                try
-                {
-                    job();
-                }
-                catch(std::exception& e)
-                {
-                    error(e.what());
-                }
-                catch(...)
-                {
-                    error("unhandled exception");
-                }
-
-                {
-                    auto _ = std::lock_guard(mutex);
-                    auto percent = (++process * 100) / float(size);
-                    callback(percent);
-                }
-            }
-        };
-
-        auto tasks = std::queue<std::future<void>>();
-        for(int i = 0; i < std::thread::hardware_concurrency(); i++)
-        {
-            tasks.push(std::async(std::launch::async, fn));
-        }
-    }
-
-    void foreach(const std::function<void(fb::model::container&)>& fn)
+    void foreach(const std::function<void(fb::model::container&)>& fn) const
     {
         for (auto container : this->_containers)
         {

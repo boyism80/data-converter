@@ -9,22 +9,15 @@ namespace ExcelTableConverter.Factory.CPP
 
         private string WithNullable(string type, bool nullable, DataFormatOption option)
         {
-            var amp = option.Get<bool>("amp");
             var result = nullable ?
                 $"std::optional<{Util.Type.Nake(type)}>" : type;
-
-            if(amp && type.EndsWith('&') == false)
-                result = $"{result}&";
 
             return result;
         }
 
         protected override string ArrayType(object value, string root, string e, DataFormatOption option)
         {
-            var result = $"std::vector<{Build(e)}>";
-            if (option.Get<bool>("rvalue"))
-                result = $"const {result}&";
-            return result;
+            return $"std::vector<{Build(e)}>";
         }
 
         protected override string BooleanType(object value, string root, bool nullable, DataFormatOption option)
@@ -34,27 +27,17 @@ namespace ExcelTableConverter.Factory.CPP
 
         protected override string DateRangeType(object value, string root, bool nullable, DataFormatOption option)
         {
-            var result = WithNullable($"{Util.CPP.Namespace.Access(Context.Config.Namespace)}date_range", nullable, option);
-            if (option.Get<bool>("rvalue"))
-                result = $"const {result}&";
-            return result;
+            return WithNullable($"{Util.CPP.Namespace.Access(Context.Config.Namespace)}date_range", nullable, option);
         }
 
         protected override string DateTimeType(object value, string root, bool nullable, DataFormatOption option)
         {
-            var result = WithNullable("boost::posix_time::ptime", nullable, option);
-            if (option.Get<bool>("rvalue"))
-                result = $"const {result}&";
-            return result;
+            return WithNullable("boost::posix_time::ptime", nullable, option);
         }
 
         protected override string DictionaryType(object value, string root, string k, string v, DataFormatOption option)
         {
-            var result = $"std::map<{Build(k)}, {Build(v)}>";
-            if (option.Get<bool>("rvalue"))
-                result = $"const {result}&";
-
-            return result;
+            return $"std::map<{Build(k)}, {Build(v)}>";
         }
 
         protected override string DoubleType(object value, string root, bool nullable, DataFormatOption option)
@@ -119,122 +102,77 @@ namespace ExcelTableConverter.Factory.CPP
 
         protected override string StringType(object value, string root, DataFormatOption option)
         {
-            if(option.Get<bool>("raw"))
-                return WithNullable(option.Get<bool>("rvalue") ? "const char*" : "char*", false, option);
-            else
-                return WithNullable(option.Get<bool>("rvalue") ? "const std::string&" : "std::string", false, option);
+            return WithNullable("std::string", false, option);
         }
 
         protected override string TimeSpanType(object value, string root, bool nullable, DataFormatOption option)
         {
-            var result = WithNullable("std::chrono::milliseconds", nullable, option);
-            if (option.Get<bool>("rvalue"))
-                result = $"const {result}&";
-            return result;
+            return WithNullable("std::chrono::milliseconds", nullable, option);
         }
 
         protected override string Point8Type(object value, string root, bool nullable, DataFormatOption option)
         {
-            var result = WithNullable("point8_t", nullable, option);
-            if (option.Get<bool>("rvalue"))
-                result = $"const {result}&";
-            return result;
+            return WithNullable("point8_t", nullable, option);
         }
 
         protected override string Point16Type(object value, string root, bool nullable, DataFormatOption option)
         {
-            var result = WithNullable("point16_t", nullable, option);
-            if (option.Get<bool>("rvalue"))
-                result = $"const {result}&";
-            return result;
+            return WithNullable("point16_t", nullable, option);
         }
 
         protected override string Point32Type(object value, string root, bool nullable, DataFormatOption option)
         {
-            var result = WithNullable("point32_t", nullable, option);
-            if (option.Get<bool>("rvalue"))
-                result = $"const {result}&";
-            return result;
+            return WithNullable("point32_t", nullable, option);
         }
 
         protected override string Point64Type(object value, string root, bool nullable, DataFormatOption option)
         {
-            var result = WithNullable("point64_t", nullable, option);
-            if (option.Get<bool>("rvalue"))
-                result = $"const {result}&";
-            return result;
+            return WithNullable("point64_t", nullable, option);
         }
 
         protected override string Size8Type(object value, string root, bool nullable, DataFormatOption option)
         {
-            var result = WithNullable("size8_t", nullable, option);
-            if (option.Get<bool>("rvalue"))
-                result = $"const {result}&";
-            return result;
+            return WithNullable("size8_t", nullable, option);
         }
 
         protected override string Size16Type(object value, string root, bool nullable, DataFormatOption option)
         {
-            var result = WithNullable("size16_t", nullable, option);
-            if (option.Get<bool>("rvalue"))
-                result = $"const {result}&";
-            return result;
+            return WithNullable("size16_t", nullable, option);
         }
 
         protected override string Size32Type(object value, string root, bool nullable, DataFormatOption option)
         {
-            var result = WithNullable("size32_t", nullable, option);
-            if (option.Get<bool>("rvalue"))
-                result = $"const {result}&";
-            return result;
+            return WithNullable("size32_t", nullable, option);
         }
 
         protected override string Size64Type(object value, string root, bool nullable, DataFormatOption option)
         {
-            var result = WithNullable("size64_t", nullable, option);
-            if (option.Get<bool>("rvalue"))
-                result = $"const {result}&";
-            return result;
+            return WithNullable("size64_t", nullable, option);
         }
 
         protected override string Range8Type(object value, string root, bool nullable, DataFormatOption option)
         {
-            var result = WithNullable("range8_t", nullable, option);
-            if (option.Get<bool>("rvalue"))
-                result = $"const {result}&";
-            return result;
+            return WithNullable("range8_t", nullable, option);
         }
 
         protected override string Range16Type(object value, string root, bool nullable, DataFormatOption option)
         {
-            var result = WithNullable("range16_t", nullable, option);
-            if (option.Get<bool>("rvalue"))
-                result = $"const {result}&";
-            return result;
+            return WithNullable("range16_t", nullable, option);
         }
 
         protected override string Range32Type(object value, string root, bool nullable, DataFormatOption option)
         {
-            var result = WithNullable("range32_t", nullable, option);
-            if (option.Get<bool>("rvalue"))
-                result = $"const {result}&";
-            return result;
+            return WithNullable("range32_t", nullable, option);
         }
 
         protected override string Range64Type(object value, string root, bool nullable, DataFormatOption option)
         {
-            var result = WithNullable("range64_t", nullable, option);
-            if (option.Get<bool>("rvalue"))
-                result = $"const {result}&";
-            return result;
+            return WithNullable("range64_t", nullable, option);
         }
 
-        public string Build(string type, bool rvalue = false, bool amp = false, bool raw = false)
+        public string Build(string type)
         {
             var option = new DataFormatOption();
-            option.Add("rvalue", rvalue);
-            option.Add("amp", amp);
-            option.Add("raw", raw);
             return Build(type, null, option);
         }
     }

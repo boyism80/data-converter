@@ -23,6 +23,21 @@ func namespace_access(namespaces)
         ret ''
     end
 end
+
+func rvalue(type)
+    primitives = ['bool', 'char', 'short', 'int', 'long', 'long long', 'float', 'double', 'int8_t', 'int16_t', 'int32_t', 'int64_t', 'uint8_t', 'uint16_t', 'uint32_t', 'uint64_t']
+    if primitives | array.contains type
+        ret type
+    else if type | string.contains namespace_access(enum_namespace)
+        ret type
+    else
+        ret 'const ' + type + '&'
+    end
+end
+
+func deserialize(type, i)
+    ret 'any_cast<' + rvalue(type) + '>(parameters[' + i + '])'
+end
 ~}}
 class dsl
 {
@@ -58,7 +73,7 @@ public:
 
 {{ end ~}}
 public:
-    {{ item.name }}({{ for prop in item.props }}{{ prop.rtype }} {{ prop.name }}{{ if !for.last }}, {{ end }}{{ end }}){{ if item.props.size > 0 }} : {{ end }}
+    {{ item.name }}({{ for prop in item.props }}{{ rvalue(prop.type) }} {{ prop.name }}{{ if !for.last }}, {{ end }}{{ end }}){{ if item.props.size > 0 }} : {{ end }}
 {{~ for prop in item.props ~}}
         {{ prop.name }}({{ prop.name }}){{ if !for.last }},{{ end }}
 {{~ end ~}}
@@ -70,7 +85,7 @@ public:
     { }
     {{ item.name }}(const std::vector<std::any>& parameters){{ if item.props.size > 0 }} : {{ end }}
 {{~ for prop in item.props ~}}
-        {{ prop.name }}({{ prop.deserialize }}){{ if !for.last }},{{ end }}
+        {{ prop.name }}({{ deserialize(prop.type, for.index) }}){{ if !for.last }},{{ end }}
 {{~ end ~}}
     { }
 

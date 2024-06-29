@@ -30,8 +30,6 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 {
                     Name = prototype.Name,
                     Type = new TypeFactory(Context).Build(prototype.Type),
-                    RType = new TypeFactory(Context).Build(prototype.Type, true),
-                    Deserialize = new ValueDeserializeFactory(Context).Build(prototype.Type, $"parameters[{i}]")
                 } as object;
             }).ToList();
 

@@ -33,7 +33,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                     props.Add(new
                     {
                         Name = constData.Name,
-                        Type = new TypeFactory(Context).Build(constData.Type, raw: true),
+                        Type = new TypeFactory(Context).Build(constData.Type),
                         Value = new AllocateValueFactory(Context).Build(constData.Type, constData.Value),
                     });
                 }

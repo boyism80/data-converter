@@ -35,6 +35,7 @@ class hook_funcs
 {
 public:
     std::function<T*(const Json::Value&)> build;
+    std::function<void(const T& value)> built;
 };
 
 class container
@@ -110,6 +111,9 @@ private:
             auto raw = ptr.get();
             this->_ptrs.push_back(std::move(ptr));
             this->_pairs.insert({ {{ namespace_access(namespace) }}build<K>(i.key()), *raw });
+
+            if(this->hook.built != nullptr)
+                this->hook.built(*raw);
         }
     }
 
@@ -229,7 +233,10 @@ private:
             if (ptr == nullptr)
                 ptr = {{ namespace_access(namespace) }}build<std::unique_ptr<T>>(*i);
 
+            auto raw = ptr.get();
             this->_data.push_back(std::move(ptr));
+            if(this->hook.built != nullptr)
+                this->hook.built(*raw);
         }
     }
 
@@ -326,10 +333,14 @@ const typename array_container<T>::const_iterator array_container<T>::end() cons
 class __{{ table.name }} : public {{ table.type }}<{{ table.generic }}>
 {
 public:
+#ifdef DECLARE_{{ table.name | string.upcase }}_CONTAINER_CUSTOM_CONSTRUCTOR
+DECLARE_{{ table.name | string.upcase }}_CONTAINER_CUSTOM_CONSTRUCTOR
+#else
     __{{ table.name }}() : {{ table.type }}<{{ table.generic }}>(std::string("json/{{ table.name }}.json"))
     { }
     __{{ table.name }}(const __{{ table.name }}&) = delete;
     ~__{{ table.name }}() = default;
+#endif
 #ifdef DECLARE_{{ table.name | string.upcase }}_CONTAINER_EXTENSION
 DECLARE_{{ table.name | string.upcase }}_CONTAINER_EXTENSION
 #endif

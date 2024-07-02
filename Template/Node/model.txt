@@ -50,6 +50,39 @@ module.exports = (function () {
         }
     }
 
+    function PointBuilder() {
+        return {
+            build: function (v) {
+                return {
+                    x: v.x,
+                    y: v.y
+                }
+            }
+        }
+    }
+
+    function SizeBuilder() {
+        return {
+            build: function (v) {
+                return {
+                    width: v.width,
+                    height: v.height
+                }
+            }
+        }
+    }
+
+    function RangeBuilder() {
+        return {
+            build: function (v) {
+                return {
+                    min: v.min,
+                    max: v.max
+                }
+            }
+        }
+    }
+
     function TimeSpanBuilder() {
         return {
             build: function (v) {

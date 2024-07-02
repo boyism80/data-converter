@@ -166,24 +166,24 @@ namespace ExcelTableConverter.Factory.Node
                 return $"timespan.fromMilliseconds({ms}/*{ts}*/)";
         }
 
-        public string Build(string type, object value)
-        {
-            return base.Build(type, value);
-        }
-
         protected override string PointType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            throw new NotImplementedException();
+            return $"{value}";
         }
 
         protected override string SizeType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            throw new NotImplementedException();
+            return $"{value}";
         }
 
         protected override string RangeType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            throw new NotImplementedException();
+            return $"{value}";
+        }
+
+        public string Build(string type, object value)
+        {
+            return base.Build(type, value);
         }
     }
 }

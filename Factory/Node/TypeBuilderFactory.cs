@@ -103,24 +103,24 @@ namespace ExcelTableConverter.Factory.Node
             return $"TimeSpanBuilder().build";
         }
 
-        public string Build(string type)
-        {
-            return base.Build(type, null);
-        }
-
         protected override string PointType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            throw new NotImplementedException();
+            return $"PointBuilder().build";
         }
 
         protected override string SizeType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            throw new NotImplementedException();
+            return $"SizeBuilder().build";
         }
 
         protected override string RangeType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            throw new NotImplementedException();
+            return $"RangeBuilder().build";
+        }
+
+        public string Build(string type)
+        {
+            return base.Build(type, null);
         }
     }
 }

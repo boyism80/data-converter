@@ -1,5 +1,6 @@
 ﻿using ExcelTableConverter.Model;
 using ExcelTableConverter.Util;
+using System.Linq;
 
 namespace ExcelTableConverter.Worker.Validator
 {
@@ -31,22 +32,22 @@ namespace ExcelTableConverter.Worker.Validator
 
                 var pkList = columns.Where(x => Util.Type.IsPrimaryKey(x.Type, out _)).ToList();
                 if (pkList.Count > 1)
-                    throw new LogicException($"기본키가 2개 이상 정의되었습니다. ({string.Join(", ", pkList.ConvertAll(x => x.Name))})");
+                    throw new LogicException($"기본키가 2개 이상 정의되었습니다. ({string.Join(", ", pkList.ConvertAll(x => x.Name))})", sheet);
 
                 foreach (var pk in pkList)
                 {
                     if (Util.Type.IsNullable(pk.Type))
-                        throw new LogicException($"기본키 {pk.Name}는 nullable 타입으로 정의할 수 없습니다.");
+                        throw new LogicException($"기본키 {pk.Name}는 nullable 타입으로 정의할 수 없습니다.", sheet);
                 }
 
                 var gkList = columns.Where(x => Util.Type.IsGroupKey(x.Type, out _)).ToList();
                 if (gkList.Count > 1)
-                    throw new LogicException($"그룹키가 2개 이상 정의되었습니다. ({string.Join(", ", gkList.ConvertAll(x => x.Name))})");
+                    throw new LogicException($"그룹키가 2개 이상 정의되었습니다. ({string.Join(", ", gkList.ConvertAll(x => x.Name))})", sheet);
 
                 foreach (var gk in gkList)
                 {
                     if (Util.Type.IsNullable(gk.Type))
-                        throw new LogicException($"기본키 {gk.Name}는 nullable 타입으로 정의할 수 없습니다.");
+                        throw new LogicException($"기본키 {gk.Name}는 nullable 타입으로 정의할 수 없습니다.", sheet);
                 }
             }
 
@@ -56,9 +57,16 @@ namespace ExcelTableConverter.Worker.Validator
             if (boldKeyColumn != null)
             {
                 var values = boldKeyColumn.RowValuePairs.Values;
+                if (Context.Result.Enum.ContainsKey(Util.Type.Nake(boldKeyColumn.Type)))
+                {
+                    var combinedEnumKeys = values.Where(x => Util.Enum.Combined(x as string)).Select(x => x as string).ToList();
+                    if (combinedEnumKeys.Count > 0)
+                        throw new AggregateException(combinedEnumKeys.Select(key => new LogicException($"키에 열거형 조합({key})를 사용할 수 없습니다.", sheet)));
+                }
+
                 var duplicatedList = values.GroupBy(x => x).Where(x => x.Skip(1).Any()).Select(x => x.ToList()).ToList();
                 if (duplicatedList.Count > 0)
-                    throw new AggregateException(duplicatedList.ConvertAll(duplicated => new Exception($"키 '{duplicated[0]}'가 중복되었습니다.")));
+                    throw new AggregateException(duplicatedList.ConvertAll(duplicated => new LogicException($"키 '{duplicated[0]}'가 중복되었습니다.", sheet)));
             }
 
             if (normalKeyColumn != null)
@@ -77,7 +85,7 @@ namespace ExcelTableConverter.Worker.Validator
 
                     var duplicatedList = values.GroupBy(x => x).Where(x => x.Skip(1).Any()).Select(x => x.ToList()).ToList();
                     if (duplicatedList.Count > 0)
-                        throw new AggregateException(duplicatedList.ConvertAll(duplicated => new Exception($"키 '{duplicated[0]}'가 중복되었습니다.")));
+                        throw new AggregateException(duplicatedList.ConvertAll(duplicated => new LogicException($"키 '{duplicated[0]}'가 중복되었습니다.", sheet)));
 
                     _mutex.WaitOne();
                     if (_buffer.TryGetValue(sheet.TableName, out var keys) == false)
@@ -91,9 +99,16 @@ namespace ExcelTableConverter.Worker.Validator
                 else
                 {
                     var values = normalKeyColumn.RowValuePairs.Values;
+                    if (Context.Result.Enum.ContainsKey(Util.Type.Nake(normalKeyColumn.Type)))
+                    {
+                        var combinedEnumKeys = values.Where(x => Util.Enum.Combined(x as string)).Select(x => x as string).ToList();
+                        if (combinedEnumKeys.Count > 0)
+                            throw new AggregateException(combinedEnumKeys.Select(key => new LogicException($"키에 열거형 조합({key})를 사용할 수 없습니다.", sheet)));
+                    }
+
                     var duplicatedList = values.GroupBy(x => x).Where(x => x.Skip(1).Any()).Select(x => x.ToList()).ToList();
                     if (duplicatedList.Count > 0)
-                        throw new AggregateException(duplicatedList.ConvertAll(duplicated => new Exception($"키 '{duplicated[0]}'가 중복되었습니다.")));
+                        throw new AggregateException(duplicatedList.ConvertAll(duplicated => new LogicException($"키 '{duplicated[0]}'가 중복되었습니다.", sheet)));
 
                     _mutex.WaitOne();
                     if (_buffer.TryGetValue(sheet.TableName, out var keys) == false)

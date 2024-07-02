@@ -54,18 +54,9 @@ namespace ExcelTableConverter.Factory
         protected abstract T TimeSpanType(object value, string root, bool nullable, DataFormatOption option);
         protected abstract T DateTimeType(object value, string root, bool nullable, DataFormatOption option);
         protected abstract T DateRangeType(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T Point8Type(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T Point16Type(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T Point32Type(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T Point64Type(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T Size8Type(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T Size16Type(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T Size32Type(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T Size64Type(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T Range8Type(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T Range16Type(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T Range32Type(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T Range64Type(object value, string root, bool nullable, DataFormatOption option);
+        protected abstract T PointType(object value, string root, string e, bool nullable, DataFormatOption option);
+        protected abstract T SizeType(object value, string root, string e, bool nullable, DataFormatOption option);
+        protected abstract T RangeType(object value, string root, string e, bool nullable, DataFormatOption option);
 
         protected T Build(string type, object value, DataFormatOption option = null)
         {
@@ -168,48 +159,6 @@ namespace ExcelTableConverter.Factory
 
                 case "DateRange":
                     return DateRangeType(value, root, nullable, option);
-
-                case "point8":
-                case "point8_t":
-                    return Point8Type(value, root, nullable, option);
-                case "point16":
-                case "point16_t":
-                    return Point16Type(value, root, nullable, option);
-                case "point":
-                case "point32":
-                case "point32_t":
-                    return Point32Type(value, root, nullable, option);
-                case "point64":
-                case "point64_t":
-                    return Point64Type(value, root, nullable, option);
-
-                case "size8":
-                case "size8_t":
-                    return Size8Type(value, root, nullable, option);
-                case "size16":
-                case "size16_t":
-                    return Size16Type(value, root, nullable, option);
-                case "size":
-                case "size32":
-                case "size32_t":
-                    return Size32Type(value, root, nullable, option);
-                case "size64":
-                case "size64_t":
-                    return Size64Type(value, root, nullable, option);
-
-                case "range8":
-                case "range8_t":
-                    return Range8Type(value, root, nullable, option);
-                case "range16":
-                case "range16_t":
-                    return Range16Type(value, root, nullable, option);
-                case "range":
-                case "range32":
-                case "range32_t":
-                    return Range32Type(value, root, nullable, option);
-                case "range64":
-                case "range64_t":
-                    return Range64Type(value, root, nullable, option);
             }
 
             if (Util.Type.IsArray(naked, out var e))
@@ -220,6 +169,21 @@ namespace ExcelTableConverter.Factory
             if (Util.Type.IsMap(naked, out var pair))
             {
                 return DictionaryType(value, root, pair.Key, pair.Value, option);
+            }
+
+            if (Util.Type.IsPoint(naked, out var pointType))
+            {
+                return PointType(value, root, string.IsNullOrEmpty(pointType) ? "uint" : pointType, nullable, option);
+            }
+
+            if (Util.Type.IsSize(naked, out var sizeType))
+            {
+                return SizeType(value, root, string.IsNullOrEmpty(sizeType) ? "uint" : sizeType, nullable, option);
+            }
+
+            if (Util.Type.IsRange(naked, out var rangeType))
+            {
+                return RangeType(value, root, string.IsNullOrEmpty(rangeType) ? "uint" : rangeType, nullable, option);
             }
 
             if (Context.Result.Enum.ContainsKey(naked))

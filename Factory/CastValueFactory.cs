@@ -626,7 +626,7 @@ namespace ExcelTableConverter.Factory
             }
         }
 
-        private object InternalPointType(object value, string root, bool nullable, DataFormatOption option, string t)
+        protected override object PointType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
             if (Util.Value.IsNull(value))
             {
@@ -648,8 +648,8 @@ namespace ExcelTableConverter.Factory
                         if (match.Success == false)
                             throw new TypeCastException(value, root);
 
-                        var x = (ulong)Build(t, match.Groups["x"].Value);
-                        var y = (ulong)Build(t, match.Groups["y"].Value);
+                        var x = (ulong)Build(e, match.Groups["x"].Value);
+                        var y = (ulong)Build(e, match.Groups["y"].Value);
                         return new Point { X = x, Y = y };
                     });
 
@@ -658,7 +658,7 @@ namespace ExcelTableConverter.Factory
             }
         }
 
-        private object InternalSizeType(object value, string root, bool nullable, DataFormatOption option, string t)
+        protected override object SizeType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
             if (Util.Value.IsNull(value))
             {
@@ -680,8 +680,8 @@ namespace ExcelTableConverter.Factory
                         if (match.Success == false)
                             throw new TypeCastException(value, root);
 
-                        var width = (ulong)Build(t, match.Groups["width"].Value);
-                        var height = (ulong)Build(t, match.Groups["height"].Value);
+                        var width = (ulong)Build(e, match.Groups["width"].Value);
+                        var height = (ulong)Build(e, match.Groups["height"].Value);
                         return new Size { Width = width, Height = height };
                     });
 
@@ -690,7 +690,7 @@ namespace ExcelTableConverter.Factory
             }
         }
 
-        private object InternalRangeType(object value, string root, bool nullable, DataFormatOption option, string t)
+        protected override object RangeType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
             if (Util.Value.IsNull(value))
             {
@@ -712,74 +712,14 @@ namespace ExcelTableConverter.Factory
                         if (match.Success == false)
                             throw new TypeCastException(value, root);
 
-                        var min = (ulong)Build(t, match.Groups["min"].Value);
-                        var max = (ulong)Build(t, match.Groups["max"].Value);
+                        var min = (ulong)Build(e, match.Groups["min"].Value);
+                        var max = (ulong)Build(e, match.Groups["max"].Value);
                         return new Range { Min = min, Max = max };
                     });
 
                 default:
                     throw new NotImplementedException();
             }
-        }
-
-        protected override object Point8Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            return InternalPointType(value, root, nullable, option, "uint8_t");
-        }
-
-        protected override object Point16Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            return InternalPointType(value, root, nullable, option, "uint16_t");
-        }
-
-        protected override object Point32Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            return InternalPointType(value, root, nullable, option, "uint32_t");
-        }
-
-        protected override object Point64Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            return InternalPointType(value, root, nullable, option, "uint64_t");
-        }
-
-        protected override object Size8Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            return InternalSizeType(value, root, nullable, option, "uint8_t");
-        }
-
-        protected override object Size16Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            return InternalSizeType(value, root, nullable, option, "uint16_t");
-        }
-
-        protected override object Size32Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            return InternalSizeType(value, root, nullable, option, "uint32_t");
-        }
-
-        protected override object Size64Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            return InternalSizeType(value, root, nullable, option, "uint64_t");
-        }
-
-        protected override object Range8Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            return InternalRangeType(value, root, nullable, option, "uint8_t");
-        }
-
-        protected override object Range16Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            return InternalRangeType(value, root, nullable, option, "uint16_t");
-        }
-
-        protected override object Range32Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            return InternalRangeType(value, root, nullable, option, "uint32_t");
-        }
-
-        protected override object Range64Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            return InternalRangeType(value, root, nullable, option, "uint64_t");
         }
 
         public object Build(string type, object value)

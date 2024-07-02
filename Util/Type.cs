@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using NPOI.SS.Formula.Functions;
+using System.Text.RegularExpressions;
 
 namespace ExcelTableConverter.Util
 {
@@ -24,6 +25,9 @@ namespace ExcelTableConverter.Util
         private static readonly Regex _array = new Regex(@"^\[(?<type>.*)\]$", RegexOptions.Compiled);
         private static readonly Regex _map = new Regex(@"^\s*{\s*(?<key>[.\S]+)\s*:\s*(?<value>[.\S]+)\s*}\s*$", RegexOptions.Compiled);
         private static readonly Regex _dsl = new Regex(@"^(?<header>\w+)\((?<parameters>.*)\)$", RegexOptions.Compiled);
+        private static readonly Regex _point = new Regex(@"^point(<(?<e>.+)>)?$");
+        private static readonly Regex _size = new Regex(@"^size(<(?<e>.+)>)?$");
+        private static readonly Regex _range = new Regex(@"^range(<(?<e>.+)>)?$");
 
         public static string Nake(string type, NakeFlag flag = NakeFlag.All)
         {
@@ -215,6 +219,60 @@ namespace ExcelTableConverter.Util
             {
                 header = null;
                 parameters = null;
+                return false;
+            }
+        }
+
+        public static bool IsPoint(string value, out string e)
+        {
+            var match = _point.Match(value);
+            if (match.Success)
+            {
+                if (match.Groups.ContainsKey("e"))
+                    e = match.Groups["e"].Value;
+                else
+                    e = null;
+                return true;
+            }
+            else
+            {
+                e = null;
+                return false;
+            }
+        }
+
+        public static bool IsSize(string value, out string e)
+        {
+            var match = _size.Match(value);
+            if (match.Success)
+            {
+                if (match.Groups.ContainsKey("e"))
+                    e = match.Groups["e"].Value;
+                else
+                    e = null;
+                return true;
+            }
+            else
+            {
+                e = null;
+                return false;
+            }
+        }
+
+        public static bool IsRange(string value, out string e)
+        {
+            var match = _range.Match(value);
+            if (match.Success)
+            {
+                if (match.Groups.ContainsKey("e"))
+                    e = match.Groups["e"].Value;
+                else
+                    e = null;
+                return true;
+            }
+            else
+            {
+                e = null;
                 return false;
             }
         }

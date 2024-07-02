@@ -42,7 +42,10 @@ module.exports = (function () {
     function EnumBuilder(type) {
         return {
             build: function (v) {
-                return $enum[type][v]
+                if($enum[type][v] == null)
+                    return v
+                else
+                    return $enum[type][v]
             }
         }
     }

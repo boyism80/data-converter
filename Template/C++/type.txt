@@ -32,11 +32,14 @@ template <typename T>
 struct {{ class.name }}
 {
 public:
+    using value_type = T;
+
+public:
 {{~ for prop in class.props ~}}
     T {{ prop }} = 0;
 {{~ end ~}}
 
-protected:
+public:
     {{ class.name }}() = default;
     {{ class.name }}({{ for prop in class.props }}T {{ prop }}{{if !for.last }}, {{ end }}{{ end }}) : {{ for prop in class.props }}{{ prop }}({{ prop }}){{ if !for.last }}, {{ end }}{{ end }}
     { }
@@ -59,27 +62,3 @@ DECLARE_{{ class.name | string.upcase }}_EXTENSION
 
 {{~ end ~}}
 {{~ end ~}}
-
-{{~ for class in classes ~}}
-{{~ for type in ['uint8_t', 'uint16_t', 'uint32_t', 'uint64_t'] ~}}
-{{~
-suffix = type | string.remove_first 'uint'
-name = class.name + suffix
-~}}
-struct {{ name }} : public {{ class.name }}<{{ type }}>
-{
-public:
-    {{ name }}()
-    { }
-    {{ name }}({{ for prop in class.props }}{{ type }} {{ prop }}{{ if !for.last }},  {{ end }}{{ end }}) : {{ class.name }}<{{ type }}>({{ class.props | array.join ', '}})
-    { }
-#ifdef DECLARE_{{ name | string.upcase }}_EXTENSION
-DECLARE_{{ name | string.upcase }}_EXTENSION
-#endif
-};
-{{~ if !for.last ~}}
-
-{{~ end ~}}
-{{~ end ~}}
-{{~ end ~}}
-

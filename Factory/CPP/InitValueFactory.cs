@@ -111,64 +111,19 @@ namespace ExcelTableConverter.Factory.CPP
             return WithNullable("std::chrono::milliseconds", value, nullable);
         }
 
-        protected override string Point8Type(object value, string root, bool nullable, DataFormatOption option)
+        protected override string PointType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            return WithNullable("point8_t", value, nullable);
+            return WithNullable($"point<{new TypeFactory(Context).Build(e)}>", value, nullable);
         }
 
-        protected override string Point16Type(object value, string root, bool nullable, DataFormatOption option)
+        protected override string SizeType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            return WithNullable("point16_t", value, nullable);
+             return WithNullable($"size<{new TypeFactory(Context).Build(e)}>", value, nullable);
         }
 
-        protected override string Point32Type(object value, string root, bool nullable, DataFormatOption option)
+        protected override string RangeType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            return WithNullable("point32_t", value, nullable);
-        }
-
-        protected override string Point64Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            return WithNullable("point64_t", value, nullable);
-        }
-
-        protected override string Size8Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-             return WithNullable("size8_t", value, nullable);
-        }
-
-        protected override string Size16Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-             return WithNullable("size16_t", value, nullable);
-        }
-
-        protected override string Size32Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-             return WithNullable("size32_t", value, nullable);
-        }
-
-        protected override string Size64Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-             return WithNullable("size64_t", value, nullable);
-        }
-
-        protected override string Range8Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            return WithNullable("range8_t", value, nullable);
-        }
-
-        protected override string Range16Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            return WithNullable("range16_t", value, nullable);
-        }
-
-        protected override string Range32Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            return WithNullable("range32_t", value, nullable);
-        }
-
-        protected override string Range64Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            return WithNullable("range64_t", value, nullable);
+            return WithNullable($"range<{new TypeFactory(Context).Build(e)}>", value, nullable);
         }
 
         public string Build(string type, string name)

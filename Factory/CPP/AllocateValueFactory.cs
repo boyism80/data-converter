@@ -162,76 +162,22 @@ namespace ExcelTableConverter.Factory.CPP
             return $"std::chrono::milliseconds({(uint)ts.TotalMilliseconds} /* {ts} */)";
         }
 
-        protected override string Point8Type(object value, string root, bool nullable, DataFormatOption option)
+        protected override string PointType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
             var point = value as Point;
-            return $"point8_t({point.X}, {point.Y})";
+            return $"point<{e}>({point.X}, {point.Y})";
         }
 
-        protected override string Point16Type(object value, string root, bool nullable, DataFormatOption option)
+        protected override string SizeType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
             var point = value as Point;
-            return $"point16_t({point.X}, {point.Y})";
+            return $"size<{e}>({point.X} {point.Y})";
         }
 
-        protected override string Point32Type(object value, string root, bool nullable, DataFormatOption option)
+        protected override string RangeType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
             var point = value as Point;
-            return $"point32_t({point.X}, {point.Y})";
-        }
-
-        protected override string Point64Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            var point = value as Point;
-            return $"point64_t({point.X}, {point.Y})";
-        }
-
-        protected override string Size8Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            var point = value as Point;
-            return $"size8_t({point.X} {point.Y})";
-        }
-
-        protected override string Size16Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            var point = value as Point;
-            return $"size16_t({point.X}, {point.Y})";
-        }
-
-        protected override string Size32Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            var point = value as Point;
-            return $"size32_t({point.X}, {point.Y})";
-        }
-
-        protected override string Size64Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            var point = value as Point;
-            return $"size64_t({point.X}, {point.Y})";
-        }
-
-        protected override string Range8Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            var point = value as Point;
-            return $"range8_t({point.X}, {point.Y})";
-        }
-
-        protected override string Range16Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            var point = value as Point;
-            return $"range16_t({point.X}, {point.Y})";
-        }
-
-        protected override string Range32Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            var point = value as Point;
-            return $"range32_t({point.X}, {point.Y})";
-        }
-
-        protected override string Range64Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            var point = value as Point;
-            return $"range64_t({point.X}, {point.Y})";
+            return $"range<{e}>({point.X}, {point.Y})";
         }
 
         public string Build(string type, object value)

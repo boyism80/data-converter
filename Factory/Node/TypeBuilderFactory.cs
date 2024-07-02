@@ -103,69 +103,24 @@ namespace ExcelTableConverter.Factory.Node
             return $"TimeSpanBuilder().build";
         }
 
-        protected override string Point8Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override string Point16Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override string Point32Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override string Point64Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override string Size8Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override string Size16Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override string Size32Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override string Size64Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override string Range8Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override string Range16Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override string Range32Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override string Range64Type(object value, string root, bool nullable, DataFormatOption option)
-        {
-            throw new NotImplementedException();
-        }
-
         public string Build(string type)
         {
             return base.Build(type, null);
+        }
+
+        protected override string PointType(object value, string root, string e, bool nullable, DataFormatOption option)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override string SizeType(object value, string root, string e, bool nullable, DataFormatOption option)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override string RangeType(object value, string root, string e, bool nullable, DataFormatOption option)
+        {
+            throw new NotImplementedException();
         }
     }
 }

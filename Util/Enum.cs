@@ -4,7 +4,7 @@ namespace ExcelTableConverter.Util
 {
     public static class Enum
     {
-        public static List<string> _operators = new List<string> { "&", "|" };
+        public static readonly List<string> _operators = new List<string> { "&", "|" };
 
         public static Match Parse(string value, bool allowHex = true)
         {
@@ -94,6 +94,17 @@ namespace ExcelTableConverter.Util
                         yield return x as string;
                 }
             }
+        }
+
+        public static bool Combined(string value)
+        {
+            foreach (var op in _operators)
+            {
+                if (value.Contains(op))
+                    return true;
+            }
+
+            return false;
         }
 
         public class Comparer : IComparer<KeyValuePair<string, List<object>>>

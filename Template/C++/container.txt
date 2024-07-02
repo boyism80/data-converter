@@ -301,7 +301,7 @@ public:
 public:
     const T& operator * () const
     {
-        return *(std::vector<std::unique_ptr<T>>::iterator::operator*()).get();
+        return *(std::vector<std::unique_ptr<T>>::const_iterator::operator*()).get();
     }
 };
 

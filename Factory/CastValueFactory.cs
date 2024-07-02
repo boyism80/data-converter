@@ -1,4 +1,5 @@
 ﻿using ExcelTableConverter.Model;
+using ExcelTableConverter.Util;
 using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
@@ -169,6 +170,104 @@ namespace ExcelTableConverter.Factory
             });
         }
 
+        private int EnumValueToInt(string root, object value)
+        {
+            if (value is int i)
+                return i;
+
+            var s = value as string;
+            if (Context.Result.Enum[root].TryGetValue(s, out var x))
+            {
+                if (x.Count != 1)
+                    throw new LogicException("...?");
+
+                s = x[0] as string;
+            }
+
+            if (s.StartsWith("0x"))
+                return Convert.ToInt32(s, 16);
+
+            return int.Parse(s);
+        }
+
+        private List<object> ToPostfix(string root, List<object> values)
+        {
+            var data = new Stack<object>();
+            var op = new Stack<object>();
+
+            foreach (var value in values)
+            {
+                switch (value)
+                {
+                    case List<object> arr:
+                        {
+                            foreach (var x in ToPostfix(root, arr))
+                                data.Push(x);
+                        }
+                        break;
+
+                    case string s:
+                        {
+                            switch (s)
+                            {
+                                case "&":
+                                case "|":
+                                    if(op.Count > 0)
+                                        data.Push(op.Pop());
+                                    op.Push(value);
+                                    break;
+
+                                default:
+                                    data.Push(value);
+                                    break;
+                            }
+                        }
+                        break;
+                }
+            }
+
+            while (op.Count > 0)
+            {
+                data.Push(op.Pop());
+            }
+            return data.Reverse().ToList();
+        }
+
+        private object GetEnumValue(string root, List<object> values)
+        {
+            if (values.Count == 1)
+                return values[0] as string;
+
+            var stack = new Stack<object>();
+            foreach (var x in ToPostfix(root, values))
+            {
+                switch (x as string)
+                {
+                    case "&":
+                        {
+                            var x1 = EnumValueToInt(root, stack.Pop());
+                            var x2 = EnumValueToInt(root, stack.Pop());
+                            stack.Push(x1 & x2);
+                        }
+                        break;
+
+                    case "|":
+                        {
+                            var x1 = EnumValueToInt(root, stack.Pop());
+                            var x2 = EnumValueToInt(root, stack.Pop());
+                            stack.Push(x1 | x2);
+                        }
+                        break;
+
+                    default:
+                        stack.Push(x as string);
+                        break;
+                }
+            }
+
+            return stack.Pop();
+        }
+
         protected override object EnumType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
             if (Util.Value.IsNull(value))
@@ -183,10 +282,14 @@ namespace ExcelTableConverter.Factory
             if (Context.Result.Enum.TryGetValue(naked, out var enumSet) == false)
                 throw new LogicException($"{naked}는 정의된 열거형 타입이 아닙니다.");
 
-            if (enumSet.ContainsKey(value as string) == false)
-                throw new LogicException($"{value}는 {naked}에 존재하지 않는 열거형 데이터입니다.");
+            var parsed = (value as string).ParseValue(false);
+            foreach (var x in parsed.ExtractEnumValues())
+            {
+                if (enumSet.ContainsKey(x) == false)
+                    throw new LogicException($"{x}는 {naked}에 존재하지 않는 열거형 데이터입니다.");
+            }
 
-            return DP(root, value, $"{value}");
+            return DP(root, value, GetEnumValue(root, parsed));
         }
 
         protected override object FloatType(object value, string root, bool nullable, DataFormatOption option)

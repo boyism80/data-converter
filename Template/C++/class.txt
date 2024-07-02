@@ -33,12 +33,19 @@ DECLARE_{{ item.name | string.upcase }}_INHERIT
 #endif{{ end }}
 {
 {{~ if item.props.size > 0 ~}}
+#ifdef DECLARE_{{ item.name | string.upcase }}_FIELDS
+DECLARE_{{ item.name | string.upcase }}_FIELDS
+#else
 public:
 {{~ for prop in item.props ~}}
     const {{ prop.type }} {{ prop.name }};
 {{~ end ~}}
+#endif
 
 {{~ end ~}}
+#ifdef DECLARE_{{ item.name | string.upcase }}_CUSTOM_CONSTRUCTOR
+DECLARE_{{ item.name | string.upcase }}_CUSTOM_CONSTRUCTOR
+#else
 public:
     {{ item.name }}(const Json::Value& json){{ if item.based || item.props.size > 0 }} : {{ end }}{{ if item.based }}{{ namespace_access(namespace) }}{{ item.based }}(json){{ if item.props.size > 0 }},{{ end }}{{ else }}
 #ifdef DECLARE_{{ item.name | string.upcase }}_CONSTRUCTOR
@@ -52,8 +59,8 @@ DECLARE_{{ item.name | string.upcase }}_INITIALIZER
 #endif
     { }
     {{ item.name }}(const {{ item.name }}&) = delete;
-    virtual ~{{ item.name }}()
-    { }
+    virtual ~{{ item.name }}() = default;
+#endif
 #ifdef DECLARE_{{ item.name | string.upcase }}_EXTENSION
 DECLARE_{{ item.name | string.upcase }}_EXTENSION
 #endif

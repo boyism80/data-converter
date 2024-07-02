@@ -4,11 +4,96 @@ namespace ExcelTableConverter.Util
 {
     public static class Enum
     {
-        public static Match Parse(string value)
+        public static List<string> _operators = new List<string> { "&", "|" };
+
+        public static Match Parse(string value, bool allowHex = true)
         {
-            var regex = new Regex(@"^(?<value>[a-zA-Z_]+[a-zA-Z0-9]*|0x[A-F0-9]+|\d+)|(?<op>[&\|])|(?<inv>~)");
+            var regex = allowHex ? 
+                new Regex(@"^(?<value>[a-zA-Z_]+[a-zA-Z0-9_]*|0x[A-F0-9]+|\d+)|(?<op>[&\|])|(?<inv>~)") :
+                new Regex(@"^(?<value>[a-zA-Z_]+[a-zA-Z0-9_]*)|(?<op>[&\|])|(?<inv>~)");
             var matched = regex.Match(value);
             return matched;
+        }
+
+        public static List<object> ParseValue(this string value, bool allowHex = true)
+        {
+            value = value.Replace(" ", string.Empty);
+
+            var index = 0;
+            var stack = new Stack<List<object>>();
+            stack.Push(new List<object>());
+
+            while (index < value.Length)
+            {
+                var substr = value.Substring(index);
+
+                if (substr.StartsWith('('))
+                {
+                    stack.Push(new List<object>());
+                    index++;
+                }
+                else if (substr.StartsWith(')'))
+                {
+                    var array = stack.Pop();
+                    if (stack.Count == 0)
+                        throw new LogicException("구문이 잘못됐습니다.");
+
+                    stack.Peek().Add(array);
+                    index++;
+                }
+                else
+                {
+                    var matched = Util.Enum.Parse(substr, allowHex);
+                    if (matched.Success == false)
+                        throw new LogicException("구문이 잘못됐습니다.");
+
+                    var current = string.Empty;
+                    if (matched.Groups["value"].Success)
+                    {
+                        current = matched.Groups["value"].Value;
+                    }
+                    else if (matched.Groups["op"].Success)
+                    {
+                        current = matched.Groups["op"].Value;
+                    }
+                    else if (matched.Groups["inv"].Success)
+                    {
+                        current = matched.Groups["inv"].Value;
+                    }
+                    else
+                    {
+                        throw new Exception();
+                    }
+
+                    stack.Peek().Add(current);
+                    index += current.Length;
+                }
+            }
+
+            if (stack.TryPop(out var result) == false)
+                throw new LogicException("구문이 잘못됐습니다.");
+
+            if (stack.Count > 0)
+                throw new LogicException("구문이 잘못됐습니다.");
+
+            return result;
+        }
+
+        public static IEnumerable<string> ExtractEnumValues(this List<object> values)
+        {
+            foreach (var x in values)
+            {
+                if (x is List<object> arr)
+                {
+                    foreach (var x2 in ExtractEnumValues(arr))
+                        yield return x2;
+                }
+                else
+                {
+                    if (_operators.Contains(x as string) == false)
+                        yield return x as string;
+                }
+            }
         }
 
         public class Comparer : IComparer<KeyValuePair<string, List<object>>>

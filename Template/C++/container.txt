@@ -139,7 +139,7 @@ public:
 
     uint32_t size() const
     {
-        return this->_pairs.size();
+        return static_cast<uint32_t>(this->_pairs.size());
     }
 
     const V& operator [] (const K& k) const 
@@ -256,7 +256,7 @@ public:
 
     uint32_t size() const
     {
-        return this->_data.size();
+        return static_cast<uint32_t>(this->_data.size());
     }
 
     const T& operator [] (uint32_t i) const

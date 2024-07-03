@@ -59,8 +59,8 @@ end
 #include <{{ header }}>
 {{~ end ~}}
 
-#ifdef ROOT_PREPROCESSOR
-ROOT_PREPROCESSOR
+#ifdef BEGIN_PREPROCESSOR
+BEGIN_PREPROCESSOR
 #endif
 
 {{ namespace_scope_begin(namespace) }}
@@ -103,13 +103,25 @@ public:
 {{ type }}
 #pragma endregion
 
+#ifdef DECLARE_AFTER_TYPE
+DECLARE_AFTER_TYPE
+#endif
+
 #pragma region enum
 {{ enum }}
 #pragma endregion
 
+#ifdef DECLARE_AFTER_ENUM
+DECLARE_AFTER_ENUM
+#endif
+
 #pragma region const
 {{ const }}
 #pragma endregion
+
+#ifdef DECLARE_AFTER_CONST
+DECLARE_AFTER_CONST
+#endif
 
 template<class T>
 struct is_optional : std::false_type {};
@@ -387,5 +399,9 @@ template <typename T> typename std::enable_if<{{ namespace_access(namespace) }}i
 #pragma endregion
 
 {{ namespace_scope_end(namespace) }}
+
+#ifdef END_PREPROCESSOR
+END_PREPROCESSOR
+#endif
 
 #endif

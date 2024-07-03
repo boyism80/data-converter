@@ -79,5 +79,36 @@
             "type": "bool",
             "desc": "is admin"
         }
+    ],
+    "world": [
+        {
+            "name": "id",
+            "type": "$world",
+            "desc": "world id"
+        },
+        {
+            "name": "index",
+            "type": "uint16_t",
+            "desc": "world point index"
+        }
+    ],
+    "map": [
+        {
+            "name": "id",
+            "type": "$map",
+            "desc": "map id"
+        },
+        {
+            "name": "x",
+            "type": "uint16_t",
+            "desc": "x",
+            "default": 0
+        },
+        {
+            "name": "y",
+            "type": "uint16_t",
+            "desc": "y",
+            "default": 0
+        }
     ]
 }

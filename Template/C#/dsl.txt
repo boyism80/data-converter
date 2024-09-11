@@ -1,38 +1,38 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using WebUtil.Util;
-
-namespace {{for namespace in namespaces}}{{namespace}}.{{end}}Types.Dsl.Parameter
-{
-    public class {{ header }}
+{{~
+func ns(namespaces)
+    ret namespaces | array.join "."
+end
+~}}
+    public class Dsl
     {
-{{~ for prop in props ~}}
-        public {{ prop.type }} {{ prop.name }} { get; set; }
+        public {{ ns(namespace | array.concat enum_namespace) }}.{{ dsl_function_type }} Type { get; set; }
+        public object[] Params { get; set; }
+
+{{~ for item in items ~}}
+        public class {{ item.header }}
+        {
+{{~ for prop in item.props ~}}
+            public {{ prop.type }} {{ prop.name }} { get; set; }
 {{~ end ~}}
 
-        public static {{ header }} Parse(object[] parameters)
-        {
-            return new {{ header }}
+            public static {{ item.header }} Parse(object[] parameters)
             {
-{{~ for prop in props ~}}
-                {{ prop.name }} = {{ prop.deserialize }}{{ if !for.last }},{{ end }}
-{{~ end ~}}
-            };
-        }
-
-        public Dsl ToDsl()
-        {
-            return new Dsl
-            {
-                Type = {{ dsl_function_type }}.{{ header }},
-                Parameters = new object[]
+                return new {{ item.header }}
                 {
-{{~ for prop in props ~}}
-                    {{ prop.serialize }}{{ prop.name }}{{ if !for.last }},{{ end }}
+{{~ for prop in item.props ~}}
+                    {{ prop.name }} = {{ prop.deserialize }}{{ if !for.last }},{{ end }}
 {{~ end ~}}
-                }
-            };
+                };
+            }
+
+            public Dsl ToDSL()
+            {
+                return new Dsl
+                {
+                    Type = {{ ns(namespace | array.concat enum_namespace) }}.{{ dsl_function_type}}.{{ item.header }},
+                    Params = new object[] { {{~ for prop in item.props ~}}{{ prop.serialize }}{{ prop.name }}{{ if !for.last }}, {{ end }}{{~ end ~}} }
+                };
+            }
         }
+{{~ end ~}}
     }
-}

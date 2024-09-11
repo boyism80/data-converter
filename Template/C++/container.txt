@@ -336,7 +336,7 @@ public:
 #ifdef DECLARE_{{ table.name | string.upcase }}_CONTAINER_CUSTOM_CONSTRUCTOR
 DECLARE_{{ table.name | string.upcase }}_CONTAINER_CUSTOM_CONSTRUCTOR
 #else
-    __{{ table.name }}() : {{ table.type }}<{{ table.generic }}>(std::string("json/{{ table.name }}.json"))
+    __{{ table.name }}() : {{ table.type }}<{{ table.generic }}>(std::string("{{ json_file_path }}/{{ table.name }}.json"))
     { }
     __{{ table.name }}(const __{{ table.name }}&) = delete;
     ~__{{ table.name }}() = default;

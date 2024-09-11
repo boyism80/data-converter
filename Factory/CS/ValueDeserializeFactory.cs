@@ -1,4 +1,5 @@
 ﻿using ExcelTableConverter.Model;
+using ExcelTableConverter.Util;
 
 namespace ExcelTableConverter.Factory.CS
 {
@@ -60,7 +61,8 @@ namespace ExcelTableConverter.Factory.CS
 
         protected override string EnumType(object obj, string root, string e, bool nullable, DataFormatOption option)
         {
-            return WithNullable(obj as string, $"EnumParse<{root}>.Parse({obj}.ToString())", nullable);
+            var ns = Util.CS.Namespace.Access(Context.Config.Namespace.Concat(Context.Config.EnumNamespace));
+            return WithNullable(obj as string, $"({ns}.{root.ToCamelCase()})Enum.Parse(typeof({ns}.{root.ToCamelCase()}), {obj}.ToString())", nullable);
         }
 
         protected override string FloatType(object obj, string root, bool nullable, DataFormatOption option)

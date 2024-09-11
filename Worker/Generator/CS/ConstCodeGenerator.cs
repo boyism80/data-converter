@@ -1,12 +1,13 @@
-﻿using ExcelTableConverter.Factory.CPP;
+﻿using ExcelTableConverter.Factory.CS;
 using ExcelTableConverter.Model;
+using ExcelTableConverter.Util;
 using Scriban;
 
-namespace ExcelTableConverter.Worker.Generator.CPP
+namespace ExcelTableConverter.Worker.Generator.CS
 {
     public class ConstCodeGenerator : ParallelWorker<Scope, string>
     {
-        private static readonly Template _template = Template.Parse(File.ReadAllText($"Template/C++/const.txt"));
+        private static readonly Template _template = Template.Parse(File.ReadAllText($"Template/C#/const.txt"));
 
         public Dictionary<Scope, string> Result { get; private set; } = new Dictionary<Scope, string>();
 
@@ -32,24 +33,23 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 {
                     props.Add(new
                     {
-                        Name = constData.Name,
+                        Name = constData.Name.ToCamelCase(),
                         Type = new TypeFactory(Context).Build(constData.Type),
                         Value = new AllocateValueFactory(Context).Build(constData.Type, constData.Value),
                     });
                 }
-                
+
                 if (props.Count == 0)
                     continue;
 
-                items.Add(groupName, props);
+                items.Add(groupName.ToCamelCase(), props);
             }
 
             yield return _template.Render(new 
             { 
                 Namespace = Context.Config.Namespace, 
-                ConstNamespace = Context.Config.ConstNamespace,
-                Super = scope == Scope.Common,
-                Scope = scope,
+                Super = scope == Scope.Common, 
+                Scope = scope, 
                 Items = items 
             });
         }

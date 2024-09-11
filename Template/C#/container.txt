@@ -1,0 +1,23 @@
+    public class KeyValueContainer<K, V>
+    { }
+
+    public class ArrayContainer<V>
+    { }
+
+    public class TableAttribute : Attribute
+    {
+        public TableAttribute(string path)
+        {
+
+        }
+    }
+
+    public class Model
+    {
+{{~ for table in tables ~}}
+        [Table("{{ json_file_path }}/{{ table.name }}.json")]
+        public partial class {{ table.name }}Table : {{ table.type }}<{{ table.generic }}>
+        { }
+        public {{ table.name }}Table {{ table.name }} { get; private set; } = new {{ table.name }}Table();
+{{~ end ~}}
+    }

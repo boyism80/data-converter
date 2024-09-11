@@ -1,12 +1,13 @@
-﻿using ExcelTableConverter.Factory.CPP;
+﻿using ExcelTableConverter.Factory.CS;
 using ExcelTableConverter.Model;
+using ExcelTableConverter.Util;
 using Scriban;
 
-namespace ExcelTableConverter.Worker.Generator.CPP
+namespace ExcelTableConverter.Worker.Generator.CS
 {
     public class BindCodeGenerator : ParallelWorker<Scope, KeyValuePair<Scope, string>>
     {
-        private static readonly Template _template = Template.Parse(File.ReadAllText($"Template/C++/container.txt"));
+        private static readonly Template _template = Template.Parse(File.ReadAllText($"Template/C#/container.txt"));
 
         public Dictionary<Scope, string> Result { get; private set; } = new Dictionary<Scope, string>();
 
@@ -31,8 +32,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 if (ftdSchemaSet.Count == 0)
                     continue;
 
-                var ns = Util.CPP.Namespace.Access(Context.Config.Namespace);
-                var modelName = $"{ns}{tableName}";
+                var camelTableName = tableName.ToCamelCase();
 
                 var containerType = string.Empty;
                 var genericType = string.Empty;
@@ -40,28 +40,28 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 var gk = ftdSchemaSet.FirstOrDefault(x => Util.Type.IsGroupKey(x.Type, out _));
                 if (gk != null && pk != null)
                 {
-                    containerType = $"{ns}kv_container";
-                    genericType = $"{new TypeFactory(Context).Build(gk.Type)}, {ns}kv_container<{new TypeFactory(Context).Build(pk.Type)}, {modelName}>";
+                    containerType = $"KeyValueContainer";
+                    genericType = $"{new TypeFactory(Context).Build(gk.Type)}, KeyValueContainer<{new TypeFactory(Context).Build(pk.Type)}, {camelTableName}>";
                 }
                 else if (pk != null)
                 {
-                    containerType = $"{ns}kv_container";
-                    genericType = $"{new TypeFactory(Context).Build(pk.Type)}, {modelName}";
+                    containerType = $"KeyValueContainer";
+                    genericType = $"{new TypeFactory(Context).Build(pk.Type)}, {camelTableName}";
                 }
                 else if (gk != null)
                 {
-                    containerType = $"{ns}kv_container";
-                    genericType = $"{new TypeFactory(Context).Build(gk.Type)}, {ns}array_container<{modelName}>";
+                    containerType = $"KeyValueContainer";
+                    genericType = $"{new TypeFactory(Context).Build(gk.Type)}, ArrayContainer<{camelTableName}>";
                 }
                 else
                 {
-                    containerType = $"{ns}array_container";
-                    genericType = modelName;
+                    containerType = $"ArrayContainer";
+                    genericType = camelTableName;
                 }
 
                 buffer.Add(new
                 {
-                    Name = tableName,
+                    Name = tableName.ToCamelCase(),
                     Type = containerType,
                     Generic = genericType,
                     Json = Context.Result.Schema[tableName].Json,
@@ -70,9 +70,9 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 
             var code = _template.Render(new 
             { 
-                Namespace = Context.Config.Namespace, 
+                Namespace = Context.Config.Namespace,
                 JsonFilePath = Context.Config.JsonFilePath,
-                Scope = scope, 
+                Scope = scope,
                 Tables = buffer
             });
             yield return new KeyValuePair<Scope, string>(scope, code);

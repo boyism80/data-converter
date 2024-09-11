@@ -1,0 +1,48 @@
+{{~
+func ns(namespaces)
+    ret namespaces | array.join "."
+end
+~}}
+using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+
+namespace {{ ns(namespace) }}
+{
+    public struct Point<T>
+    { 
+        public T X { get; set; }
+        public T Y { get; set; }
+    }
+
+    public struct Size<T>
+    { 
+        public T Width { get; set; }
+        public T Height { get; set; }
+    }
+
+    public struct Range<T>
+    { 
+        public T Min { get; set; }
+        public T Max { get; set; }
+    }
+}
+
+namespace {{ ns(namespace | array.concat enum_namespace)}}
+{
+{{ enum }}
+}
+
+namespace {{ ns(namespace | array.concat const_namespace)}}
+{
+{{ const }}
+}
+
+namespace {{ ns(namespace) }}
+{
+{{ class }}
+
+{{ dsl }}
+
+{{ container }}
+}

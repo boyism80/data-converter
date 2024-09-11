@@ -4,7 +4,14 @@ using Scriban;
 
 namespace ExcelTableConverter.Worker.Generator.CPP
 {
-    public class ClassFileGenerator : ParallelWorker<string, (Scope Scope, string Name, List<object> Props)>
+    public class ClassFileGeneratorResult
+    { 
+        public Scope Scope { get; set; }
+        public string Name { get; set; }
+        public List<object> Props { get; set; }
+    }
+
+    public class ClassFileGenerator : ParallelWorker<string, ClassFileGeneratorResult>
     {
         private readonly string _dir;
 
@@ -35,7 +42,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             }
         }
 
-        protected override IEnumerable<(Scope, string, List<object>)> OnWork(string tableName)
+        protected override IEnumerable<ClassFileGeneratorResult> OnWork(string tableName)
         {
             var schemaSet = Context.Result.Schema[tableName];
             var result = new[] { Scope.Server, Scope.Client }.ToDictionary(x => x, x => new List<object>());
@@ -66,16 +73,21 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 if (props.Count == 0 && schemaSet.Based == null)
                     continue;
 
-                yield return (scope, tableName, props);
+                yield return new ClassFileGeneratorResult
+                {
+                    Scope = scope,
+                    Name = tableName,
+                    Props = props
+                };
             }
         }
 
-        protected override void OnWorked(string input, (Scope Scope, string Name, List<object> Props) output, int percent)
+        protected override void OnWorked(string input, ClassFileGeneratorResult output, int percent)
         {
             Logger.Write($"클래스 코드 파일을 저장했습니다. - {input}", percent: percent);
         }
 
-        protected override IReadOnlyList<(Scope Scope, string Name, List<object> Props)> OnFinish(IReadOnlyList<(Scope Scope, string Name, List<object> Props)> output)
+        protected override IReadOnlyList<ClassFileGeneratorResult> OnFinish(IReadOnlyList<ClassFileGeneratorResult> output)
         {
             var enumCodeGenerator = new EnumCodeGenerator(Context);
             enumCodeGenerator.Run();

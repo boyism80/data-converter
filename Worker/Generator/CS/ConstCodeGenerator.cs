@@ -2,6 +2,7 @@
 using ExcelTableConverter.Model;
 using ExcelTableConverter.Util;
 using Scriban;
+using System;
 
 namespace ExcelTableConverter.Worker.Generator.CS
 {
@@ -33,7 +34,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
                 {
                     props.Add(new
                     {
-                        Name = constData.Name.ToCamelCase(),
+                        Name = constData.Name,
                         Type = new TypeFactory(Context).Build(constData.Type),
                         Value = new AllocateValueFactory(Context).Build(constData.Type, constData.Value),
                     });
@@ -42,16 +43,19 @@ namespace ExcelTableConverter.Worker.Generator.CS
                 if (props.Count == 0)
                     continue;
 
-                items.Add(groupName.ToCamelCase(), props);
+                items.Add(groupName, props);
             }
 
-            yield return _template.Render(new 
-            { 
-                Namespace = Context.Config.Namespace, 
-                Super = scope == Scope.Common, 
-                Scope = scope, 
-                Items = items 
-            });
+            var obj = new ScribanExtension();
+            obj.Add("super", scope == Scope.Common);
+            obj.Add("scope", scope);
+            obj.Add("items", items);
+            obj.Add("config", Context.Config);
+
+            var ctx = new TemplateContext();
+            ctx.PushGlobal(obj);
+
+            yield return _template.Render(ctx);
         }
 
         protected override void OnWorked(Scope input, string output, int percent)

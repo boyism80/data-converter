@@ -4,7 +4,7 @@
     {
         public static string Access(IEnumerable<string> namespaces)
         {
-            return string.Join(".", namespaces.Select(x => x.ToCamelCase()));
+            return string.Join(".", namespaces.Select(x => x));
         }
     }
 }

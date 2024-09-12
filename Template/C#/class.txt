@@ -1,13 +1,8 @@
-{{~
-func ns(namespaces)
-    ret namespace | array.join "."
-end
-~}}
 {{~ for item in items ~}}
-    public class {{ item.name }}{{ if item.based }} : {{ ns(namespace) }}.{{ item.based }}{{ end }}
+    public class {{ item.name | @upper_camel }}{{ if item.based }} : {{ config.namespace | array.each @upper_camel | array.join '.' }}.{{ item.based | @upper_camel }}{{ end }}
     {
 {{~ for prop in item.props ~}}
-        public {{ prop.type }} {{ prop.name }} { get; set; }
+        public {{ prop.type }} {{ prop.name | @upper_camel }} { get; set; }
 {{~ end ~}}
     }
 {{~ if !for.last }}

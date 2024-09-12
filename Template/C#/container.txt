@@ -16,8 +16,8 @@
     {
 {{~ for table in tables ~}}
         [Table("{{ json_file_path }}/{{ table.name }}.json")]
-        public partial class {{ table.name }}Table : {{ table.type }}<{{ table.generic }}>
+        public partial class {{ table.name | @upper_camel }}Table : {{ table.type }}<{{ table.generic }}>
         { }
-        public {{ table.name }}Table {{ table.name }} { get; private set; } = new {{ table.name }}Table();
+        public {{ table.name | @upper_camel }}Table {{ table.name | @upper_camel }} { get; private set; } = new {{ table.name | @upper_camel }}Table();
 {{~ end ~}}
     }

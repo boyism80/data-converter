@@ -22,7 +22,7 @@ func enum_recursive(v)
 
         ret $result
     else
-        ret v
+        ret v | @upper_camel
     end
 end
 
@@ -37,10 +37,10 @@ func enum(v)
 end
 ~}}
 {{~ for item in items ~}}
-    public enum {{ item.name }}
+    public enum {{ item.name | @upper_camel }}
     {
 {{~ for prop in item.props ~}}
-        {{ prop.name }} = {{ enum(prop.value)}}{{ if !for.last }}, {{ end }}
+        {{ prop.name | @upper_camel }} = {{ enum(prop.value)}}{{ if !for.last }}, {{ end }}
 {{~ end ~}}
     }
 {{~ if !for.last ~}}

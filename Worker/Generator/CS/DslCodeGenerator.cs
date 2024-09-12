@@ -37,7 +37,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
             {
                 return new
                 {
-                    Name = prototype.Name.ToCamelCase(),
+                    Name = prototype.Name,
                     Type = new TypeFactory(Context).Build(prototype.Type),
                     Serialize = Context.GetCSharpSerializeCode(prototype.Type, prototype.Name),
                     Deserialize = new ValueDeserializeFactory(Context).Build(prototype.Type, $"parameters[{i}]")
@@ -47,7 +47,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
             yield return new DslCodeGeneratorResult
             {
                 DslFunctionType = Context.Config.DslTypeEnumName,
-                Header = header.ToCamelCase(),
+                Header = header,
                 Props = props
             };
         }
@@ -61,16 +61,14 @@ namespace ExcelTableConverter.Worker.Generator.CS
         protected override IReadOnlyList<DslCodeGeneratorResult> OnFinish(IReadOnlyList<DslCodeGeneratorResult> output)
         {
             var template = Template.Parse(File.ReadAllText($"Template/C#/dsl.txt"));
-            var parameters = new 
-            {
-                Namespace = Context.Config.Namespace.ConvertAll(x => x.ToCamelCase()),
-                EnumNamespace = Context.Config.EnumNamespace.ConvertAll(x => x.ToCamelCase()),
-                DslFunctionType = Context.Config.DslTypeEnumName.ToCamelCase(),
-                Items = output.OrderBy(x => x.Header),
-                Dsls = _prototypes.Keys.OrderBy(x => x).ToList() 
-            };
+            var obj = new ScribanExtension();
+            obj.Add("items", output.OrderBy(x => x.Header).ToList());
+            obj.Add("dsls", _prototypes.Keys.OrderBy(x => x).ToList());
+            obj.Add("config", Context.Config);
 
-            Result = template.Render(parameters);
+            var ctx = new TemplateContext();
+            ctx.PushGlobal(obj);
+            Result = template.Render(ctx);
 
             Logger.Complete("DSL 파일을 생성했습니다.");
             return base.OnFinish(output);

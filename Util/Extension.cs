@@ -32,13 +32,5 @@ namespace ExcelTableConverter.Util
 
             return (boldColumns, normalColumns);
         }
-
-        public static string ToCamelCase(this string value)
-        {
-            if (value == null)
-                return null;
-
-            return value.ToLower().Split(new[] { "_" }, StringSplitOptions.RemoveEmptyEntries).Select(s => char.ToUpperInvariant(s[0]) + s.Substring(1, s.Length - 1)).Aggregate(string.Empty, (s1, s2) => s1 + s2);
-        }
     }
 }

@@ -55,7 +55,10 @@ namespace ExcelTableConverter.Factory.CS
 
         protected override string EnumType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            return $"{Util.CS.Namespace.Access(Context.Config.Namespace)}.{Util.CS.Namespace.Access(Context.Config.EnumNamespace)}.{Util.Type.Nake(root.ToCamelCase())}";
+            var namespaces = Context.Config.Namespace.Concat(Context.Config.EnumNamespace).Select(x => ScribanExtension.UpperCamel(x));
+            var prefix = ScribanExtension.NamespaceAccess(namespaces, LanguageType.CS);
+
+            return $"{prefix}.{ScribanExtension.UpperCamel(Util.Type.Nake(root))}";
         }
 
         protected override string FloatType(object value, string root, bool nullable, DataFormatOption option)

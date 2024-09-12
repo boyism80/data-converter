@@ -2,6 +2,7 @@
 using ExcelTableConverter.Model;
 using ExcelTableConverter.Util;
 using Scriban;
+using System.Security.Cryptography.X509Certificates;
 
 namespace ExcelTableConverter.Worker.Generator.CS
 {
@@ -66,7 +67,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
                     Index = i,
                     Key = Util.Type.IsKey(property.Type, out _),
                     Type = new TypeFactory(Context).Build(property.Type),
-                    Name = property.Name.ToCamelCase()
+                    Name = property.Name
                 });
             }
 
@@ -78,7 +79,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
                 yield return new ClassFileGeneratorResult
                 {
                     Scope = scope,
-                    Name = tableName.ToCamelCase(),
+                    Name = tableName,
                     Table = tableName,
                     Props = props
                 };
@@ -110,7 +111,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
                 {
                     x.Name,
                     x.Props,
-                    Based = Context.Result.Schema[x.Table].Based.ToCamelCase()
+                    Based = Context.Result.Schema[x.Table].Based
                 } as object).ToList();
             });
 
@@ -124,25 +125,25 @@ namespace ExcelTableConverter.Worker.Generator.CS
             var modelTemplate = Template.Parse(File.ReadAllText("Template/C#/model.txt"));
             foreach (var (scope, items) in g)
             {
-                var classCode = classTemplate.Render(new 
-                { 
-                    Namespace = Context.Config.Namespace.ConvertAll(x => x.ToCamelCase()), 
-                    Scope = scope,
-                    Items = items
-                });
+                var obj = new ScribanExtension();
+                obj.Add("scope", scope);
+                obj.Add("items", items);
+                obj.Add("config", Context.Config);
 
-                File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", "Model.cs"), modelTemplate.Render(new
-                {
-                    Namespace = Context.Config.Namespace.ConvertAll(x => x.ToCamelCase()),
-                    EnumNamespace = Context.Config.EnumNamespace.ConvertAll(x => x.ToCamelCase()),
-                    ConstNamespace = Context.Config.ConstNamespace.ConvertAll(x => x.ToCamelCase()),
-                    Scope = scope,
-                    Class = classCode,
-                    Enum = enumCodeGenerator.Result,
-                    Const = constCodeGenerator.Result[scope],
-                    Container = bindCodeGenerator.Result[scope],
-                    Dsl = dslCodeGenerator.Result
-                }));
+                var ctx = new TemplateContext();
+                ctx.PushGlobal(obj);
+                var classCode = classTemplate.Render(ctx);
+                
+                ctx.PopGlobal();
+                obj.Remove("items");
+                obj.Add("class", classCode);
+                obj.Add("enum", enumCodeGenerator.Result);
+                obj.Add("const", constCodeGenerator.Result[scope]);
+                obj.Add("container", bindCodeGenerator.Result[scope]);
+                obj.Add("dsl", dslCodeGenerator.Result);
+                ctx.PushGlobal(obj);
+
+                File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", "Model.cs"), modelTemplate.Render(ctx));
             }
 
             Logger.Complete($"클래스 코드 파일을 저장했습니다.");

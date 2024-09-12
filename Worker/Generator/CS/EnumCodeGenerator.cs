@@ -1,6 +1,7 @@
 ﻿using ExcelTableConverter.Model;
 using ExcelTableConverter.Util;
 using Scriban;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace ExcelTableConverter.Worker.Generator.CS
 {
@@ -33,11 +34,11 @@ namespace ExcelTableConverter.Worker.Generator.CS
         {
             var props = Context.Result.Enum[enumName].OrderBy(x => x, new Util.Enum.Comparer()).Select(x => new
             {
-                Name = x.Key.ToCamelCase(),
+                Name = x.Key,
                 Value = x.Value.Select(x => 
                 {
                     if (x is string s)
-                        return s.ToCamelCase();
+                        return s;
                     else
                         return x;
                 }).ToList()
@@ -49,7 +50,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
 
             yield return new EnumCodeGeneratorResult
             {
-                Name = enumName.ToCamelCase(),
+                Name = enumName,
                 Props = props
             };
         }
@@ -68,11 +69,14 @@ namespace ExcelTableConverter.Worker.Generator.CS
                 x.Props
             } as object).ToList();
 
-            Result = _template.Render(new
-            {
-                Namespace = Context.Config.EnumNamespace,
-                Items = items,
-            });
+            var obj = new ScribanExtension();
+            obj.Add("items", items);
+            obj.Add("config", Context.Config);
+
+            var ctx = new TemplateContext();
+            ctx.PushGlobal(obj);
+
+            Result = _template.Render(ctx);
 
             Logger.Complete("열거형 코드 파일을 생성했습니다.");
             return base.OnFinish(output);

@@ -32,7 +32,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
                 if (ftdSchemaSet.Count == 0)
                     continue;
 
-                var camelTableName = tableName.ToCamelCase();
+                var camelTableName = ScribanExtension.UpperCamel(tableName);
 
                 var containerType = string.Empty;
                 var genericType = string.Empty;
@@ -61,20 +61,21 @@ namespace ExcelTableConverter.Worker.Generator.CS
 
                 buffer.Add(new
                 {
-                    Name = tableName.ToCamelCase(),
+                    Name = tableName,
                     Type = containerType,
                     Generic = genericType,
                     Json = Context.Result.Schema[tableName].Json,
                 });
             }
 
-            var code = _template.Render(new 
-            { 
-                Namespace = Context.Config.Namespace,
-                JsonFilePath = Context.Config.JsonFilePath,
-                Scope = scope,
-                Tables = buffer
-            });
+            var obj = new ScribanExtension();
+            obj.Add("scope", scope);
+            obj.Add("tables", buffer);
+            obj.Add("config", Context.Config);
+
+            var ctx = new TemplateContext();
+            ctx.PushGlobal(obj);
+            var code = _template.Render(ctx);
             yield return new KeyValuePair<Scope, string>(scope, code);
         }
 

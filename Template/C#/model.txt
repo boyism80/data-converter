@@ -1,13 +1,8 @@
-{{~
-func ns(namespaces)
-    ret namespaces | array.join "."
-end
-~}}
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 
-namespace {{ ns(namespace) }}
+namespace {{ config.namespace | array.each @upper_camel | array.join '.' }}
 {
     public struct Point<T>
     { 
@@ -28,17 +23,17 @@ namespace {{ ns(namespace) }}
     }
 }
 
-namespace {{ ns(namespace | array.concat enum_namespace)}}
+namespace {{ config.namespace | array.concat config.enum_namespace | array.each @upper_camel | array.join '.' }}
 {
 {{ enum }}
 }
 
-namespace {{ ns(namespace | array.concat const_namespace)}}
+namespace {{ config.namespace | array.concat config.const_namespace | array.each @upper_camel | array.join '.' }}
 {
 {{ const }}
 }
 
-namespace {{ ns(namespace) }}
+namespace {{ config.namespace | array.each @upper_camel | array.join '.' }}
 {
 {{ class }}
 

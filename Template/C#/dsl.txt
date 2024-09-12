@@ -1,26 +1,21 @@
-{{~
-func ns(namespaces)
-    ret namespaces | array.join "."
-end
-~}}
     public class Dsl
     {
-        public {{ ns(namespace | array.concat enum_namespace) }}.{{ dsl_function_type }} Type { get; set; }
+        public {{ config.namespace | array.concat config.enum_namespace | array.each @upper_camel | array.join '.' }}.{{ config.dsl_type_enum_name | @upper_camel }} Type { get; set; }
         public object[] Params { get; set; }
 
 {{~ for item in items ~}}
-        public class {{ item.header }}
+        public class {{ item.header | @upper_camel }}
         {
 {{~ for prop in item.props ~}}
-            public {{ prop.type }} {{ prop.name }} { get; set; }
+            public {{ prop.type }} {{ prop.name | @upper_camel }} { get; set; }
 {{~ end ~}}
 
-            public static {{ item.header }} Parse(object[] parameters)
+            public static {{ item.header | @upper_camel }} Parse(object[] parameters)
             {
-                return new {{ item.header }}
+                return new {{ item.header | @upper_camel }}
                 {
 {{~ for prop in item.props ~}}
-                    {{ prop.name }} = {{ prop.deserialize }}{{ if !for.last }},{{ end }}
+                    {{ prop.name | @upper_camel }} = {{ prop.deserialize }}{{ if !for.last }},{{ end }}
 {{~ end ~}}
                 };
             }
@@ -29,8 +24,8 @@ end
             {
                 return new Dsl
                 {
-                    Type = {{ ns(namespace | array.concat enum_namespace) }}.{{ dsl_function_type}}.{{ item.header }},
-                    Params = new object[] { {{~ for prop in item.props ~}}{{ prop.serialize }}{{ prop.name }}{{ if !for.last }}, {{ end }}{{~ end ~}} }
+                    Type = {{ config.namespace | array.concat config.enum_namespace | array.each @upper_camel | array.join '.' }}.{{ config.dsl_type_enum_name | @upper_camel }}.{{ item.header | @upper_camel }},
+                    Params = new object[] { {{~ for prop in item.props ~}}{{ prop.serialize }}{{ prop.name | @upper_camel }}{{ if !for.last }}, {{ end }}{{~ end ~}} }
                 };
             }
         }

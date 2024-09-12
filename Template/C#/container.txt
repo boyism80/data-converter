@@ -26,28 +26,54 @@ end
     }
 
     [JsonConverter(typeof(ContainerConverter))]
-    public interface Container
+    public abstract class Container
     {
-        void Load();
-        void Load(string json);
+        public class HookFuncs<T>
+        {
+            public Func<JToken, T> Build { get; set; }
+            public Action<T> Built { get; set; }
+        }
+
+        public abstract void Load();
+        public abstract void Load(string json);
     }
 
     public class KeyValueContainer<K, V> : Container, IReadOnlyDictionary<K, V>
     {
         private Dictionary<K, V> _raw;
 
-        public void Load()
+        public HookFuncs<V> Hook { get; private set; } = new HookFuncs<V>();
+
+        public override void Load()
         {
             var attr = GetType().GetCustomAttribute<TableAttribute>(true);
             Load(File.ReadAllText(attr.Path));
         }
 
-        public void Load(string json)
+        public override void Load(string json)
         {
-            _raw = JsonConvert.DeserializeObject<Dictionary<K, V>>(json);
+            foreach (var (key, value) in JObject.Parse(json))
+            {
+                try
+                {
+                    object ist = null;
+                    if (Hook.Build != null)
+                        ist = Hook.Build.Invoke(value);
+                    
+                    ist ??= JsonConvert.DeserializeObject<V>(value.ToString());
+                    _raw.Add(JsonConvert.DeserializeObject<K>(key), (V)ist);
+
+                    if (Hook.Built != null)
+                        Hook.Built.Invoke((V)ist);
+                }
+                catch (Exception e)
+                {
+                    throw;
+                }
+            }
         }
 
-        public V this[K key] => _raw.TryGetValue(key, out var value) ? value : default(V);
+        public V this[K key] => _raw.TryGetValue(key, out var value) ? value : default;
 
         public IEnumerable<K> Keys => _raw.Keys;
 
@@ -68,15 +94,28 @@ end
     {
         private List<V> _raw;
 
-        public void Load()
+        public HookFuncs<V> Hook { get; private set; } = new HookFuncs<V>();
+
+        public override void Load()
         {
             var attr = GetType().GetCustomAttribute<TableAttribute>(true);
             Load(File.ReadAllText(attr.Path));
         }
 
-        public void Load(string json)
+        public override void Load(string json)
         {
-            _raw = JsonConvert.DeserializeObject<List<V>>(json);
+            foreach (var value in JArray.Parse(json))
+            {
+                object ist = null;
+                if (Hook.Build != null)
+                    ist = Hook.Build.Invoke(value);
+                if (ist == null)
+                    ist ??= JsonConvert.DeserializeObject<V>(value.ToString());
+                _raw.Add((V)ist);
+
+                if (Hook.Built != null)
+                    Hook.Built.Invoke((V)ist);
+            }
         }
 
         public V this[int index] => _raw.ElementAtOrDefault(index);

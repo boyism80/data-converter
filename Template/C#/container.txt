@@ -1,23 +1,121 @@
-    public class KeyValueContainer<K, V>
-    { }
+{{~
+func containable(table)
+    ret table.name == table.json
+end
+~}}
+    public class ContainerConverter : JsonConverter
+    {
+        public override bool CanConvert(Type objectType)
+        {
+            return false;
+        }
 
-    public class ArrayContainer<V>
-    { }
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            var token = JToken.Load(reader);
+            var result = Activator.CreateInstance(objectType) as Container;
+            result.Load(token.ToString());
+
+            return result;
+        }
+
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    [JsonConverter(typeof(ContainerConverter))]
+    public interface Container
+    {
+        void Load();
+        void Load(string json);
+    }
+
+    public class KeyValueContainer<K, V> : Container, IReadOnlyDictionary<K, V>
+    {
+        private Dictionary<K, V> _raw;
+
+        public void Load()
+        {
+            var attr = GetType().GetCustomAttribute<TableAttribute>(true);
+            Load(File.ReadAllText(attr.Path));
+        }
+
+        public void Load(string json)
+        {
+            _raw = JsonConvert.DeserializeObject<Dictionary<K, V>>(json);
+        }
+
+        public V this[K key] => _raw.TryGetValue(key, out var value) ? value : default(V);
+
+        public IEnumerable<K> Keys => _raw.Keys;
+
+        public IEnumerable<V> Values => _raw.Values;
+
+        public int Count => _raw.Count;
+
+        public bool ContainsKey(K key) => _raw.ContainsKey(key);
+
+        public IEnumerator<KeyValuePair<K, V>> GetEnumerator() => _raw.GetEnumerator();
+
+        public bool TryGetValue(K key, [MaybeNullWhen(false)] out V value) => _raw.TryGetValue(key, out value);
+
+        IEnumerator IEnumerable.GetEnumerator() => _raw.GetEnumerator();
+    }
+
+    public class ArrayContainer<V> : Container, IReadOnlyList<V>
+    {
+        private List<V> _raw;
+
+        public void Load()
+        {
+            var attr = GetType().GetCustomAttribute<TableAttribute>(true);
+            Load(File.ReadAllText(attr.Path));
+        }
+
+        public void Load(string json)
+        {
+            _raw = JsonConvert.DeserializeObject<List<V>>(json);
+        }
+
+        public V this[int index] => _raw.ElementAtOrDefault(index);
+
+        public int Count => _raw.Count;
+
+        public IEnumerator<V> GetEnumerator() => _raw.GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() => _raw.GetEnumerator();
+    }
 
     public class TableAttribute : Attribute
     {
+        public string Path { get; private set; }
+
         public TableAttribute(string path)
         {
-
+            Path = path;
         }
     }
 
     public class Model
     {
-{{~ for table in tables ~}}
-        [Table("{{ json_file_path }}/{{ table.name }}.json")]
+{{~ for table in tables | array.filter @containable ~}}
+        [Table("{{ config.json_file_path }}/{{ table.name }}.json")]
         public partial class {{ table.name | @upper_camel }}Table : {{ table.type }}<{{ table.generic }}>
         { }
         public {{ table.name | @upper_camel }}Table {{ table.name | @upper_camel }} { get; private set; } = new {{ table.name | @upper_camel }}Table();
 {{~ end ~}}
+
+        public Container[] Containers { get; private set; }
+
+        public Model()
+        {
+            Containers = new Container[]
+            {
+{{~ for table in tables | array.filter @containable ~}}
+                {{ table.name | @upper_camel }}{{ if !for.last }}, {{ end }}
+{{~ end ~}}
+            };
+        }
     }

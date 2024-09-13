@@ -2,7 +2,6 @@
 using ExcelTableConverter.Model;
 using ExcelTableConverter.Util;
 using Scriban;
-using System.Security.Cryptography.X509Certificates;
 
 namespace ExcelTableConverter.Worker.Generator.CS
 {
@@ -16,30 +15,16 @@ namespace ExcelTableConverter.Worker.Generator.CS
 
     public class ClassFileGenerator : ParallelWorker<string, ClassFileGeneratorResult>
     {
-        private static readonly Template _template = Template.Parse(File.ReadAllText("Template/C#/class.txt"));
         private readonly string _dir;
 
         public ClassFileGenerator(Context ctx) : base(ctx)
         {
-            _dir = Path.Combine(ctx.Output, Context.Config.ClassCodeFilePath);
-            if (Directory.Exists(_dir) == false)
-                Directory.CreateDirectory(_dir);
-
-            foreach (var file in Directory.GetFiles(_dir))
-            {
-                File.Delete(file);
-            }
-
-            foreach (var dir in Directory.GetDirectories(_dir))
-            {
-                Directory.Delete(dir, true);
-            }
-
+            _dir = Path.Join(Context.Output, "C#");
             foreach (var scope in new[] { Scope.Server, Scope.Client })
             {
-                var dir = Path.Combine(_dir, $"{scope}".ToLower());
-                if (Directory.Exists(dir) == false)
-                    Directory.CreateDirectory(dir);
+                var path = Path.Join(_dir, $"{scope}".ToLower());
+                if (Directory.Exists(path) == false)
+                    Directory.CreateDirectory(path);
             }
         }
 

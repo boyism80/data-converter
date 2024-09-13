@@ -3,7 +3,6 @@ using ExcelTableConverter.Util;
 using ExcelTableConverter.Worker;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NPOI.SS.Formula.Functions;
 using System.Collections.Concurrent;
 using System.Reflection;
 

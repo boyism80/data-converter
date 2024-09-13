@@ -1,7 +1,6 @@
 ﻿using ExcelTableConverter.Factory.CPP;
 using ExcelTableConverter.Model;
 using ExcelTableConverter.Util;
-using Org.BouncyCastle.Asn1.Pkcs;
 using Scriban;
 
 namespace ExcelTableConverter.Worker.Generator.CPP
@@ -19,20 +18,12 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 
         public ClassFileGenerator(Context ctx) : base(ctx)
         {
-            _dir = Path.Combine(ctx.Output, Context.Config.ClassCodeFilePath);
-            if (Directory.Exists(_dir) == false)
-                Directory.CreateDirectory(_dir);
-
-            foreach (var dir in Directory.GetDirectories(_dir))
-                Directory.Delete(dir, true);
-
-            foreach (var file in Directory.GetFiles(_dir))
-                File.Delete(file);
-
+            _dir = Path.Join(Context.Output, "C++");
             foreach (var scope in new[] { Scope.Server, Scope.Client })
             {
-                Directory.CreateDirectory(Path.Combine(_dir, $"{scope.ToString().ToLower()}"));
-                Directory.CreateDirectory(Path.Combine(_dir, $"{scope.ToString().ToLower()}"));
+                var path = Path.Join(_dir, $"{scope}".ToLower());
+                if (Directory.Exists(path) == false)
+                    Directory.CreateDirectory(path);
             }
         }
 

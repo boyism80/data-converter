@@ -13,12 +13,12 @@ using Newtonsoft.Json;
 try
 {
     var dir = Path.Combine("..", "..", "..", "..");
-    var lang = "c++";
+    var languages = "c++";
     var env = string.Empty;
     var options = new OptionSet
     {
         { "d|dir=", "input directory", v => dir = v },
-        { "l|lang=", "code language", v => lang = v },
+        { "l|lang=", "code language", v => languages = v },
         { "e|env=", "code language", v => env = v }
     };
 
@@ -246,19 +246,22 @@ try
         Scheduler.Add(() => new JsonFileGenerator(ctx).Run());
         Scheduler.Add(() => new DiffFileGenerator(ctx).Run());
 
-        switch (lang.ToLower())
+        foreach (var lang in languages.Split('|').Select(x => x.Trim().ToLower()).Distinct().ToHashSet())
         {
-            case "c++":
-                Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CPP.ClassFileGenerator(ctx).Run());
-                break;
+            switch (lang)
+            {
+                case "c++":
+                    Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CPP.ClassFileGenerator(ctx).Run());
+                    break;
 
-            case "c#":
-                Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CS.ClassFileGenerator(ctx).Run());
-                break;
+                case "c#":
+                    Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CS.ClassFileGenerator(ctx).Run());
+                    break;
 
-            case "node":
-                Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.Node.ClassFileGenerator(ctx).Run());
-                break;
+                case "node":
+                    Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.Node.ClassFileGenerator(ctx).Run());
+                    break;
+            }
         }
         Scheduler.Add(() =>
         {

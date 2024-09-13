@@ -13,33 +13,6 @@ classes = [
             props: ['min', 'max']
         }
     ]
-
-func namespace_scope_begin(namespaces)
-    
-    $result = ''
-    for namespace in namespaces
-        $result += 'namespace ' + namespace + ' { '
-    end
-
-    ret $result | string.rstrip
-end
-
-func namespace_scope_end(namespaces)
-    $result = ''
-    for namespace in namespaces
-        $result += '} '
-    end
-
-    ret $result | string.rstrip
-end
-
-func namespace_access(namespaces)
-    if namespaces.size > 0
-        ret (namespaces | array.join "::") + "::"
-    else
-        ret ''
-    end
-end
 ~}}
 #ifndef __MODEL_H__
 #define __MODEL_H__
@@ -55,7 +28,7 @@ end
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/xpressive/xpressive.hpp>
 #include <unordered_map>
-{{~ for header in additional_header_files ~}}
+{{~ for header in config.additional_header_files ~}}
 #include <{{ header }}>
 {{~ end ~}}
 
@@ -63,7 +36,7 @@ end
 BEGIN_PREPROCESSOR
 #endif
 
-{{ namespace_scope_begin(namespace) }}
+{{ config.namespace | @begin_namespace_cpp }}
 
 class option
 {
@@ -152,7 +125,7 @@ template<class T>
 struct is_{{ class.name }} : std::false_type {};
 
 template<class T>
-struct is_{{ class.name }}<{{ namespace_access(namespace) }}{{ class.name }}<T>> : std::true_type {};
+struct is_{{ class.name }}<{{ config.namespace | @namespace_access_cpp }}{{ class.name }}<T>> : std::true_type {};
 {{~ if !for.last ~}}
 
 {{~ end ~}}
@@ -164,27 +137,27 @@ struct is_default
     static constexpr bool value =
         !std::is_enum<T>::value &&
         !std::is_pointer<T>::value &&
-        !{{ namespace_access(namespace) }}is_vector<T>::value &&
-        !{{ namespace_access(namespace) }}is_map<T>::value &&
-        !{{ namespace_access(namespace) }}is_optional<T>::value &&
-        !{{ namespace_access(namespace) }}is_unique<T>::value &&
-        !{{ namespace_access(namespace) }}is_point<T>::value &&
-        !{{ namespace_access(namespace) }}is_size<T>::value &&
-        !{{ namespace_access(namespace) }}is_range<T>::value;
+        !{{ config.namespace | @namespace_access_cpp }}is_vector<T>::value &&
+        !{{ config.namespace | @namespace_access_cpp }}is_map<T>::value &&
+        !{{ config.namespace | @namespace_access_cpp }}is_optional<T>::value &&
+        !{{ config.namespace | @namespace_access_cpp }}is_unique<T>::value &&
+        !{{ config.namespace | @namespace_access_cpp }}is_point<T>::value &&
+        !{{ config.namespace | @namespace_access_cpp }}is_size<T>::value &&
+        !{{ config.namespace | @namespace_access_cpp }}is_range<T>::value;
 };
 
 class dsl;
 
-template <typename T> inline static typename std::enable_if<{{ namespace_access(namespace) }}is_default<T>::value, T>::type build(const Json::Value& json);
+template <typename T> inline static typename std::enable_if<{{ config.namespace | @namespace_access_cpp }}is_default<T>::value, T>::type build(const Json::Value& json);
 template <typename T> inline static typename std::enable_if<std::is_enum<T>::value, T>::type build(const Json::Value& json);
 template <typename T> inline static typename std::enable_if<std::is_pointer<T>::value, T>::type build(const Json::Value& json);
-template <typename T> inline static typename std::enable_if<{{ namespace_access(namespace) }}is_vector<T>::value, T>::type build(const Json::Value& json);
-template <typename T> inline static typename std::enable_if<{{ namespace_access(namespace) }}is_map<T>::value, T>::type build(const Json::Value& json);
-template <typename T> inline static typename std::enable_if<{{ namespace_access(namespace) }}is_optional<T>::value, T>::type build(const Json::Value& json);
-template <typename T> inline static typename std::enable_if<{{ namespace_access(namespace) }}is_unique<T>::value, T>::type build(const Json::Value& json);
-template <typename T> inline static typename std::enable_if<{{ namespace_access(namespace) }}is_point<T>::value, T>::type build(const Json::Value& json);
-template <typename T> inline static typename std::enable_if<{{ namespace_access(namespace) }}is_size<T>::value, T>::type build(const Json::Value& json);
-template <typename T> inline static typename std::enable_if<{{ namespace_access(namespace) }}is_range<T>::value, T>::type build(const Json::Value& json);
+template <typename T> inline static typename std::enable_if<{{ config.namespace | @namespace_access_cpp }}is_vector<T>::value, T>::type build(const Json::Value& json);
+template <typename T> inline static typename std::enable_if<{{ config.namespace | @namespace_access_cpp }}is_map<T>::value, T>::type build(const Json::Value& json);
+template <typename T> inline static typename std::enable_if<{{ config.namespace | @namespace_access_cpp }}is_optional<T>::value, T>::type build(const Json::Value& json);
+template <typename T> inline static typename std::enable_if<{{ config.namespace | @namespace_access_cpp }}is_unique<T>::value, T>::type build(const Json::Value& json);
+template <typename T> inline static typename std::enable_if<{{ config.namespace | @namespace_access_cpp }}is_point<T>::value, T>::type build(const Json::Value& json);
+template <typename T> inline static typename std::enable_if<{{ config.namespace | @namespace_access_cpp }}is_size<T>::value, T>::type build(const Json::Value& json);
+template <typename T> inline static typename std::enable_if<{{ config.namespace | @namespace_access_cpp }}is_range<T>::value, T>::type build(const Json::Value& json);
 template <> int8_t build<int8_t>(const Json::Value& json);
 template <> uint8_t build<uint8_t>(const Json::Value& json);
 template <> int16_t build<int16_t>(const Json::Value& json);
@@ -199,8 +172,8 @@ template <> double build<double>(const Json::Value& json);
 template <> bool build<bool>(const Json::Value& json);
 template <> boost::posix_time::ptime build<boost::posix_time::ptime>(const Json::Value& json);
 template <> std::chrono::milliseconds build<std::chrono::milliseconds>(const Json::Value& json);
-template <> {{ namespace_access(namespace) }}date_range build<{{ namespace_access(namespace) }}date_range>(const Json::Value& json);
-template <> {{ namespace_access(namespace) }}dsl build<{{ namespace_access(namespace) }}dsl>(const Json::Value& json);
+template <> {{ config.namespace | @namespace_access_cpp }}date_range build<{{ config.namespace | @namespace_access_cpp }}date_range>(const Json::Value& json);
+template <> {{ config.namespace | @namespace_access_cpp }}dsl build<{{ config.namespace | @namespace_access_cpp }}dsl>(const Json::Value& json);
 
 #pragma region dsl
 {{ dsl }}
@@ -223,7 +196,7 @@ template <typename T> typename std::enable_if<is_default<T>::value, T>::type bui
 template <typename T> typename std::enable_if<std::is_enum<T>::value, T>::type build(const Json::Value& json)
 {
     if(json.isString())
-        return T({{ namespace_access(enum_namespace) }}enum_parse<T>(build<std::string>(json)));
+        return T({{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}enum_parse<T>(build<std::string>(json)));
     else
         return T(json.asInt());
 }
@@ -398,7 +371,7 @@ template <> date_range build<date_range>(const Json::Value& json)
 }
 
 {{~ for class in classes ~}}
-template <typename T> typename std::enable_if<{{ namespace_access(namespace) }}is_{{ class.name }}<T>::value, T>::type build(const Json::Value& json)
+template <typename T> typename std::enable_if<{{ config.namespace | @namespace_access_cpp }}is_{{ class.name }}<T>::value, T>::type build(const Json::Value& json)
 {
 {{~ for prop in class.props ~}}
     auto {{ prop }} = build<typename T::value_type>(json["{{ prop }}"]);
@@ -409,7 +382,7 @@ template <typename T> typename std::enable_if<{{ namespace_access(namespace) }}i
 {{~ end ~}}
 #pragma endregion
 
-{{ namespace_scope_end(namespace) }}
+{{ config.namespace | @end_namespace_cpp }}
 
 #ifdef END_PREPROCESSOR
 END_PREPROCESSOR

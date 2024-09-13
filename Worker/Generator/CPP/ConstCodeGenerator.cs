@@ -1,5 +1,6 @@
 ﻿using ExcelTableConverter.Factory.CPP;
 using ExcelTableConverter.Model;
+using ExcelTableConverter.Util;
 using Scriban;
 
 namespace ExcelTableConverter.Worker.Generator.CPP
@@ -44,14 +45,13 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 items.Add(groupName, props);
             }
 
-            yield return _template.Render(new 
-            { 
-                Namespace = Context.Config.Namespace, 
-                ConstNamespace = Context.Config.ConstNamespace,
-                Super = scope == Scope.Common,
-                Scope = scope,
-                Items = items 
-            });
+            var obj = new ScribanExtension();
+            obj.Add("super", scope == Scope.Common);
+            obj.Add("items", items);
+            obj.Add("config", Context.Config);
+            var ctx = new TemplateContext();
+            ctx.PushGlobal(obj);
+            yield return _template.Render(ctx);
         }
 
         protected override void OnWorked(Scope input, string output, int percent)

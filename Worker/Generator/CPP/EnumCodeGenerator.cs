@@ -1,4 +1,5 @@
 ﻿using ExcelTableConverter.Model;
+using ExcelTableConverter.Util;
 using Scriban;
 
 namespace ExcelTableConverter.Worker.Generator.CPP
@@ -54,12 +55,12 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 x.Props
             } as object).ToList();
 
-            Result = _template.Render(new 
-            { 
-                Namespace = Context.Config.Namespace, 
-                EnumNamespace = Context.Config.EnumNamespace, 
-                Items = items 
-            });
+            var obj = new ScribanExtension();
+            obj.Add("items", items);
+            obj.Add("config", Context.Config);
+            var ctx = new TemplateContext();
+            ctx.PushGlobal(obj);
+            Result = _template.Render(ctx);
 
             Logger.Complete("열거형 코드 파일을 생성했습니다.");
             return base.OnFinish(output);

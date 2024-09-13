@@ -35,35 +35,8 @@ func enum(v)
 
     ret $result
 end
-
-func namespace_scope_begin(namespaces)
-    
-    $result = ''
-    for namespace in namespaces
-        $result += 'namespace ' + namespace + ' { '
-    end
-
-    ret $result | string.rstrip
-end
-
-func namespace_scope_end(namespaces)
-    $result = ''
-    for namespace in namespaces
-        $result += '} '
-    end
-
-    ret $result | string.rstrip
-end
-
-func namespace_access(namespaces)
-    if namespaces.size > 0
-        ret (namespaces | array.join "::") + "::"
-    else
-        ret ''
-    end
-end
 ~}}
-{{ namespace_scope_begin(enum_namespace) }}
+{{ config.enum_namespace | @begin_namespace_cpp }}
 
 template <typename T>
 inline T enum_parse(const std::string k)
@@ -99,4 +72,4 @@ inline {{ item.name }} enum_parse<{{ item.name }}>(const std::string k)
 {{ end ~}}
 {{~ end ~}}
 
-{{ namespace_scope_end(enum_namespace) }}
+{{ config.enum_namespace | @end_namespace_cpp }}

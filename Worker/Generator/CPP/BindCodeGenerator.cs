@@ -1,5 +1,6 @@
 ﻿using ExcelTableConverter.Factory.CPP;
 using ExcelTableConverter.Model;
+using ExcelTableConverter.Util;
 using Scriban;
 
 namespace ExcelTableConverter.Worker.Generator.CPP
@@ -67,14 +68,12 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                     Json = Context.Result.Schema[tableName].Json,
                 });
             }
-
-            var code = _template.Render(new 
-            { 
-                Namespace = Context.Config.Namespace, 
-                JsonFilePath = Context.Config.JsonFilePath,
-                Scope = scope, 
-                Tables = buffer
-            });
+            var obj = new ScribanExtension();
+            obj.Add("tables", buffer);
+            obj.Add("config", Context.Config);
+            var ctx = new TemplateContext();
+            ctx.PushGlobal(obj);
+            var code = _template.Render(ctx);
             yield return new KeyValuePair<Scope, string>(scope, code);
         }
 

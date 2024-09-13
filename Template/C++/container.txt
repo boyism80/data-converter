@@ -1,31 +1,4 @@
 {{~
-func namespace_scope_begin(namespaces)
-    
-    $result = ''
-    for namespace in namespaces
-        $result += 'namespace ' + namespace + ' { '
-    end
-
-    ret $result | string.rstrip
-end
-
-func namespace_scope_end(namespaces)
-    $result = ''
-    for namespace in namespaces
-        $result += '} '
-    end
-
-    ret $result | string.rstrip
-end
-
-func namespace_access(namespaces)
-    if namespaces.size > 0
-        ret (namespaces | array.join "::") + "::"
-    else
-        ret ''
-    end
-end
-
 func containable(table)
     ret table.name == table.json
 end
@@ -106,11 +79,11 @@ private:
             if (this->hook.build != nullptr)
                 ptr.reset(this->hook.build(*i));
             if (ptr == nullptr)
-                ptr = {{ namespace_access(namespace) }}build<std::unique_ptr<V>>(*i);
+                ptr = {{ config.namespace | @namespace_access_cpp }}build<std::unique_ptr<V>>(*i);
 
             auto raw = ptr.get();
             this->_ptrs.push_back(std::move(ptr));
-            this->_pairs.insert({ {{ namespace_access(namespace) }}build<K>(i.key()), *raw });
+            this->_pairs.insert({ {{ config.namespace | @namespace_access_cpp }}build<K>(i.key()), *raw });
 
             if(this->hook.built != nullptr)
                 this->hook.built(*raw);
@@ -231,7 +204,7 @@ private:
             if (this->hook.build != nullptr)
                 ptr.reset(this->hook.build(*i));
             if (ptr == nullptr)
-                ptr = {{ namespace_access(namespace) }}build<std::unique_ptr<T>>(*i);
+                ptr = {{ config.namespace | @namespace_access_cpp }}build<std::unique_ptr<T>>(*i);
 
             auto raw = ptr.get();
             this->_data.push_back(std::move(ptr));
@@ -336,7 +309,7 @@ public:
 #ifdef DECLARE_{{ table.name | string.upcase }}_CONTAINER_CUSTOM_CONSTRUCTOR
 DECLARE_{{ table.name | string.upcase }}_CONTAINER_CUSTOM_CONSTRUCTOR
 #else
-    __{{ table.name }}() : {{ table.type }}<{{ table.generic }}>(std::string("{{ json_file_path }}/{{ table.name }}.json"))
+    __{{ table.name }}() : {{ table.type }}<{{ table.generic }}>(std::string("{{ config.json_file_path }}/{{ table.name }}.json"))
     { }
     __{{ table.name }}(const __{{ table.name }}&) = delete;
     ~__{{ table.name }}() = default;
@@ -354,11 +327,11 @@ class model
 {
 public:
 {{~ for table in tables | array.filter @containable ~}}
-    {{ namespace_access(namespace) }}__{{ table.name }} {{ table.name }};
+    {{ config.namespace | @namespace_access_cpp }}__{{ table.name }} {{ table.name }};
 {{~ end ~}}
 
 private:
-    const std::vector<{{ namespace_access(namespace) }}container*> _containers = 
+    const std::vector<{{ config.namespace | @namespace_access_cpp }}container*> _containers = 
     {
 {{~ for table in tables | array.filter @containable ~}}
         &{{ table.name }}{{ if !for.last }},{{ end }}
@@ -371,7 +344,7 @@ public:
     ~model() = default;
 
 public:
-    void foreach(const std::function<void({{ namespace_access(namespace) }}container&)>& fn) const
+    void foreach(const std::function<void({{ config.namespace | @namespace_access_cpp }}container&)>& fn) const
     {
         for (auto container : this->_containers)
         {

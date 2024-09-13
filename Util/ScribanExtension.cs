@@ -1,6 +1,4 @@
-﻿using ExcelTableConverter.Model;
-using Scriban.Runtime;
-using System.Linq;
+﻿using Scriban.Runtime;
 
 namespace ExcelTableConverter.Util
 {
@@ -36,7 +34,7 @@ namespace ExcelTableConverter.Util
                     return string.Join(".", namespaces);
 
                 case LanguageType.CPP:
-                    return string.Join(string.Empty, namespaces.Select(x => $"{x} {{"));
+                    return string.Join(string.Empty, namespaces.Select(x => $"{x}::"));
 
                 case LanguageType.NODE:
                     return string.Empty;
@@ -44,6 +42,42 @@ namespace ExcelTableConverter.Util
                 default:
                     return string.Empty;
             }
+        }
+
+        public static string NamespaceAccessCpp(object namespaces)
+        {
+            var enumerable = namespaces switch
+            {
+                List<string> list => list,
+                ScriptRange range => range.Select(x => x.ToString()),
+                _ => throw new ArgumentException()
+            };
+
+            return NamespaceAccess(enumerable, LanguageType.CPP);
+        }
+
+        public static string BeginNamespaceCpp(object namespaces)
+        {
+            var enumerable = namespaces switch
+            {
+                List<string> list => list,
+                ScriptRange range => range.Select(x => x.ToString()),
+                _ => throw new ArgumentException()
+            };
+
+            return string.Join(" ", enumerable.Select(x => $"namespace {x} {{"));
+        }
+
+        public static string EndNamespaceCpp(object namespaces)
+        {
+            var enumerable = namespaces switch
+            {
+                List<string> list => list,
+                ScriptRange range => range.Select(x => x.ToString()),
+                _ => throw new ArgumentException()
+            };
+
+            return string.Join(" ", enumerable.Select(x => $"}}"));
         }
     }
 }

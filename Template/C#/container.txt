@@ -38,9 +38,9 @@ end
         public abstract void Load(string json);
     }
 
-    public class KeyValueContainer<K, V> : Container, IReadOnlyDictionary<K, V>
+    public class KeyValueContainer<K, V> : Container, IReadOnlyDictionary<K, V> where V : class
     {
-        private Dictionary<K, V> _raw;
+        private readonly Dictionary<K, V> _raw = new Dictionary<K, V>();
 
         public HookFuncs<V> Hook { get; private set; } = new HookFuncs<V>();
 
@@ -54,22 +54,11 @@ end
         {
             foreach (var (key, value) in JObject.Parse(json))
             {
-                try
-                {
-                    object ist = null;
-                    if (Hook.Build != null)
-                        ist = Hook.Build.Invoke(value);
-                    
-                    ist ??= JsonConvert.DeserializeObject<V>(value.ToString());
-                    _raw.Add(JsonConvert.DeserializeObject<K>(key), (V)ist);
+                var obj = Hook.Build?.Invoke(value) ?? value.ToObject<V>();
+                _raw.Add(new JValue(key).ToObject<K>(), obj);
 
-                    if (Hook.Built != null)
-                        Hook.Built.Invoke((V)ist);
-                }
-                catch (Exception e)
-                {
-                    throw;
-                }
+                if (Hook.Built != null)
+                    Hook.Built.Invoke(obj);
             }
         }
 
@@ -90,11 +79,11 @@ end
         IEnumerator IEnumerable.GetEnumerator() => _raw.GetEnumerator();
     }
 
-    public class ArrayContainer<V> : Container, IReadOnlyList<V>
+    public class ArrayContainer<T> : Container, IReadOnlyList<T> where T : class
     {
-        private List<V> _raw;
+        private readonly List<T> _raw = new List<T>();
 
-        public HookFuncs<V> Hook { get; private set; } = new HookFuncs<V>();
+        public HookFuncs<T> Hook { get; private set; } = new HookFuncs<T>();
 
         public override void Load()
         {
@@ -106,23 +95,17 @@ end
         {
             foreach (var value in JArray.Parse(json))
             {
-                object ist = null;
-                if (Hook.Build != null)
-                    ist = Hook.Build.Invoke(value);
-                if (ist == null)
-                    ist ??= JsonConvert.DeserializeObject<V>(value.ToString());
-                _raw.Add((V)ist);
-
-                if (Hook.Built != null)
-                    Hook.Built.Invoke((V)ist);
+                var obj = Hook.Build?.Invoke(value) ?? value.ToObject<T>();
+                _raw.Add(obj);
+                Hook.Built?.Invoke(obj);
             }
         }
 
-        public V this[int index] => _raw.ElementAtOrDefault(index);
+        public T this[int index] => _raw.ElementAtOrDefault(index);
 
         public int Count => _raw.Count;
 
-        public IEnumerator<V> GetEnumerator() => _raw.GetEnumerator();
+        public IEnumerator<T> GetEnumerator() => _raw.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => _raw.GetEnumerator();
     }

@@ -253,54 +253,7 @@ try
                 break;
 
             case "c#":
-                Scheduler.Add(() => new JsonSheetFileGenerator(ctx).Run());
-                Scheduler.Add(() =>
-                {
-                    foreach (var file in Context.Config.SharedJsonFiles)
-                    {
-                        foreach (var scope in new[] { Scope.Server, Scope.Client })
-                        {
-                            var src = Path.Combine(dir, file);
-                            var dst = Path.Combine(ctx.Output, Context.Config.JsonFilePath, $"{scope}".ToLower(), file);
-                            if (File.Exists(src))
-                                File.Copy(src, dst);
-                        }
-                    }
-                });
                 Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CS.ClassFileGenerator(ctx).Run());
-                Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CS.BindFileGenerator(ctx).Run());
-                Scheduler.Add(() =>
-                {
-                    foreach (var scope in new[] { Scope.Server, Scope.Client })
-                    {
-                        var result = new Dictionary<string, Dictionary<string, object>>();
-                        foreach (var (tableName, constSet) in ctx.Result.Const.OrderBy(x => x.Key))
-                        {
-                            var buffer = new Dictionary<string, object>();
-                            foreach (var constValue in constSet.Values)
-                            {
-                                if (constValue.Scope.HasFlag(scope) == false)
-                                    continue;
-
-                                buffer.Add(constValue.Name, constValue.Value);
-                            }
-                            result.Add($"___{tableName}", buffer);
-                        }
-
-                        foreach (var p in new[] { Context.Config.JsonFilePath, Context.Config.JsonSheetFilePath })
-                        {
-                            var path = Path.Combine(ctx.Output, p, $"{scope}".ToLower(), "const.json");
-                            if (Directory.Exists(Path.GetDirectoryName(path)) == false)
-                                continue;
-
-                            File.WriteAllText(path, JsonConvert.SerializeObject(result, Formatting.Indented));
-                        }
-                    }
-                    new ExcelTableConverter.Worker.Generator.CS.ConstFileGenerator(ctx).Run();
-                });
-                Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CS.EnumFileGenerator(ctx).Run());
-                Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CS.CMPResolverGenerator(ctx).Run());
-                Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.CS.DslFileGenerator(ctx).Run());
                 break;
 
             case "node":

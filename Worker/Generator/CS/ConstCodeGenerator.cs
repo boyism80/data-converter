@@ -1,13 +1,14 @@
-﻿using ExcelTableConverter.Factory.CPP;
+﻿using ExcelTableConverter.Factory.CS;
 using ExcelTableConverter.Model;
 using ExcelTableConverter.Util;
 using Scriban;
+using System;
 
-namespace ExcelTableConverter.Worker.Generator.CPP
+namespace ExcelTableConverter.Worker.Generator.CS
 {
     public class ConstCodeGenerator : ParallelWorker<Scope, string>
     {
-        private static readonly Template _template = Template.Parse(File.ReadAllText($"Template/C++/const.txt"));
+        private static readonly Template _template = Template.Parse(File.ReadAllText($"Template/C#/const.txt"));
 
         public Dictionary<Scope, string> Result { get; private set; } = new Dictionary<Scope, string>();
 
@@ -38,7 +39,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                         Value = new AllocateValueFactory(Context).Build(constData.Type, constData.Value),
                     });
                 }
-                
+
                 if (props.Count == 0)
                     continue;
 
@@ -47,10 +48,13 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 
             var obj = new ScribanExtension();
             obj.Add("super", scope == Scope.Common);
+            obj.Add("scope", scope);
             obj.Add("items", items);
             obj.Add("config", Context.Config);
+
             var ctx = new TemplateContext();
             ctx.PushGlobal(obj);
+
             yield return _template.Render(ctx);
         }
 

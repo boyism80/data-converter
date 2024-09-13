@@ -1,4 +1,5 @@
 ﻿using ExcelTableConverter.Model;
+using ExcelTableConverter.Util;
 
 namespace ExcelTableConverter.Factory.CS
 {
@@ -54,52 +55,55 @@ namespace ExcelTableConverter.Factory.CS
 
         protected override string EnumType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            return root;
+            var namespaces = Context.Config.Namespace.Concat(Context.Config.EnumNamespace).Select(x => ScribanExtension.UpperCamel(x));
+            var prefix = ScribanExtension.NamespaceAccess(namespaces, LanguageType.CS);
+
+            return $"{prefix}.{ScribanExtension.UpperCamel(Util.Type.Nake(root))}";
         }
 
         protected override string FloatType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return root;
+            return WithNullable("float", nullable);
         }
 
         protected override string IntType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return root;
+            return WithNullable("int", nullable);
         }
 
         protected override string LongType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return root;
+            return WithNullable("long", nullable);
         }
 
         protected override string ByteType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return root;
+            return WithNullable("byte", nullable);
         }
 
         protected override string SbyteType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return root;
+            return WithNullable("sbyte", nullable);
         }
 
         protected override string ShortType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return root;
+            return WithNullable("short", nullable);
         }
 
         protected override string UshortType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return root;
+            return WithNullable("ushort", nullable);
         }
 
         protected override string UintType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return root;
+            return WithNullable("uint", nullable);
         }
 
         protected override string UlongType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return root;
+            return WithNullable("ulong", nullable);
         }
 
         protected override string StringType(object value, string root, DataFormatOption option)
@@ -109,27 +113,27 @@ namespace ExcelTableConverter.Factory.CS
 
         protected override string TimeSpanType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return root;
+            return WithNullable("TimeSpan", nullable);
+        }
+
+        protected override string PointType(object value, string root, string e, bool nullable, DataFormatOption option)
+        {
+            return WithNullable($"Point<{Build(e)}>", nullable);
+        }
+
+        protected override string SizeType(object value, string root, string e, bool nullable, DataFormatOption option)
+        {
+            return WithNullable($"Size<{Build(e)}>", nullable);
+        }
+
+        protected override string RangeType(object value, string root, string e, bool nullable, DataFormatOption option)
+        {
+            return WithNullable($"Range<{Build(e)}>", nullable);
         }
 
         public string Build(string type)
         {
             return Build(type, null);
-        }
-
-        protected override string PointType(object value, string root, string e, bool nullable, DataFormatOption option)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override string SizeType(object value, string root, string e, bool nullable, DataFormatOption option)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override string RangeType(object value, string root, string e, bool nullable, DataFormatOption option)
-        {
-            throw new NotImplementedException();
         }
     }
 }

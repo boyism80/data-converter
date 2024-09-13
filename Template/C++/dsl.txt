@@ -1,34 +1,9 @@
 {{~
-func namespace_scope_begin(namespaces)
-    if namespaces.size > 0
-        ret (namespaces | array.join " { ") + " {"
-    else
-        ret ''
-    end
-end
-
-func namespace_scope_end(namespaces)
-    $result = []
-    for namespace in namespaces
-        $result | array.add ''
-    end
-
-    ret $result | array.join ' '
-end
-
-func namespace_access(namespaces)
-    if namespaces | array.size > 0
-        ret (namespaces | array.join "::") + "::"
-    else
-        ret ''
-    end
-end
-
 func rvalue(type)
     primitives = ['bool', 'char', 'short', 'int', 'long', 'long long', 'float', 'double', 'int8_t', 'int16_t', 'int32_t', 'int64_t', 'uint8_t', 'uint16_t', 'uint32_t', 'uint64_t']
     if primitives | array.contains type
         ret type
-    else if type | string.contains namespace_access(enum_namespace)
+    else if type | string.contains (config.enum_namespace | @namespace_access_cpp)
         ret type
     else
         ret 'const ' + type + '&'
@@ -47,23 +22,23 @@ public:
 {{~ end ~}}
 
 public:
-    {{ namespace_access(namespace) }}{{ namespace_access(enum_namespace) }}{{ dsl_function_type }} header;
+    {{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }} header;
     const std::vector<std::any> params;
 
 private:
     static std::vector<std::any> parse_params(const Json::Value& json);
 
 public:
-    dsl({{ namespace_access(namespace) }}{{ namespace_access(enum_namespace) }}{{ dsl_function_type }} header, const std::vector<std::any>& params) : header(header), params(params)
+    dsl({{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }} header, const std::vector<std::any>& params) : header(header), params(params)
     { }
-    dsl(const Json::Value& json) : header(build<{{ namespace_access(namespace) }}{{ namespace_access(enum_namespace) }}{{ dsl_function_type }}>(json["Type"])), params(parse_params(json))
+    dsl(const Json::Value& json) : header(build<{{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }}>(json["Type"])), params(parse_params(json))
     { }
     ~dsl()
     { }
 };
 
 {{~ for item in items ~}}
-class {{ namespace_access(namespace) }}dsl::{{ item.name }}
+class {{ config.namespace | @namespace_access_cpp }}dsl::{{ item.name }}
 {
 {{~ if item.props.size > 0 ~}}
 public:
@@ -80,7 +55,7 @@ public:
     { }
     {{ item.name }}(const Json::Value& json){{ if item.props.size > 0 }} : {{ end }}
 {{~ for props in item.props ~}}
-        {{ props.name }}({{ namespace_access(namespace) }}build<{{ props.type }}>(json[{{ for.index }}])){{ if !for.last }},{{ end }}
+        {{ props.name }}({{ config.namespace | @namespace_access_cpp }}build<{{ props.type }}>(json[{{ for.index }}])){{ if !for.last }},{{ end }}
 {{~ end ~}}
     { }
     {{ item.name }}(const std::vector<std::any>& parameters){{ if item.props.size > 0 }} : {{ end }}
@@ -90,25 +65,25 @@ public:
     { }
 
 public:
-    {{ namespace_access(namespace) }}dsl to_dsl()
+    {{ config.namespace | @namespace_access_cpp }}dsl to_dsl()
     {
-        return {{ namespace_access(namespace) }}dsl({{ namespace_access(namespace) }}{{ namespace_access(enum_namespace) }}{{ dsl_function_type }}::{{ item.name }}, { {{~ for prop in item.props ~}} {{ prop.name }}{{ if !for.last }}, {{ end }} {{~ end ~}} });
+        return {{ config.namespace | @namespace_access_cpp }}dsl({{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }}::{{ item.name }}, { {{~ for prop in item.props ~}} {{ prop.name }}{{ if !for.last }}, {{ end }} {{~ end ~}} });
     }
 };
 {{ if !for.last }}
 {{ end }}
 {{~ end ~}}
 
-inline std::vector<std::any> {{ namespace_access(namespace) }}dsl::parse_params(const Json::Value& json)
+inline std::vector<std::any> {{ config.namespace | @namespace_access_cpp }}dsl::parse_params(const Json::Value& json)
 {
-    static auto data = std::unordered_map<{{ namespace_access(namespace) }}{{ namespace_access(enum_namespace) }}{{ dsl_function_type }}, std::function<std::vector<std::any>(const Json::Value&)>>
+    static auto data = std::unordered_map<{{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }}, std::function<std::vector<std::any>(const Json::Value&)>>
     {
 {{~ for dsl in dsls ~}}
-        { {{ namespace_access(namespace) }}{{ namespace_access(enum_namespace) }}{{ dsl_function_type }}::{{ dsl }}, [](const Json::Value& json) { return {{ namespace_access(namespace) }}dsl::{{ dsl }}(json).to_dsl().params; }}{{ if !for.last }},{{ end }}
+        { {{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }}::{{ dsl }}, [](const Json::Value& json) { return {{ config.namespace | @namespace_access_cpp }}dsl::{{ dsl }}(json).to_dsl().params; }}{{ if !for.last }},{{ end }}
 {{~ end ~}}
     };
 
-    auto header = build<{{ namespace_access(namespace) }}{{ namespace_access(enum_namespace) }}{{ dsl_function_type }}>(json["Type"]);
+    auto header = build<{{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }}>(json["Type"]);
     auto i = data.find(header);
     if(i == data.end())
         throw std::runtime_error("invalid dsl header");

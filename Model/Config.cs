@@ -14,10 +14,7 @@
         public string BindingCodeFilePath { get; set; }
         public string ConstCodeFilePath { get; set; }
         public string EnumCodeFilePath { get; set; }
-        public string CMPResolverCodeFilePath { get; set; }
         public string DslCodeFilePath { get; set; }
-        public List<string> SharedJsonFiles { get; set; }
-        public HashSet<string> PartitionJsonTables { get; set; }
         public string ParentTableFormat { get; set; } = "{0}Attribute";
         public string ParentPropName { get; set; } = "Parent";
         public string DslTypeEnumName { get; set; } = "DslFunctionType";

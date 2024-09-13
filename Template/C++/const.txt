@@ -1,31 +1,4 @@
 {{~
-func namespace_scope_begin(namespaces)
-    
-    $result = ''
-    for namespace in namespaces
-        $result += 'namespace ' + namespace + ' { '
-    end
-
-    ret $result | string.rstrip
-end
-
-func namespace_scope_end(namespaces)
-    $result = ''
-    for namespace in namespaces
-        $result += '} '
-    end
-
-    ret $result | string.rstrip
-end
-
-func namespace_access(namespaces)
-    if namespaces.size > 0
-        ret (namespaces | array.join "::") + "::"
-    else
-        ret ''
-    end
-end
-
 func const_keyword(t)
     compile_const_type = ['bool', 'char', 'short', 'int', 'long', 'long long', 'float', 'double', 'int8_t', 'int16_t', 'int32_t', 'int64_t', 'uint8_t', 'uint16_t', 'uint32_t', 'uint64_t', 'char*']
 
@@ -40,7 +13,7 @@ func const_keyword(t)
     end
 end
 ~}}
-{{ namespace_scope_begin(const_namespace) }}
+{{ config.const_namespace | @begin_namespace_cpp }}
 
 {{~ for item in items ~}}
 class {{ item.key }}
@@ -59,4 +32,4 @@ DECLARE_CONST_{{ item.key | string.upcase }}_EXTENSION
 };
 {{~ end ~}}
 
-{{ namespace_scope_end(const_namespace) }}
+{{ config.const_namespace | @end_namespace_cpp }}

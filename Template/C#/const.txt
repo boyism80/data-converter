@@ -1,37 +1,11 @@
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-
-namespace {{for namespace in namespaces}}{{namespace}}.{{end}}Types{{~ if super ~}}.{{ scope }} {{~ end }}
-{
-{{~ if super ~}}
-    public class Const
-{{~ else ~}}
-    public partial class Const : {{for namespace in namespaces}}{{namespace}}.{{end}}Types.Common.Const
-{{~ end ~}}
+{{~ for item in items ~}}
+    public static class {{ item.key | @upper_camel }}
     {
-{{~ if super ~}}
-        public static Const _ist { get; protected set; } = new Const();
-{{~ else ~}}
-        public static new Const _ist { get; private set; } = new Const();
-{{~ end ~}}
-
-{{~ for item in items ~}}
-        public{{~ if !super}} new{{~ end }} class __{{ item.key }}{{~ if !super }} : {{for namespace in namespaces}}{{namespace}}.{{end}}Types.Common.Const.__{{ item.key }} {{~ end }}
-        {
 {{~ for prop in item.value ~}}
-            public {{ prop.type }} {{ prop.name }} = {{ prop.value }};
-{{~ end ~}}
-        }
-{{~ end ~}}
-
-{{~ for item in items ~}}
-        public{{ if !super }} new{{ end }} __{{ item.key }} ___{{ item.key }} { get; set; } = new __{{ item.key }}();
-{{~ end ~}}
-
-{{~ for item in items ~}}
-        [JsonIgnore]
-        public static{{ if !super}} new{{ end }} __{{ item.key }} {{ item.key }} => _ist.___{{ item.key }};
+        public const {{ prop.type }} {{ prop.name | @upper_camel }} = {{ prop.value }};
 {{~ end ~}}
     }
-}
+{{~ if !for.last ~}}
+
+{{~ end ~}}
+{{~ end ~}}

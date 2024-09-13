@@ -1,0 +1,47 @@
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Linq;
+using System.Collections;
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
+using System.Runtime.Serialization;
+
+namespace {{ config.namespace | array.each @upper_camel | array.join '.' }}
+{
+    public struct Point<T>
+    { 
+        public T X { get; set; }
+        public T Y { get; set; }
+    }
+
+    public struct Size<T>
+    { 
+        public T Width { get; set; }
+        public T Height { get; set; }
+    }
+
+    public struct Range<T>
+    { 
+        public T Min { get; set; }
+        public T Max { get; set; }
+    }
+}
+
+namespace {{ config.namespace | array.concat config.enum_namespace | array.each @upper_camel | array.join '.' }}
+{
+{{ enum }}
+}
+
+namespace {{ config.namespace | array.concat config.const_namespace | array.each @upper_camel | array.join '.' }}
+{
+{{ const }}
+}
+
+namespace {{ config.namespace | array.each @upper_camel | array.join '.' }}
+{
+{{ class }}
+
+{{ dsl }}
+
+{{ container }}
+}

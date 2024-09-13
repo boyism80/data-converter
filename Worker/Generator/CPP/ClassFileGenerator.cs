@@ -1,10 +1,19 @@
 ﻿using ExcelTableConverter.Factory.CPP;
 using ExcelTableConverter.Model;
+using ExcelTableConverter.Util;
+using Org.BouncyCastle.Asn1.Pkcs;
 using Scriban;
 
 namespace ExcelTableConverter.Worker.Generator.CPP
 {
-    public class ClassFileGenerator : ParallelWorker<string, (Scope Scope, string Name, List<object> Props)>
+    public class ClassFileGeneratorResult
+    { 
+        public Scope Scope { get; set; }
+        public string Name { get; set; }
+        public List<object> Props { get; set; }
+    }
+
+    public class ClassFileGenerator : ParallelWorker<string, ClassFileGeneratorResult>
     {
         private readonly string _dir;
 
@@ -35,7 +44,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             }
         }
 
-        protected override IEnumerable<(Scope, string, List<object>)> OnWork(string tableName)
+        protected override IEnumerable<ClassFileGeneratorResult> OnWork(string tableName)
         {
             var schemaSet = Context.Result.Schema[tableName];
             var result = new[] { Scope.Server, Scope.Client }.ToDictionary(x => x, x => new List<object>());
@@ -66,16 +75,21 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 if (props.Count == 0 && schemaSet.Based == null)
                     continue;
 
-                yield return (scope, tableName, props);
+                yield return new ClassFileGeneratorResult
+                {
+                    Scope = scope,
+                    Name = tableName,
+                    Props = props
+                };
             }
         }
 
-        protected override void OnWorked(string input, (Scope Scope, string Name, List<object> Props) output, int percent)
+        protected override void OnWorked(string input, ClassFileGeneratorResult output, int percent)
         {
             Logger.Write($"클래스 코드 파일을 저장했습니다. - {input}", percent: percent);
         }
 
-        protected override IReadOnlyList<(Scope Scope, string Name, List<object> Props)> OnFinish(IReadOnlyList<(Scope Scope, string Name, List<object> Props)> output)
+        protected override IReadOnlyList<ClassFileGeneratorResult> OnFinish(IReadOnlyList<ClassFileGeneratorResult> output)
         {
             var enumCodeGenerator = new EnumCodeGenerator(Context);
             enumCodeGenerator.Run();
@@ -109,24 +123,33 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             if (g.ContainsKey(Scope.Client) == false)
                 g.Add(Scope.Client, new List<object>());
 
+            var ctx = new TemplateContext();
             foreach (var (scope, items) in g)
             {
-                var typeCode = baseTypeTemplate.Render(new { Namespace = Util.CPP.Namespace.Access(Context.Config.Namespace) });
-                var classCode = classTemplate.Render(new { Namespace = Context.Config.Namespace, Items = items });
+                var obj = new ScribanExtension();
+                obj.Add("items", items);
+                obj.Add("config", Context.Config);
+                ctx.PushGlobal(obj);
+                var classCode = classTemplate.Render(ctx);
+                ctx.PopGlobal();
 
-                File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", $"model.h"), modelTemplate.Render(new
-                {
-                    Namespace = Context.Config.Namespace,
-                    EnumNamespace = Context.Config.EnumNamespace,
-                    ConstNamespace = Context.Config.ConstNamespace,
-                    Enum = enumCodeGenerator.Result,
-                    Dsl = dslCodeGenerator.Result,
-                    Type = typeCode,
-                    Const = constCodeGenerator.Result[scope],
-                    Class = classCode,
-                    Container = bindCodeGenerator.Result[scope],
-                    AdditionalHeaderFiles = Context.Config.AdditionalHeaderFiles
-                }));
+                obj = new ScribanExtension();
+                obj.Add("config", Context.Config);
+                ctx.PushGlobal(obj);
+                var typeCode = baseTypeTemplate.Render(ctx);
+                ctx.PopGlobal();
+
+                obj = new ScribanExtension();
+                obj.Add("enum", enumCodeGenerator.Result);
+                obj.Add("type", typeCode);
+                obj.Add("const", constCodeGenerator.Result[scope]);
+                obj.Add("class", classCode);
+                obj.Add("dsl", dslCodeGenerator.Result);
+                obj.Add("container", bindCodeGenerator.Result[scope]);
+                obj.Add("config", Context.Config);
+                ctx.PushGlobal(obj);
+                File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", $"model.h"), modelTemplate.Render(ctx));
+                ctx.PopGlobal();
             }
 
             Logger.Complete($"클래스 코드 파일을 저장했습니다.");

@@ -1,4 +1,3 @@
-// Generated code. DO NOT MODIFY DIRECTLY
 {{~
 func enum_recursive(v)
     if object.typeof(v) == 'array'
@@ -23,7 +22,7 @@ func enum_recursive(v)
 
         ret $result
     else
-        ret v
+        ret v | @upper_camel
     end
 end
 
@@ -37,19 +36,16 @@ func enum(v)
     ret $result
 end
 ~}}
-
-using System;
-using System.Collections.Generic;
-using {{for namespace in namespaces}}{{namespace}}.{{end}}Types;
-using {{for namespace in namespaces}}{{namespace}}.{{end}}Types.Common;
-
-namespace {{for namespace in namespaces}}{{namespace}}.{{end}}Types
-{
-    [DescriptiveEnumEnforcement(DescriptiveEnumEnforcementAttribute.EnforcementTypeEnum.ThrowException)]
-    public enum {{ name }}
+{{~ for item in items ~}}
+    [JsonConverter(typeof(StringEnumConverter))]
+    public enum {{ item.name | @upper_camel }}
     {
-{{~ for pair in properties ~}}
-        {{ pair.key }} = {{ enum(pair.value) }}{{ if !for.last }}, {{ end }}
+{{~ for prop in item.props ~}}
+        [EnumMember(Value = "{{ prop.name }}")]
+        {{ prop.name | @upper_camel }} = {{ enum(prop.value)}}{{ if !for.last }}, {{ end }}
 {{~ end ~}}
     }
-}
+{{~ if !for.last ~}}
+
+{{~ end ~}}
+{{~ end ~}}

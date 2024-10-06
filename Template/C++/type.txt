@@ -94,6 +94,36 @@ public:
         return timespan(ts._ms - duration);
     }
 
+    friend bool operator == (const timespan& ts1, const timespan& ts2)
+    {
+        return ts1._ms == ts2._ms;
+    }
+
+    friend bool operator != (const timespan& ts1, const timespan& ts2)
+    {
+        return ts1._ms != ts2._ms;
+    }
+
+    friend bool operator > (const timespan& ts1, const timespan& ts2)
+    {
+        return ts1._ms > ts2._ms;
+    }
+
+    friend bool operator < (const timespan& ts1, const timespan& ts2)
+    {
+        return ts1._ms < ts2._ms;
+    }
+
+    friend bool operator >= (const timespan& ts1, const timespan& ts2)
+    {
+        return ts1._ms >= ts2._ms;
+    }
+
+    friend bool operator <= (const timespan& ts1, const timespan& ts2)
+    {
+        return ts1._ms <= ts2._ms;
+    }
+
     timespan& operator += (const timespan& ts)
     {
         this->_ms += ts._ms;
@@ -127,12 +157,12 @@ public:
 
     int seconds() const
     {
-        return std::chrono::duration_cast<std::chrono::seconds>(this->_ms).count();
+        return std::chrono::duration_cast<std::chrono::seconds>(this->_ms).count() % 60;
     }
 
     int minutes() const
     {
-        return std::chrono::duration_cast<std::chrono::minutes>(this->_ms).count();
+        return std::chrono::duration_cast<std::chrono::minutes>(this->_ms).count() % 60;
     }
 
     int hours() const
@@ -148,6 +178,24 @@ public:
     int64_t total_milliseconds() const
     {
         return this->_ms.count();
+    }
+
+    std::string to_string()
+    {
+        auto sstream = std::stringstream();
+        auto days = this->days();
+        if (days > 0)
+            sstream << days << '.';
+
+        sstream << this->hours() << ':'
+            << this->minutes() << ':'
+            << this->seconds();
+
+        auto ms = this->milliseconds();
+        if (ms > 0)
+            sstream << '.' << ms;
+
+        return sstream.str();
     }
 };
 
@@ -262,6 +310,36 @@ public:
     {
         this->add_milliseconds(-ts.total_milliseconds());
         return *this;
+    }
+
+    friend bool operator == (const datetime& dt1, const datetime& dt2)
+    {
+        return dt1._ptime == dt2._ptime;
+    }
+
+    friend bool operator != (const datetime& dt1, const datetime& dt2)
+    {
+        return dt1._ptime != dt2._ptime;
+    }
+
+    friend bool operator > (const datetime& dt1, const datetime& dt2)
+    {
+        return dt1._ptime > dt2._ptime;
+    }
+
+    friend bool operator < (const datetime& dt1, const datetime& dt2)
+    {
+        return dt1._ptime < dt2._ptime;
+    }
+
+    friend bool operator >= (const datetime& dt1, const datetime& dt2)
+    {
+        return dt1._ptime >= dt2._ptime;
+    }
+
+    friend bool operator <= (const datetime& dt1, const datetime& dt2)
+    {
+        return dt1._ptime <= dt2._ptime;
     }
 
     template <class _Rep, class _Period>

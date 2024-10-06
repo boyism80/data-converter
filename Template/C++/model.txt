@@ -28,7 +28,6 @@ classes = [
 #include <boost/xpressive/xpressive.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <unordered_map>
-#include <datetime.h>
 {{~ for header in config.additional_header_files ~}}
 #include <{{ header }}>
 {{~ end ~}}

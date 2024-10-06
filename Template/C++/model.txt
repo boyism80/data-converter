@@ -319,7 +319,7 @@ template <> datetime build<datetime>(const Json::Value& json)
 {
     try
     {
-        return datetime::parse("yyyy-MM-dd HH:mm:ss", build<std::string>(json));
+        return datetime(build<std::string>(json));
     }
     catch (std::exception&)
     {

@@ -25,8 +25,7 @@ classes = [
 #include <optional>
 #include <chrono>
 #include <jsoncpp/json/json.h>
-#include <boost/xpressive/xpressive.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
+#include <datetime.h>
 #include <unordered_map>
 {{~ for header in config.additional_header_files ~}}
 #include <{{ header }}>
@@ -170,8 +169,8 @@ template <> std::string build<std::string>(const Json::Value& json);
 template <> float build<float>(const Json::Value& json);
 template <> double build<double>(const Json::Value& json);
 template <> bool build<bool>(const Json::Value& json);
-template <> {{ config.namespace | @namespace_access_cpp }}datetime build<datetime>(const Json::Value& json);
-template <> {{ config.namespace | @namespace_access_cpp }}timespan build<timespan>(const Json::Value& json);
+template <> datetime build<datetime>(const Json::Value& json);
+template <> timespan build<timespan>(const Json::Value& json);
 template <> {{ config.namespace | @namespace_access_cpp }}date_range build<{{ config.namespace | @namespace_access_cpp }}date_range>(const Json::Value& json);
 template <> {{ config.namespace | @namespace_access_cpp }}dsl build<{{ config.namespace | @namespace_access_cpp }}dsl>(const Json::Value& json);
 

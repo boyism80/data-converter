@@ -46,7 +46,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
                 items.Add(groupName, props);
             }
 
-            var obj = new ScribanExtension();
+            var obj = new ScribanEx();
             obj.Add("super", scope == Scope.Common);
             obj.Add("scope", scope);
             obj.Add("items", items);

@@ -69,7 +69,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
                 x.Props
             } as object).ToList();
 
-            var obj = new ScribanExtension();
+            var obj = new ScribanEx();
             obj.Add("items", items);
             obj.Add("config", Context.Config);
 

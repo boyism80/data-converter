@@ -117,20 +117,20 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             var ctx = new TemplateContext();
             foreach (var (scope, items) in g)
             {
-                var obj = new ScribanExtension();
+                var obj = new ScribanEx();
                 obj.Add("items", items);
                 obj.Add("config", Context.Config);
                 ctx.PushGlobal(obj);
                 var classCode = classTemplate.Render(ctx);
                 ctx.PopGlobal();
 
-                obj = new ScribanExtension();
+                obj = new ScribanEx();
                 obj.Add("config", Context.Config);
                 ctx.PushGlobal(obj);
                 var typeCode = baseTypeTemplate.Render(ctx);
                 ctx.PopGlobal();
 
-                obj = new ScribanExtension();
+                obj = new ScribanEx();
                 obj.Add("enum", enumCodeGenerator.Result);
                 obj.Add("type", typeCode);
                 obj.Add("const", constCodeGenerator.Result[scope]);

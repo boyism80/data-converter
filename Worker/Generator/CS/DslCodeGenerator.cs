@@ -61,7 +61,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
         protected override IReadOnlyList<DslCodeGeneratorResult> OnFinish(IReadOnlyList<DslCodeGeneratorResult> output)
         {
             var template = Template.Parse(File.ReadAllText($"Template/C#/dsl.txt"));
-            var obj = new ScribanExtension();
+            var obj = new ScribanEx();
             obj.Add("items", output.OrderBy(x => x.Header).ToList());
             obj.Add("dsls", _prototypes.Keys.OrderBy(x => x).ToList());
             obj.Add("config", Context.Config);

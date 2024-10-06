@@ -7,7 +7,7 @@ namespace ExcelTableConverter.Util
         CPP, CS, NODE
     }
 
-    public class ScribanExtension : ScriptObject
+    public class ScribanEx : ScriptObject
     {
         public static string UpperCamel(string value)
         {

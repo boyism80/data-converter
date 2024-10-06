@@ -32,7 +32,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
                 if (ftdSchemaSet.Count == 0)
                     continue;
 
-                var camelTableName = ScribanExtension.UpperCamel(tableName);
+                var camelTableName = ScribanEx.UpperCamel(tableName);
 
                 var containerType = string.Empty;
                 var genericType = string.Empty;
@@ -68,7 +68,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
                 });
             }
 
-            var obj = new ScribanExtension();
+            var obj = new ScribanEx();
             obj.Add("scope", scope);
             obj.Add("tables", buffer);
             obj.Add("config", Context.Config);

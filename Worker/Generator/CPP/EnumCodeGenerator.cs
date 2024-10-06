@@ -55,7 +55,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 x.Props
             } as object).ToList();
 
-            var obj = new ScribanExtension();
+            var obj = new ScribanEx();
             obj.Add("items", items);
             obj.Add("config", Context.Config);
             var ctx = new TemplateContext();

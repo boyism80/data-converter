@@ -110,7 +110,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
             var modelTemplate = Template.Parse(File.ReadAllText("Template/C#/model.txt"));
             foreach (var (scope, items) in g)
             {
-                var obj = new ScribanExtension();
+                var obj = new ScribanEx();
                 obj.Add("scope", scope);
                 obj.Add("items", items);
                 obj.Add("config", Context.Config);

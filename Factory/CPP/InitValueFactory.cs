@@ -33,7 +33,7 @@ namespace ExcelTableConverter.Factory.CPP
 
         protected override string DateTimeType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable("jed_utils::datetime", value, nullable);
+            return WithNullable("datetime", value, nullable);
         }
 
         protected override string DictionaryType(object value, string root, string k, string v, DataFormatOption option)
@@ -108,7 +108,7 @@ namespace ExcelTableConverter.Factory.CPP
 
         protected override string TimeSpanType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable("jed_utils::timespan", value, nullable);
+            return WithNullable("timespan", value, nullable);
         }
 
         protected override string PointType(object value, string root, string e, bool nullable, DataFormatOption option)

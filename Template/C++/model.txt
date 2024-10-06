@@ -26,6 +26,7 @@ classes = [
 #include <chrono>
 #include <jsoncpp/json/json.h>
 #include <boost/xpressive/xpressive.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <unordered_map>
 #include <datetime.h>
 {{~ for header in config.additional_header_files ~}}
@@ -170,8 +171,8 @@ template <> std::string build<std::string>(const Json::Value& json);
 template <> float build<float>(const Json::Value& json);
 template <> double build<double>(const Json::Value& json);
 template <> bool build<bool>(const Json::Value& json);
-template <> jed_utils::datetime build<jed_utils::datetime>(const Json::Value& json);
-template <> jed_utils::timespan build<jed_utils::timespan>(const Json::Value& json);
+template <> {{ config.namespace | @namespace_access_cpp }}datetime build<datetime>(const Json::Value& json);
+template <> {{ config.namespace | @namespace_access_cpp }}timespan build<timespan>(const Json::Value& json);
 template <> {{ config.namespace | @namespace_access_cpp }}date_range build<{{ config.namespace | @namespace_access_cpp }}date_range>(const Json::Value& json);
 template <> {{ config.namespace | @namespace_access_cpp }}dsl build<{{ config.namespace | @namespace_access_cpp }}dsl>(const Json::Value& json);
 
@@ -315,19 +316,19 @@ template <> bool build<bool>(const Json::Value& json)
     return json.asBool();
 }
 
-template <> jed_utils::datetime build<jed_utils::datetime>(const Json::Value& json)
+template <> datetime build<datetime>(const Json::Value& json)
 {
     try
     {
-        return jed_utils::datetime::parse("yyyy-MM-dd HH:mm:ss", build<std::string>(json));
+        return datetime::parse("yyyy-MM-dd HH:mm:ss", build<std::string>(json));
     }
     catch (std::exception&)
     {
-        return jed_utils::datetime();
+        return datetime();
     }
 }
 
-template <> jed_utils::timespan build<jed_utils::timespan>(const Json::Value& json)
+template <> timespan build<timespan>(const Json::Value& json)
 {
     static const auto regex = boost::xpressive::sregex::compile("((?P<day>\\d+).)?(?P<hour>\\d{1,2}):(?P<min>\\d{1,2}):(?P<sec>\\d{1,2})(?:.(?P<ms>\\d+))?");
     auto what = boost::xpressive::smatch();
@@ -339,7 +340,7 @@ template <> jed_utils::timespan build<jed_utils::timespan>(const Json::Value& js
     auto hours = std::stoi(what["hour"].str());
     auto mins = std::stoi(what["min"].str());
     auto secs = std::stoi(what["sec"].str());
-    return jed_utils::timespan(day, hours, mins, secs);
+    return timespan(day, hours, mins, secs);
 }
 
 template <> dsl build<dsl>(const Json::Value& json)
@@ -349,7 +350,7 @@ template <> dsl build<dsl>(const Json::Value& json)
 
 template <> date_range build<date_range>(const Json::Value& json)
 {
-    return date_range(build<std::optional<jed_utils::datetime>>(json["Begin"]), build<std::optional<jed_utils::datetime>>(json["End"]));
+    return date_range(build<std::optional<datetime>>(json["Begin"]), build<std::optional<datetime>>(json["End"]));
 }
 
 {{~ for class in classes ~}}

@@ -50,7 +50,7 @@ namespace ExcelTableConverter.Factory.CPP
         protected override string DateTimeType(object value, string root, bool nullable, DataFormatOption option)
         {
             var dt = (DateTime)value;
-            return $"jed_utils::datetime::parse(\"yyyy-MM-dd HH:mm:ss\", {Build("string", dt.ToString("yyyy-MM-dd HH:mm:ss"))})";
+            return $"datetime({Build("string", dt.ToString("yyyy-MM-dd HH:mm:ss"))})";
         }
 
         protected override string DictionaryType(object value, string root, string k, string v, DataFormatOption option)
@@ -159,7 +159,7 @@ namespace ExcelTableConverter.Factory.CPP
         protected override string TimeSpanType(object value, string root, bool nullable, DataFormatOption option)
         {
             var ts = (TimeSpan)value;
-            return $"jed_utils::timespan({ts.Days}, {ts.Hours}, {ts.Minutes}, {ts.Seconds})";
+            return $"timespan({Build("string", ts.ToString("dd\\.hh\\:mm\\:ss"))})";
         }
 
         protected override string PointType(object value, string root, string e, bool nullable, DataFormatOption option)

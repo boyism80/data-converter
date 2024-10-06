@@ -17,10 +17,10 @@
 class date_range
 {
 public:
-    const std::optional<boost::posix_time::ptime> begin, end;
+    const std::optional<jed_utils::datetime> begin, end;
 
 public:
-    date_range(const std::optional<boost::posix_time::ptime>& begin, const std::optional<boost::posix_time::ptime>& end) : 
+    date_range(const std::optional<jed_utils::datetime>& begin, const std::optional<jed_utils::datetime>& end) : 
         begin(begin),
         end(end)
     {}

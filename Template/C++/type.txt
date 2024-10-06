@@ -187,9 +187,9 @@ public:
         if (days > 0)
             sstream << days << '.';
 
-        sstream << this->hours() << ':'
-            << this->minutes() << ':'
-            << this->seconds();
+        sstream << std::setw(2) << std::setfill('0') << this->hours() << ':'
+            << std::setw(2) << std::setfill('0') << this->minutes() << ':'
+            << std::setw(2) << std::setfill('0') << this->seconds();
 
         auto ms = this->milliseconds();
         if (ms > 0)
@@ -300,6 +300,12 @@ public:
         return result;
     }
 
+    friend timespan operator - (const datetime& dt1, const datetime& dt2)
+    {
+        auto diff = dt1._ptime - dt2._ptime;
+        return timespan(boost::posix_time::to_simple_string(diff));
+    }
+
     datetime& operator += (const timespan& ts)
     {
         this->add_timespan(ts);
@@ -372,11 +378,11 @@ public:
     {
         auto sstream = std::stringstream();
         sstream << this->year() << '-'
-            << this->month() << '-'
-            << this->day() << ' '
-            << this->hours() << ':'
-            << this->minutes() << ':'
-            << this->seconds();
+            << std::setw(2) << std::setfill('0') << this->month() << '-'
+            << std::setw(2) << std::setfill('0') << this->day() << ' '
+            << std::setw(2) << std::setfill('0') << this->hours() << ':'
+            << std::setw(2) << std::setfill('0') << this->minutes() << ':'
+            << std::setw(2) << std::setfill('0') << this->seconds();
 
         auto ms = this->milliseconds();
         if (ms > 0)

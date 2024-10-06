@@ -398,7 +398,7 @@ public:
     const std::optional<datetime> begin, end;
 
 public:
-    date_range(const std::optional<datetime>& begin, const std::optional<jed_utils::datetime>& end) : 
+    date_range(const std::optional<datetime>& begin, const std::optional<datetime>& end) : 
         begin(begin),
         end(end)
     {}

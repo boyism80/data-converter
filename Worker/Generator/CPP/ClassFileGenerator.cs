@@ -97,6 +97,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             var classTemplate = Template.Parse(File.ReadAllText("Template/C++/class.txt"));
             var baseTypeTemplate = Template.Parse(File.ReadAllText("Template/C++/type.txt"));
             var modelTemplate = Template.Parse(File.ReadAllText("Template/C++/model.txt"));
+            var datetimeTemplate = Template.Parse(File.ReadAllText("Template/C++/datetime.txt"));
 
             var g = output.GroupBy(x => x.Scope).ToDictionary(x => x.Key, x =>
             {
@@ -141,6 +142,15 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 ctx.PushGlobal(obj);
                 File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", $"model.h"), modelTemplate.Render(ctx));
                 ctx.PopGlobal();
+            }
+
+            {
+                var obj = new ScribanEx();
+                obj.Add("config", Context.Config);
+
+                ctx = new TemplateContext();
+                ctx.PushGlobal(obj);
+                File.WriteAllText(Path.Combine(_dir, $"datetime.h"), datetimeTemplate.Render(ctx));
             }
 
             Logger.Complete($"클래스 코드 파일을 저장했습니다.");

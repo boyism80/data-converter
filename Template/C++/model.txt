@@ -1,19 +1,4 @@
 {{~
-classes = [
-        {
-            name: 'point',
-            props: ['x', 'y']
-        },
-        {
-            name: 'size',
-            props: ['width', 'height']
-        },
-        {
-            name: 'range',
-            props: ['min', 'max']
-        }
-    ]
-~}}
 #ifndef __MODEL_H__
 #define __MODEL_H__
 
@@ -183,7 +168,12 @@ template <typename T> T build(const Json::Value& json)
     }
     else if constexpr (is_map<T>)
     {
-        return std::map<typename T::key_type, typename T::mapped_type>(build<typename T::key_type>(*i), build<typename T::mapped_type>(*i));
+        auto result = std::map<typename T::key_type, typename T::mapped_type>();
+        for(auto i = json.begin(); i != json.end(); i++)
+        {
+            result.insert({ build<typename T::key_type>(i.key()), build<typename T::mapped_type>(*i)});
+        }
+        return result;
     } 
     else if constexpr (is_optional<T>)
     {
@@ -328,16 +318,6 @@ template <> date_range build<date_range>(const Json::Value& json)
     return date_range(build<std::optional<datetime>>(json["Begin"]), build<std::optional<datetime>>(json["End"]));
 }
 
-{{~ for class in classes ~}}
-template <typename T> typename std::enable_if<{{ config.namespace | @namespace_access_cpp }}is_{{ class.name }}<T>::value, T>::type build(const Json::Value& json)
-{
-{{~ for prop in class.props ~}}
-    auto {{ prop }} = build<typename T::value_type>(json["{{ prop }}"]);
-{{~ end ~}}
-
-    return {{ class.name }}({{ for prop in class.props}}{{ prop }}{{ if !for.last }}, {{ end }}{{ end }});
-}
-{{~ end ~}}
 #pragma endregion
 
 {{ config.namespace | @end_namespace_cpp }}

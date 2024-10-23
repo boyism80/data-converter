@@ -18,7 +18,7 @@
 BEGIN_PREPROCESSOR
 #endif
 
-{{ config.namespace | @begin_namespace_cpp }}
+namespace {{ config.namespace | array.join '::' }} {
 
 class option
 {
@@ -26,7 +26,7 @@ public:
     using encoding_func_type = std::function<std::string(const std::string&)>;
 
 public:
-    encoding_func_type                      encoding_func;
+    encoding_func_type encoding_func;
 
 private:
     option() = default;
@@ -37,8 +37,8 @@ public:
 public:
     static option& get()
     {
-        static std::once_flag               flag;
-        static std::unique_ptr<option>      ist;
+        static std::once_flag flag;
+        static std::unique_ptr<option> ist;
 
         std::call_once(flag, [] 
         {
@@ -80,34 +80,34 @@ DECLARE_AFTER_CONST
 
 class dsl;
 
-template<typename> constexpr bool is_optional_impl = false;
-template<typename T> constexpr bool is_optional_impl<std::optional<T>> = true;
-template<> constexpr bool is_optional_impl<std::nullopt_t> = true;
-template<typename T>  constexpr bool is_optional = is_optional_impl<std::decay_t<T>>;
+template <typename>   constexpr bool is_optional_impl = false;
+template <typename T> constexpr bool is_optional_impl<std::optional<T>> = true;
+template<>            constexpr bool is_optional_impl<std::nullopt_t> = true;
+template <typename T> constexpr bool is_optional = is_optional_impl<std::decay_t<T>>;
 
-template<typename> constexpr bool is_unique_impl = false;
-template<typename T> constexpr bool is_unique_impl<std::unique_ptr<T>> = true;
-template<typename T> constexpr bool is_unique = is_unique_impl<std::decay_t<T>>;
+template <typename>   constexpr bool is_unique_impl = false;
+template <typename T> constexpr bool is_unique_impl<std::unique_ptr<T>> = true;
+template <typename T> constexpr bool is_unique = is_unique_impl<std::decay_t<T>>;
 
-template<typename> constexpr bool is_vector_impl = false;
-template<typename T> constexpr bool is_vector_impl<std::vector<T>> = true;
-template<typename T> constexpr bool is_vector = is_vector_impl<std::decay_t<T>>;
+template <typename>   constexpr bool is_vector_impl = false;
+template <typename T> constexpr bool is_vector_impl<std::vector<T>> = true;
+template <typename T> constexpr bool is_vector = is_vector_impl<std::decay_t<T>>;
 
 template <typename T, typename Enabler = void> constexpr bool is_map_impl = false;
 template <typename T> constexpr bool is_map_impl<T, std::void_t<typename T::mapped_type>> = true;
-template<typename T>  constexpr bool is_map = is_map_impl<std::decay_t<T>>;
+template <typename T>  constexpr bool is_map = is_map_impl<std::decay_t<T>>;
 
-template<typename> constexpr bool is_point_impl = false;
-template<typename T> constexpr bool is_point_impl<fb::model::point<T>> = true;
-template<typename T> constexpr bool is_point = is_point_impl<std::decay_t<T>>;
+template <typename>   constexpr bool is_point_impl = false;
+template <typename T> constexpr bool is_point_impl<fb::model::point<T>> = true;
+template <typename T> constexpr bool is_point = is_point_impl<std::decay_t<T>>;
 
-template<typename> constexpr bool is_size_impl = false;
-template<typename T> constexpr bool is_size_impl<fb::model::size<T>> = true;
-template<typename T> constexpr bool is_size = is_size_impl<std::decay_t<T>>;
+template <typename>   constexpr bool is_size_impl = false;
+template <typename T> constexpr bool is_size_impl<fb::model::size<T>> = true;
+template <typename T> constexpr bool is_size = is_size_impl<std::decay_t<T>>;
 
-template<typename> constexpr bool is_range_impl = false;
-template<typename T> constexpr bool is_range_impl<fb::model::range<T>> = true;
-template<typename T> constexpr bool is_range = is_range_impl<std::decay_t<T>>;
+template <typename>   constexpr bool is_range_impl = false;
+template <typename T> constexpr bool is_range_impl<fb::model::range<T>> = true;
+template <typename T> constexpr bool is_range = is_range_impl<std::decay_t<T>>;
 
 template <typename T> inline static T build(const Json::Value& json);
 template <> int8_t build<int8_t>(const Json::Value& json);
@@ -319,7 +319,7 @@ template <> date_range build<date_range>(const Json::Value& json)
 
 #pragma endregion
 
-{{ config.namespace | @end_namespace_cpp }}
+} // end of namespace {{ config.namespace | array.join '::' }}
 
 #ifdef END_PREPROCESSOR
 END_PREPROCESSOR

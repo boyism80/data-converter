@@ -55,29 +55,5 @@ namespace ExcelTableConverter.Util
 
             return NamespaceAccess(enumerable, LanguageType.CPP);
         }
-
-        public static string BeginNamespaceCpp(object namespaces)
-        {
-            var enumerable = namespaces switch
-            {
-                List<string> list => list,
-                ScriptRange range => range.Select(x => x.ToString()),
-                _ => throw new ArgumentException()
-            };
-
-            return string.Join(" ", enumerable.Select(x => $"namespace {x} {{"));
-        }
-
-        public static string EndNamespaceCpp(object namespaces)
-        {
-            var enumerable = namespaces switch
-            {
-                List<string> list => list,
-                ScriptRange range => range.Select(x => x.ToString()),
-                _ => throw new ArgumentException()
-            };
-
-            return string.Join(" ", enumerable.Select(x => $"}}"));
-        }
     }
 }

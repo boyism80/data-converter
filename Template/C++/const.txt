@@ -13,7 +13,7 @@ func const_keyword(t)
     end
 end
 ~}}
-{{ config.const_namespace | @begin_namespace_cpp }}
+namespace {{ config.const_namespace | array.join '::' }} {
 
 {{~ for item in items ~}}
 class {{ item.key }}
@@ -29,7 +29,7 @@ private:
 #ifdef DECLARE_CONST_{{ item.key | string.upcase }}_EXTENSION
 DECLARE_CONST_{{ item.key | string.upcase }}_EXTENSION
 #endif
-};
+}; // end of const '{{ item.key }}'
 {{~ end ~}}
 
-{{ config.const_namespace | @end_namespace_cpp }}
+} // end of namespace {{ config.const_namespace | array.join '::' }}

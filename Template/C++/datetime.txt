@@ -6,7 +6,7 @@
 #include <boost/xpressive/xpressive.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-{{ config.namespace | @begin_namespace_cpp }}
+namespace {{ config.namespace | array.join '::' }} {
 
 class timespan
 {
@@ -434,6 +434,6 @@ public:
     }
 };
 
-{{ config.namespace | @end_namespace_cpp }}
+} // end of namespace {{ config.namespace | array.join '::' }}
 
 #endif

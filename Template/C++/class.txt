@@ -36,5 +36,5 @@ DECLARE_{{ item.name | string.upcase }}_INITIALIZER
 #ifdef DECLARE_{{ item.name | string.upcase }}_EXTENSION
 DECLARE_{{ item.name | string.upcase }}_EXTENSION
 #endif
-};
+}; // end of class '{{ item.name }}'
 {{~ end ~}}

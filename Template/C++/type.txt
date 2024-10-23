@@ -57,7 +57,7 @@ public:
 #ifdef DECLARE_{{ class.name | string.upcase }}_EXTENSION
 DECLARE_{{ class.name | string.upcase }}_EXTENSION
 #endif
-};
+}; // end of struct {{ class.name }}
 {{~ if !for.last ~}}
 
 {{~ end ~}}

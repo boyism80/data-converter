@@ -119,7 +119,7 @@ public:
     {
         auto found = this->find(k);
         if(found == nullptr)
-            throw std::runtime_error("does not exists");
+            throw std::runtime_error(std::format("{} does not exists", k));
 
         return *found;
     }

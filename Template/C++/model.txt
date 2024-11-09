@@ -4,6 +4,7 @@
 #define __MODEL_H__
 
 #include <string>
+#include <format>
 #include <map>
 #include <vector>
 #include <queue>

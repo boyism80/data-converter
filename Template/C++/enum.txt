@@ -44,6 +44,12 @@ inline T enum_parse(const std::string k)
     throw std::runtime_error("cannot parse enum value");
 }
 
+template <typename T>
+inline const char* enum_tostring(T k)
+{
+    throw std::runtime_error("cannot convert to string from enum value");
+}
+
 {{~ for item in items ~}}
 enum class {{ item.name }}
 {
@@ -59,6 +65,23 @@ inline {{ item.name }} enum_parse<{{ item.name }}>(const std::string k)
     {
 {{~ for prop in item.props ~}}
         { "{{ prop.name }}", {{ item.name }}::{{ prop.name }} }{{ if !for.last }}, {{ end }}
+{{~ end ~}}
+    };
+
+    auto i = enums.find(k);
+    if (i == enums.end())
+        throw std::runtime_error("no enum value");
+
+    return i->second;
+}
+
+template <>
+inline const char* enum_tostring<{{ item.name }}>({{ item.name }} k)
+{
+    static const std::unordered_map<{{ item.name }}, const char*> enums
+    {
+{{~ for prop in item.props ~}}
+        { {{ item.name }}::{{ prop.name }}, "{{ prop.name }}" }{{ if !for.last }}, {{ end }}
 {{~ end ~}}
     };
 

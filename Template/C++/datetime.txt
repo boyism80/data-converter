@@ -239,9 +239,9 @@ public:
         if (days != 0)
             sstream << days << '.';
 
-        sstream << std::setw(2) << std::setfill('0') << std::abs(this->hours()) << ':' << std::setw(2)
-                << std::setfill('0') << std::abs(this->minutes()) << ':' << std::setw(2) << std::setfill('0')
-                << std::abs(this->seconds());
+        sstream << std::setw(2) << std::setfill('0') << std::abs(this->hours()) << ':' 
+                << std::setw(2) << std::setfill('0') << std::abs(this->minutes()) << ':' 
+                << std::setw(2) << std::setfill('0') << std::abs(this->seconds());
 
         auto ms = std::abs(this->milliseconds());
         if (ms != 0)

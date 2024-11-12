@@ -1,8 +1,8 @@
 {
-  "profiles": {
-    "ExcelTableConverter": {
-      "commandName": "Project",
-      "commandLineArgs": "--dir=D:\\Users\\CSHYEON\\Data\\git\\game\\c++\\fb\\resources\\table --lang=c++|c#|node"
+    "profiles": {
+        "ExcelTableConverter": {
+            "commandName": "Project",
+            "commandLineArgs": "--dir=C:\\cshyeon\\git\\fb\\resources\\table --lang=c++|c#|node"
+        }
     }
-  }
 }

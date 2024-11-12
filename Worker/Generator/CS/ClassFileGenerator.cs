@@ -6,7 +6,7 @@ using Scriban;
 namespace ExcelTableConverter.Worker.Generator.CS
 {
     public class ClassFileGeneratorResult
-    { 
+    {
         public Scope Scope { get; set; }
         public string Name { get; set; }
         public string Table { get; set; }
@@ -26,6 +26,22 @@ namespace ExcelTableConverter.Worker.Generator.CS
                 if (Directory.Exists(path) == false)
                     Directory.CreateDirectory(path);
             }
+        }
+
+        private static string GenerateClassCode(Scope scope, List<object> items)
+        {
+            var obj = new ScribanEx
+            {
+                ["scope"] = scope,
+                ["items"] = items,
+                ["config"] = Context.Config,
+            };
+
+            var ctx = new TemplateContext();
+            ctx.PushGlobal(obj);
+
+            var template = Template.Parse(File.ReadAllText("Template/C#/class.txt"));
+            return template.Render(ctx); ;
         }
 
         protected override IEnumerable<string> OnReady()
@@ -106,26 +122,20 @@ namespace ExcelTableConverter.Worker.Generator.CS
             if (g.ContainsKey(Scope.Client) == false)
                 g.Add(Scope.Client, new List<object>());
 
-            var classTemplate = Template.Parse(File.ReadAllText("Template/C#/class.txt"));
             var modelTemplate = Template.Parse(File.ReadAllText("Template/C#/model.txt"));
             foreach (var (scope, items) in g)
             {
-                var obj = new ScribanEx();
-                obj.Add("scope", scope);
-                obj.Add("items", items);
-                obj.Add("config", Context.Config);
-
+                var obj = new ScribanEx
+                {
+                    ["scope"] = scope,
+                    ["config"] = Context.Config,
+                    ["class"] = GenerateClassCode(scope, items),
+                    ["enum"] = enumCodeGenerator.Result,
+                    ["const"] = constCodeGenerator.Result[scope],
+                    ["container"] = bindCodeGenerator.Result[scope],
+                    ["dsl"] = dslCodeGenerator.Result,
+                };
                 var ctx = new TemplateContext();
-                ctx.PushGlobal(obj);
-                var classCode = classTemplate.Render(ctx);
-                
-                ctx.PopGlobal();
-                obj.Remove("items");
-                obj.Add("class", classCode);
-                obj.Add("enum", enumCodeGenerator.Result);
-                obj.Add("const", constCodeGenerator.Result[scope]);
-                obj.Add("container", bindCodeGenerator.Result[scope]);
-                obj.Add("dsl", dslCodeGenerator.Result);
                 ctx.PushGlobal(obj);
 
                 File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", "Model.cs"), modelTemplate.Render(ctx));

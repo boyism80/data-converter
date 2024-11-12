@@ -9,7 +9,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
     {
         private static readonly Template _template = Template.Parse(File.ReadAllText($"Template/C++/const.txt"));
 
-        public Dictionary<Scope, string> Result { get; private set; } = new Dictionary<Scope, string>();
+        public Dictionary<Scope, string> Declaration { get; private set; } = new Dictionary<Scope, string>();
 
         public ConstCodeGenerator(Context ctx) : base(ctx)
         {
@@ -38,7 +38,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                         Value = new AllocateValueFactory(Context).Build(constData.Type, constData.Value),
                     });
                 }
-                
+
                 if (props.Count == 0)
                     continue;
 
@@ -56,7 +56,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 
         protected override void OnWorked(Scope input, string output, int percent)
         {
-            Result.Add(input, output);
+            Declaration.Add(input, output);
             base.OnWorked(input, output, percent);
         }
 

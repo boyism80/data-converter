@@ -5,19 +5,32 @@ using Scriban;
 namespace ExcelTableConverter.Worker.Generator.CPP
 {
     public class EnumCodeGeneratorResult
-    { 
+    {
         public string Name { get; set; }
         public object Props { get; set; }
     }
 
     public class EnumCodeGenerator : ParallelWorker<string, EnumCodeGeneratorResult>
     {
-        private static readonly Template _template = Template.Parse(File.ReadAllText($"Template/C++/enum.txt"));
+        private static readonly Template _declarationTemplate = Template.Parse(File.ReadAllText($"Template/C++/enum.txt"));
 
-        public string Result { get; private set; }
+        public string Declaration { get; private set; }
+        public List<object> Enums { get; private set; }
 
         public EnumCodeGenerator(Context ctx) : base(ctx)
         {
+        }
+
+        private static string GenerateDeclarationCode(List<object> enums)
+        {
+            var obj = new ScribanEx
+            {
+                ["enums"] = enums,
+                ["config"] = Context.Config,
+            };
+            var ctx = new TemplateContext();
+            ctx.PushGlobal(obj);
+            return _declarationTemplate.Render(ctx);
         }
 
         protected override IEnumerable<string> OnReady()
@@ -30,13 +43,13 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 
         protected override IEnumerable<EnumCodeGeneratorResult> OnWork(string enumName)
         {
-            var props = Context.Result.Enum[enumName].OrderBy(x => x, new Util.Enum.Comparer()).Select(x => new 
+            var props = Context.Result.Enum[enumName].OrderBy(x => x, new Util.Enum.Comparer()).Select(x => new
             {
                 Name = x.Key,
                 Value = x.Value
             } as object).ToList();
             yield return new EnumCodeGeneratorResult
-            { 
+            {
                 Name = enumName,
                 Props = props
             };
@@ -49,18 +62,13 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 
         protected override IReadOnlyList<EnumCodeGeneratorResult> OnFinish(IReadOnlyList<EnumCodeGeneratorResult> output)
         {
-            var items = output.OrderBy(x => x.Name).Select(x => new
+            Enums = output.OrderBy(x => x.Name).Select(x => new
             {
                 x.Name,
                 x.Props
             } as object).ToList();
 
-            var obj = new ScribanEx();
-            obj.Add("items", items);
-            obj.Add("config", Context.Config);
-            var ctx = new TemplateContext();
-            ctx.PushGlobal(obj);
-            Result = _template.Render(ctx);
+            Declaration = GenerateDeclarationCode(Enums);
 
             Logger.Complete("열거형 코드 파일을 생성했습니다.");
             return base.OnFinish(output);

@@ -50,21 +50,21 @@ inline const char* enum_tostring(T k)
     throw std::runtime_error("cannot convert to string from enum value");
 }
 
-{{~ for item in items ~}}
-enum class {{ item.name }}
+{{~ for e in enums ~}}
+enum class {{ e.name }}
 {
-{{~ for prop in item.props ~}}
+{{~ for prop in e.props ~}}
     {{ prop.name }} = {{ enum(prop.value) }}{{ if !for.last }}, {{ end }}
 {{~ end ~}}
-}; // end of enum '{{ item.name }}'
+}; // end of enum '{{ e.name }}'
 
 template <>
-inline {{ item.name }} enum_parse<{{ item.name }}>(const std::string k)
+inline {{ e.name }} enum_parse<{{ e.name }}>(const std::string k)
 {
-    static const std::unordered_map<std::string, {{ item.name }}> enums
+    static const std::unordered_map<std::string, {{ e.name }}> enums
     {
-{{~ for prop in item.props ~}}
-        { "{{ prop.name }}", {{ item.name }}::{{ prop.name }} }{{ if !for.last }}, {{ end }}
+{{~ for prop in e.props ~}}
+        { "{{ prop.name }}", {{ e.name }}::{{ prop.name }} }{{ if !for.last }}, {{ end }}
 {{~ end ~}}
     };
 
@@ -76,12 +76,12 @@ inline {{ item.name }} enum_parse<{{ item.name }}>(const std::string k)
 }
 
 template <>
-inline const char* enum_tostring<{{ item.name }}>({{ item.name }} k)
+inline const char* enum_tostring<{{ e.name }}>({{ e.name }} k)
 {
-    static const std::unordered_map<{{ item.name }}, const char*> enums
+    static const std::unordered_map<{{ e.name }}, const char*> enums
     {
-{{~ for prop in item.props ~}}
-        { {{ item.name }}::{{ prop.name }}, "{{ prop.name }}" }{{ if !for.last }}, {{ end }}
+{{~ for prop in e.props ~}}
+        { {{ e.name }}::{{ prop.name }}, "{{ prop.name }}" }{{ if !for.last }}, {{ end }}
 {{~ end ~}}
     };
 

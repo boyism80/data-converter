@@ -16,6 +16,14 @@
 {{~ for header in config.additional_header_files ~}}
 #include <{{ header }}>
 {{~ end ~}}
+#ifdef LUA
+extern "C"
+{
+#include <lua/lua.h>
+#include <lua/lualib.h>
+#include <lua/lauxlib.h>
+}
+#endif
 
 #ifdef BEGIN_PREPROCESSOR
 BEGIN_PREPROCESSOR
@@ -90,6 +98,10 @@ DECLARE_AFTER_ENUM
 
 #pragma region const
 {{ const }}
+#pragma endregion
+
+#pragma region lua
+{{ lua }}
 #pragma endregion
 
 #ifdef DECLARE_AFTER_CONST

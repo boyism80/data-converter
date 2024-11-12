@@ -37,7 +37,7 @@ namespace ExcelTableConverter.Worker
             switch (e)
             {
                 case AggregateException ae:
-                    foreach(var x in ae.InnerExceptions)
+                    foreach (var x in ae.InnerExceptions)
                         Logger.Error(x.Message, tracker);
                     break;
 
@@ -209,7 +209,7 @@ namespace ExcelTableConverter.Worker
             if (cellType == CellType.Formula)
                 cellType = cell.CachedFormulaResultType;
 
-            if(cellType == CellType.String)
+            if (cellType == CellType.String)
                 return cell.StringCellValue.StartsWith("#");
 
             if (cellType == CellType.Error)

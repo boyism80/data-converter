@@ -1,6 +1,6 @@
 #ifdef LUA
 namespace lua {
-void map_enum(lua_State* lua)
+inline static void map_enum(lua_State* lua)
 {
 {{~ for enum in enums ~}}
 {{~ for prop in enum.props ~}}

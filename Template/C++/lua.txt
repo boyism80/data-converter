@@ -9,6 +9,5 @@ inline static void map_enum(lua_State* lua)
 {{~ end ~}}
 {{~ end ~}}
 }
-#endif
-
 } // end of namespace {{ config.namespace | array.add 'lua' | array.join '::' }}
+#endif

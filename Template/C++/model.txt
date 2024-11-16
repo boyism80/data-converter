@@ -25,6 +25,10 @@ extern "C"
 }
 #endif
 
+#ifdef DELETE
+#undef DELETE
+#endif
+
 #ifdef BEGIN_PREPROCESSOR
 BEGIN_PREPROCESSOR
 #endif
@@ -152,8 +156,8 @@ template <> std::string build<std::string>(const Json::Value& json);
 template <> float build<float>(const Json::Value& json);
 template <> double build<double>(const Json::Value& json);
 template <> bool build<bool>(const Json::Value& json);
-template <> datetime build<datetime>(const Json::Value& json);
-template <> timespan build<timespan>(const Json::Value& json);
+template <> {{ config.namespace | array.add 'datetime' | array.join '::' }} build<{{ config.namespace | array.add 'datetime' | array.join '::' }}>(const Json::Value& json);
+template <> {{ config.namespace | array.add 'timespan' | array.join '::' }} build<{{ config.namespace | array.add 'timespan' | array.join '::' }}>(const Json::Value& json);
 template <> {{ config.namespace | @namespace_access_cpp }}date_range build<{{ config.namespace | @namespace_access_cpp }}date_range>(const Json::Value& json);
 template <> {{ config.namespace | @namespace_access_cpp }}dsl build<{{ config.namespace | @namespace_access_cpp }}dsl>(const Json::Value& json);
 

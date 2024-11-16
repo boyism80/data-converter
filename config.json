@@ -9,5 +9,5 @@
     "ParentTableFormat": "{0}_attribute",
     "ParentPropName": "parent",
     "DslTypeEnumName": "DSL",
-    "AdditionalHeaderFiles": ["lua.h", "fb/model/datetime.h", "model.preprocessor.h", "enum_ext.h"]
+    "AdditionalHeaderFiles": ["model.additional.h"]
 }

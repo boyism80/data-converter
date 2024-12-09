@@ -1,0 +1,9 @@
+    const $const = {
+{{~ for item in items ~}}
+        {{ item.name }}: {
+{{~ for prop in item.props ~}}
+            {{ prop.name }}: {{ prop.value }}{{ if !for.last }},{{ end }}
+{{~ end ~}}
+        }{{ if !for.last }},{{ end }}
+{{ end }}
+    }

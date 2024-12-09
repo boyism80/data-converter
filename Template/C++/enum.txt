@@ -1,0 +1,98 @@
+{{~
+func enum_recursive(v)
+    if object.typeof(v) == 'array'
+        $result = ''
+        $index = 0
+        if v.size > 1
+            $result += '('
+        end
+        
+        for x in v
+            $index = $index + 1
+            $result += enum_recursive(x)
+
+            if $index < v.size && x != '~'
+                $result += ' '
+            end
+        end
+        
+        if v.size > 1
+            $result += ')'
+        end
+
+        ret $result
+    else
+        ret v
+    end
+end
+
+func enum(v)
+    $result = enum_recursive(v)
+    if ($result | string.starts_with '(') && ($result | string.ends_with(')'))
+        $result = $result | string.remove_first '('
+        $result = $result | string.remove_last ')'
+    end
+
+    ret $result
+end
+~}}
+namespace {{ config.enum_namespace | array.join '::' }} {
+
+template <typename T>
+inline T enum_parse(const std::string k)
+{
+    throw std::runtime_error("cannot parse enum value");
+}
+
+template <typename T>
+inline const char* enum_tostring(T k)
+{
+    throw std::runtime_error("cannot convert to string from enum value");
+}
+
+{{~ for e in enums ~}}
+enum class {{ e.name }}
+{
+{{~ for prop in e.props ~}}
+    {{ prop.name }} = {{ enum(prop.value) }}{{ if !for.last }}, {{ end }}
+{{~ end ~}}
+}; // end of enum '{{ e.name }}'
+
+template <>
+inline {{ e.name }} enum_parse<{{ e.name }}>(const std::string k)
+{
+    static const std::unordered_map<std::string, {{ e.name }}> enums
+    {
+{{~ for prop in e.props ~}}
+        { "{{ prop.name }}", {{ e.name }}::{{ prop.name }} }{{ if !for.last }}, {{ end }}
+{{~ end ~}}
+    };
+
+    auto i = enums.find(k);
+    if (i == enums.end())
+        throw std::runtime_error("no enum value");
+
+    return i->second;
+}
+
+template <>
+inline const char* enum_tostring<{{ e.name }}>({{ e.name }} k)
+{
+    static const std::unordered_map<{{ e.name }}, const char*> enums
+    {
+{{~ for prop in e.props ~}}
+        { {{ e.name }}::{{ prop.name }}, "{{ prop.name }}" }{{ if !for.last }}, {{ end }}
+{{~ end ~}}
+    };
+
+    auto i = enums.find(k);
+    if (i == enums.end())
+        throw std::runtime_error("no enum value");
+
+    return i->second;
+}
+{{~ if !for.last }}
+{{ end ~}}
+{{~ end ~}}
+
+} // end of namespace {{ config.enum_namespace | array.join '::' }}

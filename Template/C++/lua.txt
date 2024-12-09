@@ -1,0 +1,13 @@
+#ifdef LUA
+namespace lua {
+inline static void map_enum(lua_State* lua)
+{
+{{~ for enum in enums ~}}
+{{~ for prop in enum.props ~}}
+    lua_pushinteger(lua, (lua_Integer){{ config.namespace | array.concat config.enum_namespace | array.add enum.name | array.add prop.name | array.join '::'}});
+    lua_setglobal(lua, "{{ enum.name }}_{{ prop.name }}");
+{{~ end ~}}
+{{~ end ~}}
+}
+} // end of namespace {{ config.namespace | array.add 'lua' | array.join '::' }}
+#endif

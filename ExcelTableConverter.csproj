@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Version>1.1.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Converter\**" />
+    <Compile Remove="output\**" />
+    <EmbeddedResource Remove="Converter\**" />
+    <EmbeddedResource Remove="output\**" />
+    <None Remove="Converter\**" />
+    <None Remove="output\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Crc32.NET" Version="1.2.0" />
+    <PackageReference Include="NDesk.Options.Core" Version="1.2.6" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="NPOI" Version="2.6.2" />
+    <PackageReference Include="Scriban" Version="5.9.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="config.c#.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="config.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="dsl.c#.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="dsl.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include=".\Template\**" LinkBase="Template">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Template\C++\" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,92 @@
+{{~
+func rvalue(type)
+    primitives = ['bool', 'char', 'short', 'int', 'long', 'long long', 'float', 'double', 'int8_t', 'int16_t', 'int32_t', 'int64_t', 'uint8_t', 'uint16_t', 'uint32_t', 'uint64_t']
+    if primitives | array.contains type
+        ret type
+    else if type | string.contains (config.enum_namespace | @namespace_access_cpp)
+        ret type
+    else
+        ret 'const ' + type + '&'
+    end
+end
+
+func deserialize(type, i)
+    ret 'any_cast<' + rvalue(type) + '>(parameters[' + i + '])'
+end
+~}}
+class dsl
+{
+public:
+{{~ for dsl in dsls ~}}
+    class {{ dsl }};
+{{~ end ~}}
+
+public:
+    {{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }} header;
+    const std::vector<std::any> params;
+
+private:
+    static std::vector<std::any> parse_params(const Json::Value& json);
+
+public:
+    dsl({{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }} header, const std::vector<std::any>& params) : header(header), params(params)
+    { }
+    dsl(const Json::Value& json) : header(build<{{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }}>(json["Type"])), params(parse_params(json))
+    { }
+    ~dsl()
+    { }
+};
+
+{{~ for item in items ~}}
+class {{ config.namespace | @namespace_access_cpp }}dsl::{{ item.name }}
+{
+{{~ if item.props.size > 0 ~}}
+public:
+{{~ for prop in item.props ~}}
+    const {{ prop.type }} {{ prop.name }};
+{{~ end ~}}
+
+{{ end ~}}
+public:
+    {{ item.name }}({{ for prop in item.props }}{{ rvalue(prop.type) }} {{ prop.name }}{{ if !for.last }}, {{ end }}{{ end }}){{ if item.props.size > 0 }} : {{ end }}
+{{~ for prop in item.props ~}}
+        {{ prop.name }}({{ prop.name }}){{ if !for.last }},{{ end }}
+{{~ end ~}}
+    { }
+    {{ item.name }}(const Json::Value& json){{ if item.props.size > 0 }} : {{ end }}
+{{~ for props in item.props ~}}
+        {{ props.name }}({{ config.namespace | @namespace_access_cpp }}build<{{ props.type }}>(json[{{ for.index }}])){{ if !for.last }},{{ end }}
+{{~ end ~}}
+    { }
+    {{ item.name }}(const std::vector<std::any>& parameters){{ if item.props.size > 0 }} : {{ end }}
+{{~ for prop in item.props ~}}
+        {{ prop.name }}({{ deserialize(prop.type, for.index) }}){{ if !for.last }},{{ end }}
+{{~ end ~}}
+    { }
+
+public:
+    {{ config.namespace | @namespace_access_cpp }}dsl to_dsl()
+    {
+        return {{ config.namespace | @namespace_access_cpp }}dsl({{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }}::{{ item.name }}, { {{~ for prop in item.props ~}} {{ prop.name }}{{ if !for.last }}, {{ end }} {{~ end ~}} });
+    }
+};
+{{ if !for.last }}
+{{ end }}
+{{~ end ~}}
+
+inline std::vector<std::any> {{ config.namespace | @namespace_access_cpp }}dsl::parse_params(const Json::Value& json)
+{
+    static auto data = std::unordered_map<{{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }}, std::function<std::vector<std::any>(const Json::Value&)>>
+    {
+{{~ for dsl in dsls ~}}
+        { {{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }}::{{ dsl }}, [](const Json::Value& json) { return {{ config.namespace | @namespace_access_cpp }}dsl::{{ dsl }}(json).to_dsl().params; }}{{ if !for.last }},{{ end }}
+{{~ end ~}}
+    };
+
+    auto header = build<{{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }}>(json["Type"]);
+    auto i = data.find(header);
+    if(i == data.end())
+        throw std::runtime_error("invalid dsl header");
+
+    return i->second(json["Parameters"]);
+}

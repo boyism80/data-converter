@@ -1,0 +1,11 @@
+{{~ for item in items ~}}
+    public class {{ item.name | @upper_camel }}{{ if item.based }} : {{ config.namespace | array.each @upper_camel | array.join '.' }}.{{ item.based | @upper_camel }}{{ end }}
+    {
+{{~ for prop in item.props ~}}
+        [JsonProperty("{{ prop.name }}")]
+        public {{ prop.type }} {{ prop.name | @upper_camel }} { get; set; }
+{{~ end ~}}
+    }
+{{~ if !for.last }}
+{{ end ~}}
+{{~ end ~}}

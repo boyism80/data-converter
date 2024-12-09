@@ -1,0 +1,358 @@
+// clang-format off
+
+#ifndef __MODEL_H__
+#define __MODEL_H__
+
+#include <string>
+#include <format>
+#include <map>
+#include <vector>
+#include <queue>
+#include <any>
+#include <optional>
+#include <chrono>
+#include <jsoncpp/json/json.h>
+#include <unordered_map>
+{{~ for header in config.additional_header_files ~}}
+#include <{{ header }}>
+{{~ end ~}}
+#ifdef LUA
+extern "C"
+{
+#include <lua/lua.h>
+#include <lua/lualib.h>
+#include <lua/lauxlib.h>
+}
+#endif
+
+#ifdef DELETE
+#undef DELETE
+#endif
+
+#ifdef BEGIN_PREPROCESSOR
+BEGIN_PREPROCESSOR
+#endif
+
+namespace {{ config.namespace | array.join '::' }} {
+
+class option
+{
+public:
+    using encoding_func_type = std::function<std::string(const std::string&)>;
+
+private:
+    encoding_func_type decoding_func;
+
+private:
+    option() = default;
+
+public:
+    ~option() = default;
+
+private:
+    static option& get()
+    {
+        static std::once_flag flag;
+        static std::unique_ptr<option> ist;
+
+        std::call_once(flag, [] 
+        {
+            ist = std::unique_ptr<option>(new option());
+        });
+        return *ist;
+    }
+
+public:
+    static void decoding(const encoding_func_type& fn)
+    {
+        auto& ist = get();
+        ist.decoding_func = fn;
+    }
+
+public:
+    static std::string decode(const std::string& value)
+    {
+        auto& ist = get();
+        if (ist.decoding_func)
+        {
+            return ist.decoding_func(value);
+        }
+        else
+        {
+            return value;
+        }
+    }
+};
+
+#pragma region base type
+{{ type }}
+#pragma endregion
+
+#ifdef DECLARE_AFTER_TYPE
+DECLARE_AFTER_TYPE
+#endif
+
+#pragma region enum
+{{ enum }}
+#pragma endregion
+
+#ifdef DECLARE_AFTER_ENUM
+DECLARE_AFTER_ENUM
+#endif
+
+#pragma region const
+{{ const }}
+#pragma endregion
+
+#pragma region lua
+{{ lua }}
+#pragma endregion
+
+#ifdef DECLARE_AFTER_CONST
+DECLARE_AFTER_CONST
+#endif
+
+class dsl;
+
+template <typename>   constexpr bool is_optional_impl = false;
+template <typename T> constexpr bool is_optional_impl<std::optional<T>> = true;
+template<>            constexpr bool is_optional_impl<std::nullopt_t> = true;
+template <typename T> constexpr bool is_optional = is_optional_impl<std::decay_t<T>>;
+
+template <typename>   constexpr bool is_unique_impl = false;
+template <typename T> constexpr bool is_unique_impl<std::unique_ptr<T>> = true;
+template <typename T> constexpr bool is_unique = is_unique_impl<std::decay_t<T>>;
+
+template <typename>   constexpr bool is_vector_impl = false;
+template <typename T> constexpr bool is_vector_impl<std::vector<T>> = true;
+template <typename T> constexpr bool is_vector = is_vector_impl<std::decay_t<T>>;
+
+template <typename T, typename Enabler = void> constexpr bool is_map_impl = false;
+template <typename T> constexpr bool is_map_impl<T, std::void_t<typename T::mapped_type>> = true;
+template <typename T>  constexpr bool is_map = is_map_impl<std::decay_t<T>>;
+
+template <typename>   constexpr bool is_point_impl = false;
+template <typename T> constexpr bool is_point_impl<fb::model::point<T>> = true;
+template <typename T> constexpr bool is_point = is_point_impl<std::decay_t<T>>;
+
+template <typename>   constexpr bool is_size_impl = false;
+template <typename T> constexpr bool is_size_impl<fb::model::size<T>> = true;
+template <typename T> constexpr bool is_size = is_size_impl<std::decay_t<T>>;
+
+template <typename>   constexpr bool is_range_impl = false;
+template <typename T> constexpr bool is_range_impl<fb::model::range<T>> = true;
+template <typename T> constexpr bool is_range = is_range_impl<std::decay_t<T>>;
+
+template <typename T> inline static T build(const Json::Value& json);
+template <> int8_t build<int8_t>(const Json::Value& json);
+template <> uint8_t build<uint8_t>(const Json::Value& json);
+template <> int16_t build<int16_t>(const Json::Value& json);
+template <> uint16_t build<uint16_t>(const Json::Value& json);
+template <> int build<int>(const Json::Value& json);
+template <> uint32_t build<uint32_t>(const Json::Value& json);
+template <> int64_t build<int64_t>(const Json::Value& json);
+template <> uint64_t build<uint64_t>(const Json::Value& json);
+template <> std::string build<std::string>(const Json::Value& json);
+template <> float build<float>(const Json::Value& json);
+template <> double build<double>(const Json::Value& json);
+template <> bool build<bool>(const Json::Value& json);
+template <> {{ config.namespace | array.add 'datetime' | array.join '::' }} build<{{ config.namespace | array.add 'datetime' | array.join '::' }}>(const Json::Value& json);
+template <> {{ config.namespace | array.add 'timespan' | array.join '::' }} build<{{ config.namespace | array.add 'timespan' | array.join '::' }}>(const Json::Value& json);
+template <> {{ config.namespace | @namespace_access_cpp }}date_range build<{{ config.namespace | @namespace_access_cpp }}date_range>(const Json::Value& json);
+template <> {{ config.namespace | @namespace_access_cpp }}dsl build<{{ config.namespace | @namespace_access_cpp }}dsl>(const Json::Value& json);
+
+#pragma region dsl
+{{ dsl }}
+#pragma endregion
+
+#pragma region class model
+{{ class }}
+#pragma endregion
+
+#pragma region container
+{{ container }}
+#pragma endregion
+
+#pragma region build function
+template <typename T> T build(const Json::Value& json)
+{
+    if constexpr (std::is_enum_v<T>)
+    {
+        if (json.isString())
+            return T(fb::model::enum_value::enum_parse<T>(build<std::string>(json)));
+        else
+            return T(json.asInt());
+    }
+    else if constexpr (std::is_pointer_v<T>)
+    {
+        if (json.isNull())
+            return nullptr;
+        else
+            return new typename std::pointer_traits<T>::element_type(json);
+    }
+    else if constexpr (is_vector<T>)
+    {
+        auto result = std::vector<typename T::value_type>();
+        for (auto i = json.begin(); i != json.end(); i++)
+        {
+            result.push_back(build<typename T::value_type>(*i));
+        }
+        return result;
+    }
+    else if constexpr (is_map<T>)
+    {
+        auto result = std::map<typename T::key_type, typename T::mapped_type>();
+        for(auto i = json.begin(); i != json.end(); i++)
+        {
+            result.insert({ build<typename T::key_type>(i.key()), build<typename T::mapped_type>(*i)});
+        }
+        return result;
+    } 
+    else if constexpr (is_optional<T>)
+    {
+        if (json.isNull())
+            return std::nullopt;
+        else
+            return std::optional<typename T::value_type>(build<typename T::value_type>(json));
+    }
+    else if constexpr (is_unique<T>)
+    {
+        if (json.isNull())
+            return std::unique_ptr<typename std::pointer_traits<T>::element_type>();
+        else
+            return std::unique_ptr<typename std::pointer_traits<T>::element_type>(build<typename std::pointer_traits<T>::element_type*>(json));
+    }
+    else if constexpr (is_point<T>)
+    {
+        auto x = build<typename T::value_type>(json["x"]);
+        auto y = build<typename T::value_type>(json["y"]);
+
+        return point(x, y);
+    }
+    else if constexpr (is_size<T>)
+    {
+        auto width = build<typename T::value_type>(json["width"]);
+        auto height = build<typename T::value_type>(json["height"]);
+
+        return size(width, height);
+    }
+    else if constexpr (is_range<T>)
+    {
+        auto min = build<typename T::value_type>(json["min"]);
+        auto max = build<typename T::value_type>(json["max"]);
+
+        return range(min, max);
+    }
+    else
+    {
+        return T(json);
+    }
+}
+
+template <> int8_t build<int8_t>(const Json::Value& json)
+{
+    auto result = json.isString() ? std::atoi(build<std::string>(json).c_str()) : json.asInt();
+    return static_cast<int8_t>(result);
+}
+
+template <> uint8_t build<uint8_t>(const Json::Value& json)
+{
+    auto result = json.isString() ? std::atoi(build<std::string>(json).c_str()) : json.asUInt();
+    return static_cast<uint8_t>(result);
+}
+
+template <> int16_t build<int16_t>(const Json::Value& json)
+{
+    auto result = json.isString() ? std::atoi(build<std::string>(json).c_str()) : json.asInt();
+    return static_cast<int16_t>(result);
+}
+
+template <> uint16_t build<uint16_t>(const Json::Value& json)
+{
+    auto result = json.isString() ? std::atoi(build<std::string>(json).c_str()) : json.asUInt();
+    return static_cast<uint16_t>(result);
+}
+
+template <> int build<int>(const Json::Value& json)
+{
+    auto result = json.isString() ? std::atoi(build<std::string>(json).c_str()) : json.asInt();
+    return static_cast<int>(result);
+}
+
+template <> uint32_t build<uint32_t>(const Json::Value& json)
+{
+    auto result = json.isString() ? std::atoi(build<std::string>(json).c_str()) : json.asUInt();
+    return static_cast<uint32_t>(result);
+}
+
+template <> int64_t build<int64_t>(const Json::Value& json)
+{
+    auto result = json.isString() ? std::atoi(build<std::string>(json).c_str()) : json.asInt64();
+    return static_cast<int64_t>(result);
+}
+
+template <> uint64_t build<uint64_t>(const Json::Value& json)
+{
+    auto result = json.isString() ? std::atoi(build<std::string>(json).c_str()) : json.asUInt64();
+    return static_cast<uint64_t>(result);
+}
+
+template <> std::string build<std::string>(const Json::Value& json)
+{
+    if (json.isNull())
+        return "";
+    else
+        return fb::model::option::decode(json.asString());
+}
+
+template <> float build<float>(const Json::Value& json)
+{
+    return json.asFloat();
+}
+
+template <> double build<double>(const Json::Value& json)
+{
+    return json.asDouble();
+}
+
+template <> bool build<bool>(const Json::Value& json)
+{
+    return json.asBool();
+}
+
+template <> datetime build<datetime>(const Json::Value& json)
+{
+    try
+    {
+        return datetime(build<std::string>(json));
+    }
+    catch (std::exception&)
+    {
+        return datetime();
+    }
+}
+
+template <> timespan build<timespan>(const Json::Value& json)
+{
+    return timespan(build<std::string>(json));
+}
+
+template <> dsl build<dsl>(const Json::Value& json)
+{
+    return dsl(json);
+}
+
+template <> date_range build<date_range>(const Json::Value& json)
+{
+    return date_range(build<std::optional<datetime>>(json["Begin"]), build<std::optional<datetime>>(json["End"]));
+}
+
+#pragma endregion
+
+} // end of namespace {{ config.namespace | array.join '::' }}
+
+#ifdef END_PREPROCESSOR
+END_PREPROCESSOR
+#endif
+
+#endif

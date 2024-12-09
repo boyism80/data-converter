@@ -1,0 +1,34 @@
+    public class Dsl
+    {
+        public {{ config.namespace | array.concat config.enum_namespace | array.each @upper_camel | array.join '.' }}.{{ config.dsl_type_enum_name | @upper_camel }} Header { get; set; }
+        public object[] Params { get; set; }
+
+{{~ for item in items ~}}
+        public class {{ item.header | @upper_camel }}
+        {
+{{~ for prop in item.props ~}}
+            [JsonProperty("{{ prop.name }}")]
+            public {{ prop.type }} {{ prop.name | @upper_camel }} { get; set; }
+{{~ end ~}}
+
+            public static {{ item.header | @upper_camel }} Parse(object[] parameters)
+            {
+                return new {{ item.header | @upper_camel }}
+                {
+{{~ for prop in item.props ~}}
+                    {{ prop.name | @upper_camel }} = {{ prop.deserialize }}{{ if !for.last }},{{ end }}
+{{~ end ~}}
+                };
+            }
+
+            public Dsl ToDSL()
+            {
+                return new Dsl
+                {
+                    Header = {{ config.namespace | array.concat config.enum_namespace | array.each @upper_camel | array.join '.' }}.{{ config.dsl_type_enum_name | @upper_camel }}.{{ item.header | @upper_camel }},
+                    Params = new object[] { {{~ for prop in item.props ~}}{{ prop.serialize }}{{ prop.name | @upper_camel }}{{ if !for.last }}, {{ end }}{{~ end ~}} }
+                };
+            }
+        }
+{{~ end ~}}
+    }

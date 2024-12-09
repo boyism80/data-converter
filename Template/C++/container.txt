@@ -1,0 +1,366 @@
+{{~
+func containable(table)
+    ret table.name == table.json
+end
+~}}
+template <typename T>
+class hook_funcs
+{
+public:
+    std::function<T*(const Json::Value&)> build;
+    std::function<void(const T& value)> built;
+};
+
+class container
+{
+public:
+    virtual uint32_t size() const = 0;
+    virtual void load() = 0;
+};
+
+template <typename K, typename V>
+class kv_container : public container
+{
+public:
+    using iterator          = std::unordered_map<K,V&>::iterator;
+    using const_iterator    = std::unordered_map<K,V&>::const_iterator;
+
+private:
+    std::vector<std::unique_ptr<V>>     _ptrs;
+    std::unordered_map<K,V&>            _pairs;
+    const std::string                   _fname;
+
+public:
+    hook_funcs<V> hook;
+
+protected:
+    kv_container(const std::string& fname) : _fname(fname)
+    { }
+
+public:
+    kv_container(const Json::Value& json)
+    {
+        this->load(json);
+    }
+    kv_container(const kv_container&) = delete;
+    ~kv_container() = default;
+
+private:
+    void load(const std::string& fname)
+    {
+        Json::Value             json;
+        std::ifstream           ifstream;
+        ifstream.open(fname);
+        if (ifstream.is_open() == false)
+        {
+            auto sstream = std::stringstream();
+            sstream << "cannot find json file : " << fname;
+            throw std::runtime_error(sstream.str());
+        }
+
+        Json::Reader            reader;
+        if (reader.parse(ifstream, json) == false)
+        {
+            ifstream.close();
+
+            auto sstream = std::stringstream();
+            sstream << "cannot parse json file : " << fname;
+            throw std::runtime_error(sstream.str());
+        }
+
+        ifstream.close();
+        this->load(json);
+    }
+    void load(const Json::Value& json)
+    {
+        for (auto i = json.begin(); i != json.end(); i++)
+        {
+            auto ptr = std::unique_ptr<V>();
+            if (this->hook.build != nullptr)
+                ptr.reset(this->hook.build(*i));
+            if (ptr == nullptr)
+                ptr = {{ config.namespace | @namespace_access_cpp }}build<std::unique_ptr<V>>(*i);
+
+            auto raw = ptr.get();
+            this->_ptrs.push_back(std::move(ptr));
+            this->_pairs.insert({ {{ config.namespace | @namespace_access_cpp }}build<K>(i.key()), *raw });
+
+            if(this->hook.built != nullptr)
+                this->hook.built(*raw);
+        }
+    }
+
+public:
+    void load()
+    {
+        this->load(this->_fname);
+    }
+
+    bool contains(const K& k) const
+    {
+        return this->_pairs.find(k) != this->_pairs.cend();
+    }
+
+    const V* find(const K& k) const
+    {
+        auto i = this->_pairs.find(k);
+        if (i == this->_pairs.cend())
+            return nullptr;
+
+        return &i->second;
+    }
+
+    uint32_t size() const
+    {
+        return static_cast<uint32_t>(this->_pairs.size());
+    }
+
+    const V& operator [] (const K& k) const 
+    {
+        auto found = this->find(k);
+        if(found == nullptr)
+        {
+            auto sstream = std::stringstream();
+            if constexpr (std::is_enum_v<K>)
+            {
+                sstream << enum_tostring<K>(k);
+            }
+            else
+            {
+                sstream << k;
+            }
+            sstream << " does not exists in file " << this->_fname;
+            throw std::runtime_error(sstream.str());
+        }
+
+        return *found;
+    }
+
+    iterator begin()
+    {
+        return this->_pairs.begin();
+    }
+
+    iterator end()
+    {
+        return this->_pairs.end();
+    }
+
+    const const_iterator begin() const
+    {
+        return this->_pairs.begin();
+    }
+    const const_iterator end() const
+    {
+        return this->_pairs.end();
+    }
+};
+
+template <typename T>
+class array_container : public container
+{
+public:
+    class iterator;
+    class const_iterator;
+
+private:
+    std::vector<std::unique_ptr<T>> _data;
+    const std::string _fname;
+
+public:
+    hook_funcs<T> hook;
+
+protected:
+    array_container(const std::string& fname) : _fname(fname)
+    { }
+
+public:
+    array_container(const Json::Value& json)
+    {
+        this->load(json);
+    }
+    array_container(const array_container&) = delete;
+    ~array_container() = default;
+
+private:
+    void load(const std::string& fname)
+    {
+        Json::Value             json;
+        std::ifstream           ifstream;
+        ifstream.open(fname);
+        if (ifstream.is_open() == false)
+        {
+            auto sstream = std::stringstream();
+            sstream << "cannot find json file : " << fname;
+            throw std::runtime_error(sstream.str());
+        }
+
+        Json::Reader            reader;
+        if (reader.parse(ifstream, json) == false)
+        {
+            ifstream.close();
+
+            auto sstream = std::stringstream();
+            sstream << "cannot parse json file : " << fname;
+            throw std::runtime_error(sstream.str());
+        }
+
+        ifstream.close();
+        this->load(json);
+    }
+    void load(const Json::Value& json)
+    {
+        for (auto i = json.begin(); i != json.end(); i++)
+        {
+            auto ptr = std::unique_ptr<T>();
+            if (this->hook.build != nullptr)
+                ptr.reset(this->hook.build(*i));
+            if (ptr == nullptr)
+                ptr = {{ config.namespace | @namespace_access_cpp }}build<std::unique_ptr<T>>(*i);
+
+            auto raw = ptr.get();
+            this->_data.push_back(std::move(ptr));
+            if(this->hook.built != nullptr)
+                this->hook.built(*raw);
+        }
+    }
+
+public:
+    void load()
+    {
+        this->load(this->_fname);
+    }
+
+    const T* find(uint32_t i) const
+    {
+        if (i > this->_data.size() - 1)
+            return nullptr;
+
+        return this->_data.at(i).get();
+    }
+
+    uint32_t size() const
+    {
+        return static_cast<uint32_t>(this->_data.size());
+    }
+
+    const T& operator [] (uint32_t i) const
+    {
+        auto found = this->find(i);
+        if (found == nullptr)
+            throw std::out_of_range("out of range exception");
+
+        return *found;
+    }
+
+public:
+    iterator begin();
+    iterator end();
+    const const_iterator begin() const;
+    const const_iterator end() const;
+};
+
+template <typename T>
+class array_container<T>::iterator : public std::vector<std::unique_ptr<T>>::iterator
+{
+public:
+    iterator(const typename std::vector<std::unique_ptr<T>>::iterator& i) : std::vector<std::unique_ptr<T>>::iterator(i)
+    {}
+    ~iterator() = default;
+
+public:
+    T& operator * ()
+    {
+        return *(std::vector<std::unique_ptr<T>>::iterator::operator*()).get();
+    }
+};
+
+template <typename T>
+class array_container<T>::const_iterator : public std::vector<std::unique_ptr<T>>::const_iterator
+{
+public:
+    const_iterator(const typename std::vector<std::unique_ptr<T>>::const_iterator& i) : std::vector<std::unique_ptr<T>>::const_iterator(i)
+    {}
+    ~const_iterator() = default;
+
+public:
+    const T& operator * () const
+    {
+        return *(std::vector<std::unique_ptr<T>>::const_iterator::operator*()).get();
+    }
+};
+
+template <typename T>
+array_container<T>::iterator array_container<T>::begin()
+{
+    return array_container<T>::iterator(this->_data.begin());
+}
+
+template <typename T>
+array_container<T>::iterator array_container<T>::end()
+{
+    return array_container<T>::iterator(this->_data.end());
+}
+
+template <typename T>
+const typename array_container<T>::const_iterator array_container<T>::begin() const
+{
+    return array_container<T>::const_iterator(this->_data.cbegin());
+}
+
+template <typename T>
+const typename array_container<T>::const_iterator array_container<T>::end() const
+{
+    return array_container<T>::const_iterator(this->_data.cend());
+}
+
+{{~ for table in tables | array.filter @containable ~}}
+class __{{ table.name }} : public {{ table.type }}<{{ table.generic }}>
+{
+public:
+#ifdef DECLARE_{{ table.name | string.upcase }}_CONTAINER_CUSTOM_CONSTRUCTOR
+DECLARE_{{ table.name | string.upcase }}_CONTAINER_CUSTOM_CONSTRUCTOR
+#else
+    __{{ table.name }}() : {{ table.type }}<{{ table.generic }}>(std::string("{{ config.json_file_path }}/{{ table.name }}.json"))
+    { }
+    __{{ table.name }}(const __{{ table.name }}&) = delete;
+    ~__{{ table.name }}() = default;
+#endif
+#ifdef DECLARE_{{ table.name | string.upcase }}_CONTAINER_EXTENSION
+DECLARE_{{ table.name | string.upcase }}_CONTAINER_EXTENSION
+#endif
+};
+{{~ if !for.last }}
+{{ end ~}}
+{{~ end ~}}
+
+
+class model
+{
+public:
+{{~ for table in tables | array.filter @containable ~}}
+    {{ config.namespace | @namespace_access_cpp }}__{{ table.name }} {{ table.name }};
+{{~ end ~}}
+
+private:
+    const std::vector<{{ config.namespace | @namespace_access_cpp }}container*> _containers = 
+    {
+{{~ for table in tables | array.filter @containable ~}}
+        &{{ table.name }}{{ if !for.last }},{{ end }}
+{{~ end ~}}
+    };
+
+public:
+    model() = default;
+    model(const model&) = delete;
+    ~model() = default;
+
+public:
+    void foreach(const std::function<void({{ config.namespace | @namespace_access_cpp }}container&)>& fn) const
+    {
+        for (auto container : this->_containers)
+        {
+            fn(*container);
+        }
+    }
+};

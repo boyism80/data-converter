@@ -1,0 +1,15 @@
+{{~
+func containable(table)
+    ret table.name == table.json
+end
+~}}
+{{~ for table in tables | array.filter @containable ~}}
+    function {{ table.name }}ContainerBuilder(hook) {
+        return {
+            build: function (v) {
+                return {{ table.type }}(v, hook)
+            }
+        }
+    }{{ if !for.last }}
+{{ end }}
+{{~ end ~}}

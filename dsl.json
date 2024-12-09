@@ -1,0 +1,114 @@
+{
+    "item": [
+        {
+            "name": "id",
+            "type": "$item",
+            "desc": "item id"
+        },
+        {
+            "name": "count",
+            "type": "uint",
+            "desc": "item count",
+            "default": 1
+        },
+        {
+            "name": "percent",
+            "type": "double",
+            "desc": "percentage",
+            "default": 100.0
+        }
+    ],
+    "level": [
+        {
+            "name": "min",
+            "type": "uint8_t?",
+            "desc": "minimum level"
+        },
+        {
+            "name": "max",
+            "type": "uint8_t?",
+            "desc": "maximum level",
+            "default": null
+        }
+    ],
+    "sex": [
+        {
+            "name": "value",
+            "type": "SEX",
+            "desc": "sex type"
+        }
+    ],
+    "strength": [
+        {
+            "name": "value",
+            "type": "uint8_t",
+            "desc": "strength"
+        }
+    ],
+    "intelligence": [
+        {
+            "name": "value",
+            "type": "uint8_t",
+            "desc": "intelligence"
+        }
+    ],
+    "dexteritry": [
+        {
+            "name": "value",
+            "type": "uint8_t",
+            "desc": "dexteritry"
+        }
+    ],
+    "promotion": [
+        {
+            "name": "value",
+            "type": "uint8_t",
+            "desc": "promotion"
+        }
+    ],
+    "class_t": [
+        {
+            "name": "value",
+            "type": "CLASS",
+            "desc": "class"
+        }
+    ],
+    "admin": [
+        {
+            "name": "value",
+            "type": "bool",
+            "desc": "is admin"
+        }
+    ],
+    "world": [
+        {
+            "name": "id",
+            "type": "$world",
+            "desc": "world id"
+        },
+        {
+            "name": "index",
+            "type": "uint16_t",
+            "desc": "world point index"
+        }
+    ],
+    "map": [
+        {
+            "name": "id",
+            "type": "$map",
+            "desc": "map id"
+        },
+        {
+            "name": "x",
+            "type": "uint16_t",
+            "desc": "x",
+            "default": 0
+        },
+        {
+            "name": "y",
+            "type": "uint16_t",
+            "desc": "y",
+            "default": 0
+        }
+    ]
+}

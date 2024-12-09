@@ -1,0 +1,64 @@
+{{~
+    classes = [
+        {
+            name: 'point',
+            props: ['x', 'y']
+        },
+        {
+            name: 'size',
+            props: ['width', 'height']
+        },
+        {
+            name: 'range',
+            props: ['min', 'max']
+        }
+    ]
+~}}
+class date_range
+{
+public:
+    const std::optional<datetime> begin, end;
+
+public:
+    date_range(const std::optional<datetime>& begin, const std::optional<datetime>& end) : 
+        begin(begin),
+        end(end)
+    {}
+    ~date_range() = default;
+};
+
+{{~ for class in classes ~}}
+template <typename T>
+struct {{ class.name }}
+{
+public:
+    using value_type = T;
+
+public:
+{{~ for prop in class.props ~}}
+    T {{ prop }} = 0;
+{{~ end ~}}
+
+public:
+    {{ class.name }}() = default;
+    {{ class.name }}({{ for prop in class.props }}T {{ prop }}{{if !for.last }}, {{ end }}{{ end }}) : {{ for prop in class.props }}{{ prop }}({{ prop }}){{ if !for.last }}, {{ end }}{{ end }}
+    { }
+
+public:
+    bool operator == (const {{ class.name }}<T>& r) const
+    {
+        return {{ for prop in class.props }}this->{{prop}} == r.{{prop}}{{if !for.last }} && {{ end }}{{ end }};
+    }
+
+    bool operator != (const {{ class.name }}<T>& r) const
+    {
+        return {{ for prop in class.props }}this->{{prop}} != r.{{prop}}{{if !for.last }} || {{ end }}{{ end }};
+    }
+#ifdef DECLARE_{{ class.name | string.upcase }}_EXTENSION
+DECLARE_{{ class.name | string.upcase }}_EXTENSION
+#endif
+}; // end of struct {{ class.name }}
+{{~ if !for.last ~}}
+
+{{~ end ~}}
+{{~ end ~}}

@@ -1,0 +1,54 @@
+{{~
+func enum_recursive(v)
+    if object.typeof(v) == 'array'
+        $result = ''
+        $index = 0
+        if v.size > 1
+            $result += '('
+        end
+        
+        for x in v
+            $index = $index + 1
+            $result += enum_recursive(x)
+
+            if $index < v.size && x != '~'
+                $result += ' '
+            end
+        end
+        
+        if v.size > 1
+            $result += ')'
+        end
+
+        ret $result
+    else
+        $match = v | regex.match `^[_a-zA-Z][_a-zA-Z0-9]*`
+        if ($match | array.size) > 0
+            ret 'this.' + v
+        end
+            ret v
+    end
+end
+
+func enum(v)
+    $result = enum_recursive(v)
+    if ($result | string.starts_with '(') && ($result | string.ends_with(')'))
+        $result = $result | string.remove_first '('
+        $result = $result | string.remove_last ')'
+    end
+
+    ret $result
+end
+~}}
+    const $enum = {
+{{~ for item in items ~}}
+        {{ item.name }}: {
+            init: function () {
+{{~ for prop in item.props ~}}
+                this.{{ prop.name }} = {{ enum(prop.value) }}{{ if !for.last }},{{ end }}
+{{~ end ~}}            
+                return this
+            }
+        }.init(){{ if !for.last }},{{ end }}
+{{~ end ~}}
+    }

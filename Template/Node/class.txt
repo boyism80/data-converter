@@ -1,0 +1,23 @@
+{{~ for item in items ~}}
+    class {{ item.name }}{{ if item.based }} extends {{ item.based}}{{ end }} {
+        constructor(v) {
+{{~ if item.based ~}}
+            super(v)
+{{~ end ~}}
+{{~ for prop in item.props~}}
+            this.{{ prop.name }} = {{ prop.initializer }}{{ if !for.last }},{{ end }}
+{{~ end ~}}        
+        }
+    }
+
+    function {{ item.name }}Builder() {
+        return {
+            build: function (v) {
+                if (v == null)
+                    return null
+                    
+                return new {{ item.name }}(v)
+            }
+        }
+    }
+{{~ end ~}}

@@ -1,0 +1,190 @@
+{{~
+func containable(table)
+    ret table.name == table.json
+end
+~}}
+const fs = require('fs').promises;
+const path = require('path');
+const date = require('date-and-time')
+const timespan = require('timespan')
+
+module.exports = (function () {
+{{ enum }}
+
+{{ const }}
+
+{{ dsl }}
+
+    function ArrayBuilder(build_fn) {
+        return {
+            build: function (v, hook) {
+                return v.map(e => hook?.build != null ? hook.build(v) ?? build_fn(e) : build_fn(e))
+            }
+        }
+    }
+
+    function DictionaryBuilder(build_fn_k, build_fn_v) {
+        return {
+            build: function (v, hook) {
+                return Object.fromEntries(Object.entries(v).map(([k, v]) => [build_fn_k(k), hook?.build != null ? hook.build(v) ?? build_fn_v(v) : build_fn_v(v)]))
+            }
+        }
+    }
+
+    function DefaultBuilder() {
+        return {
+            build: function (v) {
+                return v
+            }
+        }
+    }
+
+    function EnumBuilder(type) {
+        return {
+            build: function (v) {
+                if($enum[type][v] == null)
+                    return v
+                else
+                    return $enum[type][v]
+            }
+        }
+    }
+
+    function PointBuilder() {
+        return {
+            build: function (v) {
+                return {
+                    x: v.x,
+                    y: v.y
+                }
+            }
+        }
+    }
+
+    function SizeBuilder() {
+        return {
+            build: function (v) {
+                return {
+                    width: v.width,
+                    height: v.height
+                }
+            }
+        }
+    }
+
+    function RangeBuilder() {
+        return {
+            build: function (v) {
+                return {
+                    min: v.min,
+                    max: v.max
+                }
+            }
+        }
+    }
+
+    function TimeSpanBuilder() {
+        return {
+            build: function (v) {
+                if (v == null)
+                    return null
+
+                const matched = /(?:(?<day>\d+)[\s\.])?(?<hour>\d+):(?<min>\d+):(?<sec>\d+)/.exec(v)
+                if (matched == null)
+                    return null
+
+                const days = matched.groups.day != null ? parseInt(matched.groups.day) : 0
+                const hours = parseInt(matched.groups.hour) + days * 24
+                const minutes = parseInt(matched.groups.min) + hours * 60
+                const seconds = parseInt(matched.groups.sec) + minutes * 60
+                const milliseconds = seconds * 1000;
+                if(milliseconds == 0)
+                    return new timespan.TimeSpan();
+                else
+                    return timespan.fromMilliseconds(milliseconds)
+            }
+        }
+    }
+
+    function DateTimeBuilder() {
+        return {
+            build: function (v) {
+                if(v == null)
+                    return null
+
+                return date.parse(v, 'YYYY-MM-DD HH:mm:ss')
+            }
+        }
+    }
+
+    function DateRangeBuilder() {
+        return {
+            build: function (v) {
+                if(v == null)
+                    return null
+                
+                return {
+                    Start: DateTimeBuilder().build(v.Start),
+                    End: DateTimeBuilder().build(v.End)
+                }
+            }
+        }
+    }
+
+    function DslBuilder() {
+        
+        function ParseDsl(type, params) {
+            if (type == null)
+                return null
+
+            if (params == null)
+                return null
+
+            return $dsl_parser[type](params)
+        }
+
+        return {
+            build: function (v) {
+                if (v == null)
+                    return null
+
+                return {
+                    Type: v.Type,
+                    Parameters: v.Parameters,
+                    Parse: function () { return ParseDsl(this.Type, this.Parameters) }
+                }
+            }
+        }
+    }
+
+{{ class }}
+
+{{ bind }}
+    return {
+        table: {
+            hook: { },
+            load: async function (root) {
+{{~ for table in tables | array.filter @containable ~}}
+                this.{{ table.name }} = {{ table.name }}ContainerBuilder(this.hook.{{ table.name }}).build(JSON.parse(await fs.readFile(path.join(root, '{{ table.name }}.json'))))
+{{~ end ~}}
+            }
+        },
+
+        enum: $enum,
+        const: $const,
+        ArrayBuilder: ArrayBuilder,
+        DictionaryBuilder: DictionaryBuilder,
+        DefaultBuilder: DefaultBuilder,
+        EnumBuilder: EnumBuilder,
+        TimeSpanBuilder: TimeSpanBuilder,
+        DateTimeBuilder: DateTimeBuilder,
+        DateRangeBuilder: DateRangeBuilder,
+        DslBuilder: DslBuilder,
+{{~ for table in tables ~}}
+        {{ table.name }}Builder: {{ table.name }}Builder,
+{{~ end ~}}
+        load: async function (root) {
+            await this.table.load(root)
+        }
+    }
+})()

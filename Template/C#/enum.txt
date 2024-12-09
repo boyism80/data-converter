@@ -1,0 +1,51 @@
+{{~
+func enum_recursive(v)
+    if object.typeof(v) == 'array'
+        $result = ''
+        $index = 0
+        if v.size > 1
+            $result += '('
+        end
+        
+        for x in v
+            $index = $index + 1
+            $result += enum_recursive(x)
+
+            if $index < v.size && x != '~'
+                $result += ' '
+            end
+        end
+        
+        if v.size > 1
+            $result += ')'
+        end
+
+        ret $result
+    else
+        ret v | @upper_camel
+    end
+end
+
+func enum(v)
+    $result = enum_recursive(v)
+    if ($result | string.starts_with '(') && ($result | string.ends_with(')'))
+        $result = $result | string.remove_first '('
+        $result = $result | string.remove_last ')'
+    end
+
+    ret $result
+end
+~}}
+{{~ for item in items ~}}
+    [JsonConverter(typeof(StringEnumConverter))]
+    public enum {{ item.name | @upper_camel }}
+    {
+{{~ for prop in item.props ~}}
+        [EnumMember(Value = "{{ prop.name }}")]
+        {{ prop.name | @upper_camel }} = {{ enum(prop.value)}}{{ if !for.last }}, {{ end }}
+{{~ end ~}}
+    }
+{{~ if !for.last ~}}
+
+{{~ end ~}}
+{{~ end ~}}

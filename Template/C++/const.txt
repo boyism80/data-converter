@@ -1,0 +1,35 @@
+{{~
+func const_keyword(t)
+    compile_const_type = ['bool', 'char', 'short', 'int', 'long', 'long long', 'float', 'double', 'int8_t', 'int16_t', 'int32_t', 'int64_t', 'uint8_t', 'uint16_t', 'uint32_t', 'uint64_t', 'char*']
+
+    if t == 'std::string'
+        t = 'char*'
+    end
+
+    if compile_const_type | array.contains t
+        ret 'constexpr const ' + t
+    else
+        ret 'const ' + t + '&'
+    end
+end
+~}}
+namespace {{ config.const_namespace | array.join '::' }} {
+
+{{~ for item in items ~}}
+class {{ item.key }}
+{
+public:
+{{~ for prop in item.value ~}}
+    inline static {{ const_keyword(prop.type) }} {{ prop.name }} = {{ prop.value }};
+{{~ end ~}}
+
+private:
+    {{ item.key }}() = default;
+    ~{{ item.key }}() = default;
+#ifdef DECLARE_CONST_{{ item.key | string.upcase }}_EXTENSION
+DECLARE_CONST_{{ item.key | string.upcase }}_EXTENSION
+#endif
+}; // end of const '{{ item.key }}'
+{{~ end ~}}
+
+} // end of namespace {{ config.const_namespace | array.join '::' }}

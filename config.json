@@ -1,0 +1,13 @@
+{
+    "Namespace": ["fb", "model"],
+    "ConstNamespace": ["const_value"],
+    "EnumNamespace": ["enum_value"],
+    "ConstFilePrefix": "const",
+    "EnumFilePrefix": "enum",
+    "JsonFilePath": "json",
+    "DiffFilePath": "diff",
+    "ParentTableFormat": "{0}_attribute",
+    "ParentPropName": "parent",
+    "DslTypeEnumName": "DSL",
+    "AdditionalHeaderFiles": ["model.additional.h"]
+}

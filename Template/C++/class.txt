@@ -1,0 +1,40 @@
+{{~ for item in items ~}}
+class {{ item.name }}{{ if item.based }} : public {{ namespace_access_cpp config.namespace }}{{ item.based }}{{ else }}
+#ifdef DECLARE_{{ item.name | string.upcase }}_INHERIT
+DECLARE_{{ item.name | string.upcase }}_INHERIT
+#endif{{ end }}
+{
+{{~ if item.props.size > 0 ~}}
+#ifdef DECLARE_{{ item.name | string.upcase }}_FIELDS
+DECLARE_{{ item.name | string.upcase }}_FIELDS
+#else
+public:
+{{~ for prop in item.props ~}}
+    const {{ prop.type }} {{ prop.name }};
+{{~ end ~}}
+#endif
+
+{{~ end ~}}
+#ifdef DECLARE_{{ item.name | string.upcase }}_CUSTOM_CONSTRUCTOR
+DECLARE_{{ item.name | string.upcase }}_CUSTOM_CONSTRUCTOR
+#else
+public:
+    {{ item.name }}(const Json::Value& json){{ if item.based || item.props.size > 0 }} : {{ end }}{{ if item.based }}{{ config.namespace | @namespace_access_cpp }}{{ item.based }}(json){{ if item.props.size > 0 }},{{ end }}{{ else }}
+#ifdef DECLARE_{{ item.name | string.upcase }}_CONSTRUCTOR
+DECLARE_{{ item.name | string.upcase }}_CONSTRUCTOR
+#endif{{ end }}
+{{~ for prop in item.props ~}}
+        {{ prop.name }}({{ prop.initializer }}){{~ if !for.last ~}},{{ end }}
+{{~ end ~}}
+#ifdef DECLARE_{{ item.name | string.upcase }}_INITIALIZER
+DECLARE_{{ item.name | string.upcase }}_INITIALIZER
+#endif
+    { }
+    {{ item.name }}(const {{ item.name }}&) = delete;
+    virtual ~{{ item.name }}() = default;
+#endif
+#ifdef DECLARE_{{ item.name | string.upcase }}_EXTENSION
+DECLARE_{{ item.name | string.upcase }}_EXTENSION
+#endif
+}; // end of class '{{ item.name }}'
+{{~ end ~}}

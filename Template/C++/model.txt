@@ -12,6 +12,7 @@
 #include <optional>
 #include <chrono>
 #include <json/json.h>
+#include <fstream>
 #include <unordered_map>
 {{~ for header in config.additional_header_files ~}}
 #include <{{ header }}>

@@ -25,7 +25,7 @@ try
     options.Parse(args);
 
     Environment.SetEnvironmentVariable("env", env);
-#if !JENKINS
+#if !DISABLED_TTY
     Console.Clear();
 #endif
 

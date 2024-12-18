@@ -19,7 +19,7 @@ namespace ExcelTableConverter
 
         static Logger()
         {
-#if !JENKINS
+#if !DISABLED_TTY
             Console.CursorVisible = false;
 #endif
             Console.OutputEncoding = Encoding.UTF8;
@@ -43,7 +43,7 @@ namespace ExcelTableConverter
 
             lock (Console.Out)
             {
-#if !JENKINS
+#if !DISABLED_TTY
                 Console.SetCursorPosition(0, _row);
                 Console.Write(new string(' ', Console.WindowWidth));
                 Console.SetCursorPosition(0, _row);
@@ -51,13 +51,13 @@ namespace ExcelTableConverter
                     Console.ForegroundColor = foreground;
 #endif
 
-#if !JENKINS
+#if !DISABLED_TTY
                 Console.Write(text);
 #else
                 Console.WriteLine(text);
 #endif
 
-#if !JENKINS
+#if !DISABLED_TTY
                 if (foreground != ConsoleColor.White)
                     Console.ForegroundColor = ConsoleColor.White;
 #endif
@@ -72,18 +72,18 @@ namespace ExcelTableConverter
                     return;
 
                 _item++;
-#if !JENKINS
+#if !DISABLED_TTY
                 Console.SetCursorPosition(0, _row + _item);
                 if (foreground != ConsoleColor.White)
                     Console.ForegroundColor = foreground;
 #endif
 
-#if !JENKINS
+#if !DISABLED_TTY
                 Console.Write($" - {text}");
 #else
                 Console.WriteLine($" - {text}");
 #endif
-#if !JENKINS
+#if !DISABLED_TTY
                 if (foreground != ConsoleColor.White)
                     Console.ForegroundColor = ConsoleColor.White;
 #endif

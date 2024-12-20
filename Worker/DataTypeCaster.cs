@@ -5,7 +5,7 @@ using System.Data;
 namespace ExcelTableConverter.Worker
 {
     public class CastTypeChunkData
-    { 
+    {
         public IExcelFileTrackable Tracker { get; set; }
         public List<RawDataColumns> Columns { get; set; }
         public string Json { get; set; }
@@ -16,7 +16,7 @@ namespace ExcelTableConverter.Worker
         public string FileName { get; set; }
         public string SheetName { get; set; }
         public string TableName { get; set; }
-        public List<Dictionary<string, object>> Rows {get;set;}
+        public List<Dictionary<string, object>> Rows { get; set; }
         public string Json { get; set; }
     }
 
@@ -120,7 +120,7 @@ namespace ExcelTableConverter.Worker
                     throw new AggregateException(errors);
 
                 yield return new DataConvertResult
-                { 
+                {
                     FileName = chunkData.Tracker.FileName,
                     SheetName = chunkData.Tracker.SheetName,
                     TableName = table,
@@ -154,9 +154,20 @@ namespace ExcelTableConverter.Worker
 
                     if (boldColumns != null)
                     {
-                        var parentRow = normalColumns.Select(normalColumn => normalColumn.RowValuePairs.Keys.Cast<int?>().ElementAtOrDefault(row)).Where(x => x != null).OrderBy(x => x).FirstOrDefault().Value;
-                        var parent = boldKeyColumns.RowValuePairs.Where(x => x.Key < parentRow).OrderByDescending(x => x.Key).First().Value;
-                        values.Add(Context.Config.ParentPropName, Context.Cast(boldKeyColumns.Type, parent));
+                        try
+                        {
+                            var parentOffset = normalColumns.Select(normalColumn => normalColumn.RowValuePairs.Keys.Cast<int?>().ElementAtOrDefault(row)).Where(x => x != null).OrderBy(x => x).FirstOrDefault().Value;
+
+                            var parentRows = boldKeyColumns.RowValuePairs.Where(x => x.Key < parentOffset).OrderByDescending(x => x.Key).ToArray();
+                            if (parentRows.Length == 0)
+                                throw new LogicException($"부모 컬럼에 문제가 있습니다. {parentOffset} 라인을 확인하세요.", chunkData.Tracker);
+                            var parent = parentRows.First().Value;
+                            values.Add(Context.Config.ParentPropName, Context.Cast(boldKeyColumns.Type, parent));
+                        }
+                        catch (Exception e)
+                        {
+                            errors.Add(e);
+                        }
                     }
 
                     if (values.Count == 0)

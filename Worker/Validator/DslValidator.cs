@@ -71,7 +71,7 @@ namespace ExcelTableConverter.Worker.Validator
 
         protected override void OnWorked(KeyValuePair<string, JArray> input, bool output, int percent)
         {
-            Logger.Write($"DSL 정의문을 검사했습니다. - {input.Key}", percent: percent);
+            Logger.Write($"DSL 정의문을 검사했습니다. - {input.Key}");
             base.OnWorked(input, output, percent);
         }
 

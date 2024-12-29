@@ -48,7 +48,7 @@ namespace ExcelTableConverter.Worker.Loader
             }
             rawConsts.Add(output);
 
-            Logger.Write($"상수 데이터를 읽었습니다 - {input.SheetName}", percent: percent);
+            Logger.Write($"상수 데이터를 읽었습니다 - {input.SheetName}");
         }
 
         protected override IReadOnlyList<RawConst> OnFinish(IReadOnlyList<RawConst> output)

@@ -63,7 +63,7 @@ namespace ExcelTableConverter.Worker.Validator
 
         protected override void OnWorked(List<RawSheetData> input, bool output, int percent)
         {
-            Logger.Write($"스키마 병합 가능 여부를 검사했습니다. - {input[0].TableName}", percent: percent);
+            Logger.Write($"스키마 병합 가능 여부를 검사했습니다. - {input[0].TableName}");
         }
 
         protected override IReadOnlyList<bool> OnFinish(IReadOnlyList<bool> output)

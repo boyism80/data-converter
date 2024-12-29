@@ -35,7 +35,9 @@ namespace ExcelTableConverter.Worker.Loader
         protected override void OnStart(Workbook input, int percent)
         {
             if (!_quiet)
-                Logger.Write($"엑셀 시트를 읽고 있습니다. - {input.FileName}", percent: percent);
+            {
+                Logger.Write($"엑셀 시트를 읽고 있습니다. - {input.FileName}");
+            }
         }
 
         protected override void OnWorked(Workbook input, Sheet output, int percent)
@@ -44,7 +46,9 @@ namespace ExcelTableConverter.Worker.Loader
                 return;
 
             if (!_quiet)
-                Logger.Write($"엑셀 시트를 읽었습니다. - {output.SheetName}", percent: percent);
+            {
+                Logger.Write($"엑셀 시트를 읽었습니다. - {output.SheetName}");
+            }
         }
 
         protected override int TotalCount(IReadOnlyList<Workbook> inputs)

@@ -1,94 +1,140 @@
 ﻿using ExcelTableConverter.Model;
-using System.Diagnostics;
 using System.Text;
 
 namespace ExcelTableConverter
 {
+    public enum TextAlign
+    {
+        Left, Right, Center
+    }
+
     public static class Logger
     {
-        private static int _row = 0;
-        private static int _item = 0;
-        private static int _completeCount = 0;
-        private static Stopwatch _timer = new Stopwatch();
+        private static int _y = 1;
+        private static int _width, _height;
+        private static int _commentLine;
+
         private static readonly HashSet<string> _history = new HashSet<string>();
         private static readonly Mutex _errorFilesMutex = new Mutex();
         private static readonly HashSet<string> _errorFiles = new HashSet<string>();
 
-        public static int Job { get; set; }
         public static IReadOnlyList<string> ErrorFiles => _errorFiles.ToList();
+
+        public static Func<string, string> OnDecorate;
 
         static Logger()
         {
-#if !DISABLED_TTY
-            Console.CursorVisible = false;
-#endif
+            if (Environment.UserInteractive)
+            {
+                Console.CursorVisible = false;
+            }
+
             Console.OutputEncoding = Encoding.UTF8;
-            _timer.Start();
         }
 
-        public static void Write(string text, bool withElapsedTime = true, bool withStep = true, int? percent = null, ConsoleColor foreground = ConsoleColor.White)
+        public static void Write(string text, ConsoleColor foreground = ConsoleColor.White, TextAlign align = TextAlign.Left, bool decorate = true)
         {
-            var prefix = string.Empty;
-            if (withElapsedTime)
-                prefix = _timer.Elapsed.ToString("mm\\:ss");
+            if (OnDecorate != null && decorate)
+                text = OnDecorate(text);
 
-            if (withStep)
-                prefix = $"{prefix} | {_completeCount + 1,3}/{Job}";
+            var x = 0;
+            switch (align)
+            {
+                case TextAlign.Left:
+                    x = 0;
+                    break;
 
-            if (percent != null)
-                prefix = $"{prefix} | {percent,3}%";
+                case TextAlign.Center:
+                    x = (Console.WindowWidth - text.Length - 1) / 2;
+                    break;
 
-            if (string.IsNullOrEmpty(prefix) == false)
-                text = $"[{prefix}] {text}";
+                case TextAlign.Right:
+                    x = Console.WindowWidth - text.Length - 1;
+                    break;
+            }
+            text = $"{new string(' ', x)}{text}";
 
             lock (Console.Out)
             {
-#if !DISABLED_TTY
-                Console.SetCursorPosition(0, _row);
-                Console.Write(new string(' ', Console.WindowWidth));
-                Console.SetCursorPosition(0, _row);
-                if (foreground != ConsoleColor.White)
-                    Console.ForegroundColor = foreground;
-#endif
+                if (!Environment.UserInteractive)
+                {
+                    Console.WriteLine(text);
+                    return;
+                }
 
-#if !DISABLED_TTY
+                var beforeForeground = Console.ForegroundColor;
+                Console.ForegroundColor = foreground;
+                Position(_y - _commentLine);
+                Clear();
                 Console.Write(text);
-#else
-                Console.WriteLine(text);
-#endif
-
-#if !DISABLED_TTY
-                if (foreground != ConsoleColor.White)
-                    Console.ForegroundColor = ConsoleColor.White;
-#endif
+                Console.ForegroundColor = beforeForeground;
             }
         }
 
-        public static void Append(string text, ConsoleColor foreground = ConsoleColor.White)
+        public static void WriteLine(string text, ConsoleColor foreground = ConsoleColor.White, TextAlign align = TextAlign.Left)
         {
+            if (!Environment.UserInteractive)
+            {
+                Write(text, foreground, align);
+            }
+            else
+            {
+                Write(text, foreground, align);
+                NewLine();
+            };
+        }
+
+        public static void Position(int y)
+        {
+            if (!Environment.UserInteractive)
+                return;
+
+            _y = Math.Max(0, Math.Min(Console.WindowHeight - 1, y));
+            Console.SetCursorPosition(0, _y);
+        }
+
+        public static int Position()
+        {
+            if (!Environment.UserInteractive)
+                return 0;
+
+            return _y;
+        }
+
+        public static void NewLine()
+        {
+            if (!Environment.UserInteractive)
+                return;
+
+            _y += (_commentLine + 1);
+            _commentLine = 0;
+            Console.WriteLine();
+        }
+
+        private static void Clear()
+        {
+            Console.Write(new string(' ', Console.WindowWidth));
+            Position(_y);
+        }
+
+        public static void Comment(string text, ConsoleColor foreground = ConsoleColor.White)
+        {
+            if (!Environment.UserInteractive)
+            {
+                Console.WriteLine(text);
+            }
+            else
+            {
+                var beforeForeground = Console.ForegroundColor;
+                Console.WriteLine(text);
+                _commentLine++;
+                _y++;
+                Console.ForegroundColor = beforeForeground;
+            }
+
             lock (Console.Out)
             {
-                if (_history.Contains(text))
-                    return;
 
-                _item++;
-#if !DISABLED_TTY
-                Console.SetCursorPosition(0, _row + _item);
-                if (foreground != ConsoleColor.White)
-                    Console.ForegroundColor = foreground;
-#endif
-
-#if !DISABLED_TTY
-                Console.Write($" - {text}");
-#else
-                Console.WriteLine($" - {text}");
-#endif
-#if !DISABLED_TTY
-                if (foreground != ConsoleColor.White)
-                    Console.ForegroundColor = ConsoleColor.White;
-#endif
-
-                _history.Add(text);
             }
         }
 
@@ -104,31 +150,20 @@ namespace ExcelTableConverter
             var suffix = tracker != null ? $"=> {tracker.FileName}:{tracker.SheetName}" : string.Empty;
             lock (Console.Out)
             {
-                Append($"{text} {suffix}", foreground: ConsoleColor.Red);
+                Comment($"{text} {suffix}", foreground: ConsoleColor.Red);
             }
         }
 
-        public static void Next(int line = 1)
+        public static void Complete(string text)
         {
-            _row += _item + line;
-            _item = 0;
-        }
-
-        public static void Complete(string text, bool withElapsedTime = true, bool withStep = true)
-        {
-            Write(text, withElapsedTime, withStep, 100);
-            _completeCount++;
+            Write(text);
             _history.Clear();
-            Next();
+            NewLine();
         }
 
         public static void Reset()
         {
-            Next();
-
-            _completeCount = 0;
-            _item = 0;
-            Job = 0;
+            NewLine();
             _history.Clear();
         }
     }

@@ -55,7 +55,7 @@ namespace ExcelTableConverter.Worker.Loader
             }
             rawEnums.Add(output);
 
-            Logger.Write($"열거형 데이터를 읽었습니다. - {input.SheetName}", percent: percent);
+            Logger.Write($"열거형 데이터를 읽었습니다. - {input.SheetName}");
         }
 
         protected override IReadOnlyList<RawEnum> OnFinish(IReadOnlyList<RawEnum> output)

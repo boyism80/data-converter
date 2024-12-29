@@ -5,7 +5,12 @@ using System.Collections.Concurrent;
 
 namespace ExcelTableConverter.Worker
 {
-    public abstract class ParallelWorker<T, R>
+    public class ParallelWorker
+    {
+        public static int Percent { get; protected set; }
+    }
+
+    public abstract class ParallelWorker<T, R> : ParallelWorker
     {
         private readonly ConcurrentQueue<T> _queue = new ConcurrentQueue<T>();
         public Context Context { get; private set; }
@@ -60,16 +65,17 @@ namespace ExcelTableConverter.Worker
             _queue.Enqueue(value);
         }
 
-        private int GetProgressPercent(IEnumerable<List<R>> output, int totalCount)
+        private void UpdateCurrentPercent(IEnumerable<List<R>> output, int totalCount)
         {
             var goal = totalCount + RuntimeAdditionalCount();
             var count = output.Select(x => x.Count).DefaultIfEmpty(0).Sum();
-            var percent = (int)Math.Max(0, Math.Min(100, goal > 0 ? (count * 100) / (double)goal : 0));
-            return percent;
+            Percent = (int)Math.Max(0, Math.Min(100, goal > 0 ? (count * 100) / (double)goal : 0));
         }
 
         public IReadOnlyList<R> Run()
         {
+            Percent = 0;
+
             var mutexWorked = new Mutex();
             var mutexErrors = new Mutex();
             var buffer = new ConcurrentDictionary<int, List<R>>();
@@ -92,7 +98,8 @@ namespace ExcelTableConverter.Worker
                     if (exists == false)
                         break;
 
-                    OnStart(input, GetProgressPercent(buffer.Values, totalCount));
+                    UpdateCurrentPercent(buffer.Values, totalCount);
+                    OnStart(input, Percent);
                     var outputs = new List<R>();
                     var enumerator = OnWork(input).GetEnumerator();
                     while (true)
@@ -106,7 +113,8 @@ namespace ExcelTableConverter.Worker
                             outputs.Add(output);
 
                             mutexWorked.WaitOne();
-                            OnWorked(input, output, GetProgressPercent(buffer.Values, totalCount));
+                            UpdateCurrentPercent(buffer.Values, totalCount);
+                            OnWorked(input, output, Percent);
                             mutexWorked.ReleaseMutex();
                         }
                         catch (LogicException e)
@@ -174,6 +182,7 @@ namespace ExcelTableConverter.Worker
             }
 
             var result = buffer.OrderBy(x => x.Key).SelectMany(x => x.Value).ToList();
+            Percent = 100;
             result = OnFinish(result) as List<R>;
 
             if (logicalErrors.IsEmpty)

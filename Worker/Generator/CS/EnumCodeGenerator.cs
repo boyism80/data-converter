@@ -57,7 +57,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
 
         protected override void OnWorked(string input, EnumCodeGeneratorResult output, int percent)
         {
-            Logger.Write($"열거형 코드 파일을 생성했습니다. - {input}", percent: percent);
+            Logger.Write($"열거형 코드 파일을 생성했습니다. - {input}");
             base.OnWorked(input, output, percent);
         }
 

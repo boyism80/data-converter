@@ -89,7 +89,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
 
         protected override void OnWorked(string input, ClassFileGeneratorResult output, int percent)
         {
-            Logger.Write($"클래스 코드 파일을 저장했습니다. - {input}", percent: percent);
+            Logger.Write($"클래스 코드 파일을 저장했습니다. - {input}");
         }
 
         protected override IReadOnlyList<ClassFileGeneratorResult> OnFinish(IReadOnlyList<ClassFileGeneratorResult> output)

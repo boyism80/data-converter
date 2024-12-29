@@ -67,7 +67,7 @@ namespace ExcelTableConverter.Worker.Validator
 
         protected override void OnWorked((IExcelFileTrackable Tracker, string Name) input, bool output, int percent)
         {
-            Logger.Write($"데이터 이름 규칙을 검사중입니다. - {input.Name}", percent: percent);
+            Logger.Write($"데이터 이름 규칙을 검사중입니다. - {input.Name}");
         }
 
         protected override IReadOnlyList<bool> OnFinish(IReadOnlyList<bool> output)

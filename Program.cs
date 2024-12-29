@@ -10,6 +10,8 @@ using Force.Crc32;
 using NDesk.Options;
 using Newtonsoft.Json;
 
+Logger.OnDecorate = Scheduler.ConsoleDecorator;
+
 try
 {
     var dir = Path.Combine("..", "..", "..", "..");
@@ -25,9 +27,10 @@ try
     options.Parse(args);
 
     Environment.SetEnvironmentVariable("env", env);
-#if !DISABLED_TTY
-    Console.Clear();
-#endif
+    if (Environment.UserInteractive)
+    {
+        Console.Clear();
+    }
 
     Context cached;
     try
@@ -48,7 +51,7 @@ try
                 File.Delete(file);
         }
 
-        Logger.Write(" 컨버터 빌드 버전이 변경되어 캐시파일을 전부 제거했습니다.", false, false, foreground: ConsoleColor.Blue);
+        Logger.Write(" 컨버터 빌드 버전이 변경되어 캐시파일을 전부 제거했습니다.", foreground: ConsoleColor.Blue, decorate: false);
     }
     var loaded = new Context();
 
@@ -142,12 +145,12 @@ try
         }
     }
 
-    Logger.Next();
+    Logger.NewLine();
 
     var processFiles = updatedFiles.Concat(errorFiles).ToList();
     if (processFiles.Any())
     {
-        Logger.Write(" 변경된 파일 또는 가장 마지막 에러 발생 파일에 대해서만 작업을 진행합니다.", false, false, foreground: ConsoleColor.Blue);
+        Logger.Write(" 변경된 파일 또는 가장 마지막 에러 발생 파일에 대해서만 작업을 진행합니다.", foreground: ConsoleColor.Blue, decorate: false);
 
         foreach (var (files, suffix) in new[] { (updatedFiles, "변경된 파일"), (errorFiles, "에러 파일") })
         {
@@ -159,14 +162,15 @@ try
             var message = fileName;
             if (anotherFiles.Count > 0)
                 message = $"{fileName} 외 {anotherFiles.Count}개 파일";
-            Logger.Append($"{message} ({suffix})", ConsoleColor.DarkGray);
+            Logger.Comment($"{message} ({suffix})", ConsoleColor.DarkGray);
         }
     }
     else
     {
-        Logger.Write(" 변경된 파일 또는 가장 마지막 에러 발생 파일이 없습니다.", false, false, foreground: ConsoleColor.Blue);
+        Logger.Write(" 변경된 파일 또는 가장 마지막 에러 발생 파일이 없습니다.", foreground: ConsoleColor.Blue, decorate: false);
     }
-    Logger.Next(2);
+    Logger.NewLine();
+    Logger.NewLine();
 
     Scheduler.Add(() =>
     {
@@ -230,13 +234,14 @@ try
 
     Scheduler.Run();
 
-    Logger.Next(2);
+    Logger.NewLine();
+    Logger.NewLine();
 
     var isComplete = !Scheduler.Suspended;
     if (!isComplete)
-        Logger.Write("테이블 변환 과정에서 에러가 발생했습니다.", false, false, foreground: ConsoleColor.Red);
+        Logger.Write("테이블 변환 과정에서 에러가 발생했습니다.", foreground: ConsoleColor.Red, decorate: false);
     else
-        Logger.Write("테이블 변환과 검증을 완료했습니다.", false, false, foreground: ConsoleColor.Blue);
+        Logger.Write("테이블 변환과 검증을 완료했습니다.", foreground: ConsoleColor.Blue, decorate: false);
 
     Logger.Reset();
     Scheduler.Reset();

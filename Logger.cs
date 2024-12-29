@@ -71,15 +71,15 @@ namespace ExcelTableConverter
             }
         }
 
-        public static void WriteLine(string text, ConsoleColor foreground = ConsoleColor.White, TextAlign align = TextAlign.Left)
+        public static void WriteLine(string text, ConsoleColor foreground = ConsoleColor.White, TextAlign align = TextAlign.Left, bool decorate = true)
         {
             if (!Environment.UserInteractive)
             {
-                Write(text, foreground, align);
+                Write(text, foreground, align, decorate);
             }
             else
             {
-                Write(text, foreground, align);
+                Write(text, foreground, align, decorate);
                 NewLine();
             };
         }

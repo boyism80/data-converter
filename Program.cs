@@ -27,7 +27,7 @@ try
     options.Parse(args);
 
     Environment.SetEnvironmentVariable("env", env);
-    if (Environment.UserInteractive)
+    if (Logger.TTY)
     {
         Console.Clear();
     }

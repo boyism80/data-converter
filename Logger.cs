@@ -19,12 +19,18 @@ namespace ExcelTableConverter
         private static readonly HashSet<string> _errorFiles = new HashSet<string>();
 
         public static IReadOnlyList<string> ErrorFiles => _errorFiles.ToList();
-
+        public static bool TTY { get; private set; }
         public static Func<string, string> OnDecorate;
 
         static Logger()
         {
-            if (Environment.UserInteractive)
+#if DISABLED_TTY
+            TTY = false;
+#else
+            TTY = Environment.UserInteractive;
+#endif
+
+            if (TTY)
             {
                 Console.CursorVisible = false;
             }
@@ -56,7 +62,7 @@ namespace ExcelTableConverter
 
             lock (Console.Out)
             {
-                if (!Environment.UserInteractive)
+                if (!TTY)
                 {
                     Console.WriteLine(text);
                     return;
@@ -73,7 +79,7 @@ namespace ExcelTableConverter
 
         public static void WriteLine(string text, ConsoleColor foreground = ConsoleColor.White, TextAlign align = TextAlign.Left, bool decorate = true)
         {
-            if (!Environment.UserInteractive)
+            if (!TTY)
             {
                 Write(text, foreground, align, decorate);
             }
@@ -86,7 +92,7 @@ namespace ExcelTableConverter
 
         public static void Position(int y)
         {
-            if (!Environment.UserInteractive)
+            if (!TTY)
                 return;
 
             _y = Math.Max(0, Math.Min(Console.WindowHeight - 1, y));
@@ -95,7 +101,7 @@ namespace ExcelTableConverter
 
         public static int Position()
         {
-            if (!Environment.UserInteractive)
+            if (!TTY)
                 return 0;
 
             return _y;
@@ -103,7 +109,7 @@ namespace ExcelTableConverter
 
         public static void NewLine()
         {
-            if (!Environment.UserInteractive)
+            if (!TTY)
                 return;
 
             _y += (_commentLine + 1);
@@ -119,7 +125,7 @@ namespace ExcelTableConverter
 
         public static void Comment(string text, ConsoleColor foreground = ConsoleColor.White)
         {
-            if (!Environment.UserInteractive)
+            if (!TTY)
             {
                 Console.WriteLine(text);
             }

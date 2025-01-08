@@ -109,6 +109,18 @@
             "type": "uint16_t",
             "desc": "y",
             "default": 0
+        },
+        {
+            "name": "right",
+            "type": "uint16_t",
+            "desc": "right",
+            "default": 0
+        },
+        {
+            "name": "bottom",
+            "type": "uint16_t",
+            "desc": "bottom",
+            "default": 0
         }
     ],
     "area": [

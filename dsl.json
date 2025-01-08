@@ -110,5 +110,39 @@
             "desc": "y",
             "default": 0
         }
+    ],
+    "area": [
+        {
+            "name": "left",
+            "type": "uint16_t",
+            "desc": "left"
+        },
+        {
+            "name": "top",
+            "type": "uint16_t",
+            "desc": "top"
+        },
+        {
+            "name": "right",
+            "type": "uint16_t",
+            "desc": "right"
+        },
+        {
+            "name": "bottom",
+            "type": "uint16_t",
+            "desc": "bottom"
+        }
+    ],
+    "point": [
+        {
+            "name": "x",
+            "type": "uint16_t",
+            "desc": "x"
+        },
+        {
+            "name": "y",
+            "type": "uint16_t",
+            "desc": "y"
+        }
     ]
 }

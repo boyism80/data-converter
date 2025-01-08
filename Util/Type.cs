@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace ExcelTableConverter.Util
 {
     public enum NakeFlag : uint
-    { 
+    {
         PrimaryKey = 0x00000001,
         GroupKey = 0x00000002,
         Relation = 0x00000004,
@@ -28,6 +28,7 @@ namespace ExcelTableConverter.Util
         private static readonly Regex _point = new Regex(@"^point(<(?<e>.+)>)?$");
         private static readonly Regex _size = new Regex(@"^size(<(?<e>.+)>)?$");
         private static readonly Regex _range = new Regex(@"^range(<(?<e>.+)>)?$");
+        private static readonly Regex _area = new Regex(@"^area(<(?<e>.+)>)?$");
 
         public static string Nake(string type, NakeFlag flag = NakeFlag.All)
         {
@@ -262,6 +263,24 @@ namespace ExcelTableConverter.Util
         public static bool IsRange(string value, out string e)
         {
             var match = _range.Match(value);
+            if (match.Success)
+            {
+                if (match.Groups.ContainsKey("e"))
+                    e = match.Groups["e"].Value;
+                else
+                    e = null;
+                return true;
+            }
+            else
+            {
+                e = null;
+                return false;
+            }
+        }
+
+        public static bool IsArea(string value, out string e)
+        {
+            var match = _area.Match(value);
             if (match.Success)
             {
                 if (match.Groups.ContainsKey("e"))

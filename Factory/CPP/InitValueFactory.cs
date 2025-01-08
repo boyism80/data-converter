@@ -118,12 +118,17 @@ namespace ExcelTableConverter.Factory.CPP
 
         protected override string SizeType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-             return WithNullable($"size<{new TypeFactory(Context).Build(e)}>", value, nullable);
+            return WithNullable($"size<{new TypeFactory(Context).Build(e)}>", value, nullable);
         }
 
         protected override string RangeType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
             return WithNullable($"range<{new TypeFactory(Context).Build(e)}>", value, nullable);
+        }
+
+        protected override string AreaType(object value, string root, string e, bool nullable, DataFormatOption option)
+        {
+            return WithNullable($"area<{new TypeFactory(Context).Build(e)}>", value, nullable);
         }
 
         public string Build(string type, string name)

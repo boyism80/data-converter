@@ -146,6 +146,10 @@ template <typename>   constexpr bool is_range_impl = false;
 template <typename T> constexpr bool is_range_impl<fb::model::range<T>> = true;
 template <typename T> constexpr bool is_range = is_range_impl<std::decay_t<T>>;
 
+template <typename>   constexpr bool is_area_impl = false;
+template <typename T> constexpr bool is_area_impl<fb::model::area<T>> = true;
+template <typename T> constexpr bool is_area = is_area_impl<std::decay_t<T>>;
+
 template <typename T> inline static T build(const Json::Value& json);
 template <> int8_t build<int8_t>(const Json::Value& json);
 template <> uint8_t build<uint8_t>(const Json::Value& json);
@@ -245,6 +249,15 @@ template <typename T> T build(const Json::Value& json)
         auto max = build<typename T::value_type>(json["max"]);
 
         return range(min, max);
+    }
+    else if constexpr (is_area<T>)
+    {
+        auto left = build<typename T::value_type>(json["left"]);
+        auto top = build<typename T::value_type>(json["top"]);
+        auto right = build<typename T::value_type>(json["right"]);
+        auto bottom = build<typename T::value_type>(json["bottom"]);
+
+        return area(left, top, right, bottom);
     }
     else
     {

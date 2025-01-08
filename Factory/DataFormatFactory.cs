@@ -57,6 +57,7 @@ namespace ExcelTableConverter.Factory
         protected abstract T PointType(object value, string root, string e, bool nullable, DataFormatOption option);
         protected abstract T SizeType(object value, string root, string e, bool nullable, DataFormatOption option);
         protected abstract T RangeType(object value, string root, string e, bool nullable, DataFormatOption option);
+        protected abstract T AreaType(object value, string root, string e, bool nullable, DataFormatOption option);
 
         protected T Build(string type, object value, DataFormatOption option = null)
         {
@@ -184,6 +185,11 @@ namespace ExcelTableConverter.Factory
             if (Util.Type.IsRange(naked, out var rangeType))
             {
                 return RangeType(value, root, string.IsNullOrEmpty(rangeType) ? "uint" : rangeType, nullable, option);
+            }
+
+            if (Util.Type.IsArea(naked, out var areaType))
+            {
+                return AreaType(value, root, string.IsNullOrEmpty(areaType) ? "uint" : areaType, nullable, option);
             }
 
             if (Context.Result.Enum.ContainsKey(naked))

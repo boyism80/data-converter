@@ -118,6 +118,11 @@ namespace ExcelTableConverter.Factory.Node
             return $"RangeBuilder().build";
         }
 
+        protected override string AreaType(object value, string root, string e, bool nullable, DataFormatOption option)
+        {
+            return $"AreaBuilder().build";
+        }
+
         public string Build(string type)
         {
             return base.Build(type, null);

@@ -181,5 +181,10 @@ namespace ExcelTableConverter.Factory.CS
         {
             throw new NotImplementedException();
         }
+
+        protected override string AreaType(object value, string root, string e, bool nullable, DataFormatOption option)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

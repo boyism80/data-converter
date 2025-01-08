@@ -83,6 +83,19 @@ module.exports = (function () {
         }
     }
 
+    function AreaBuilder() {
+        return {
+            build: function (v) {
+                return {
+                    left: v.left,
+                    top: v.top,
+                    right: v.right,
+                    bottom: v.bottom
+                }
+            }
+        }
+    }
+
     function TimeSpanBuilder() {
         return {
             build: function (v) {

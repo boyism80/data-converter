@@ -3,7 +3,6 @@ using ExcelTableConverter.Util;
 using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
-using Range = ExcelTableConverter.Model.Range;
 
 namespace ExcelTableConverter.Factory
 {
@@ -13,6 +12,7 @@ namespace ExcelTableConverter.Factory
         private readonly Regex _pointRgx = new Regex(@"(?<x>\d+)\s*,\s*(?<y>\d+)", RegexOptions.Compiled);
         private readonly Regex _sizeRgx = new Regex(@"(?<width>\d+)\s*,\s*(?<height>\d+)", RegexOptions.Compiled);
         private readonly Regex _rangeRgx = new Regex(@"(?<min>\d+)\s*~\s*(?<max>\d+)", RegexOptions.Compiled);
+        private readonly Regex _areaRgx = new Regex(@"(?<left>\d+)\s*,\s*(?<top>\d+)\s*,\s*(?<right>\d+)\s*,\s*(?<bottom>\d+)", RegexOptions.Compiled);
         private readonly ConcurrentDictionary<string, ConcurrentDictionary<object, object>> _castValuesDP = new ConcurrentDictionary<string, ConcurrentDictionary<object, object>>();
 
         public CastValueFactory(Context ctx) : base(ctx)
@@ -212,7 +212,7 @@ namespace ExcelTableConverter.Factory
                             {
                                 case "&":
                                 case "|":
-                                    if(op.Count > 0)
+                                    if (op.Count > 0)
                                         data.Push(op.Pop());
                                     op.Push(value);
                                     break;
@@ -702,7 +702,7 @@ namespace ExcelTableConverter.Factory
 
             switch (value)
             {
-                case Range:
+                case Model.Range:
                     return value;
 
                 case string s:
@@ -714,7 +714,7 @@ namespace ExcelTableConverter.Factory
 
                         var min = (ulong)Build(e, match.Groups["min"].Value);
                         var max = (ulong)Build(e, match.Groups["max"].Value);
-                        return new Range { Min = min, Max = max };
+                        return new Model.Range { Min = min, Max = max };
                     });
 
                 default:
@@ -725,6 +725,40 @@ namespace ExcelTableConverter.Factory
         public object Build(string type, object value)
         {
             return base.Build(type, value);
+        }
+
+        protected override object AreaType(object value, string root, string e, bool nullable, DataFormatOption option)
+        {
+            if (Util.Value.IsNull(value))
+            {
+                if (nullable == false)
+                    throw new NullValueException(root);
+
+                return DP(root, value, null);
+            }
+
+            switch (value)
+            {
+                case Area:
+                    return value;
+
+                case string s:
+                    return LazyDP(root, value, () =>
+                    {
+                        var match = _areaRgx.Match(s);
+                        if (match.Success == false)
+                            throw new TypeCastException(value, root);
+
+                        var left = (ulong)Build(e, match.Groups["left"].Value);
+                        var top = (ulong)Build(e, match.Groups["top"].Value);
+                        var right = (ulong)Build(e, match.Groups["right"].Value);
+                        var bottom = (ulong)Build(e, match.Groups["bottom"].Value);
+                        return new Area { Left = left, Top = top, Right = right, Bottom = bottom };
+                    });
+
+                default:
+                    throw new NotImplementedException();
+            }
         }
     }
 }

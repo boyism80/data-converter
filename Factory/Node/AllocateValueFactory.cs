@@ -161,9 +161,9 @@ namespace ExcelTableConverter.Factory.Node
             var ts = (TimeSpan)value;
             var ms = (long)ts.TotalMilliseconds;
             if (ms == 0)
-                return $"new timespan.TimeSpan()";
+                return $"new TimeSpan()";
             else
-                return $"timespan.fromMilliseconds({ms}/*{ts}*/)";
+                return $"TimeSpan.FromMilliseconds({ms}/*{ts}*/)";
         }
 
         protected override string PointType(object value, string root, string e, bool nullable, DataFormatOption option)
@@ -177,6 +177,11 @@ namespace ExcelTableConverter.Factory.Node
         }
 
         protected override string RangeType(object value, string root, string e, bool nullable, DataFormatOption option)
+        {
+            return $"{value}";
+        }
+
+        protected override string AreaType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
             return $"{value}";
         }

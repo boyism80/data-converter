@@ -11,6 +11,10 @@
         {
             name: 'range',
             props: ['min', 'max']
+        },
+        {
+            name: 'area',
+            props: ['left', 'top', 'right', 'bottom']
         }
     ]
 ~}}

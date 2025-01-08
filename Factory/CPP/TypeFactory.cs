@@ -125,6 +125,11 @@ namespace ExcelTableConverter.Factory.CPP
             return WithNullable($"range<{Build(e)}>", nullable, option);
         }
 
+        protected override string AreaType(object value, string root, string e, bool nullable, DataFormatOption option)
+        {
+            return WithNullable($"area<{Build(e)}>", nullable, option);
+        }
+
         public string Build(string type)
         {
             var option = new DataFormatOption();

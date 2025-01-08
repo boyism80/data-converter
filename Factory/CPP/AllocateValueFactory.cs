@@ -180,6 +180,12 @@ namespace ExcelTableConverter.Factory.CPP
             return $"range<{e}>({point.X}, {point.Y})";
         }
 
+        protected override string AreaType(object value, string root, string e, bool nullable, DataFormatOption option)
+        {
+            var area = value as Area;
+            return $"area<{e}>({area.Left}, {area.Top}, {area.Right}, {area.Bottom})";
+        }
+
         public string Build(string type, object value)
         {
             return base.Build(type, value);

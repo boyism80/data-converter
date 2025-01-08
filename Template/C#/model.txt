@@ -25,6 +25,14 @@ namespace {{ config.namespace | array.each @upper_camel | array.join '.' }}
         public T Min { get; set; }
         public T Max { get; set; }
     }
+
+    public struct Area<T>
+    {
+        public T Left { get; set; }
+        public T Top { get; set; }
+        public T Right { get; set; }
+        public T Bottom { get; set; }
+    }
 }
 
 namespace {{ config.namespace | array.concat config.enum_namespace | array.each @upper_camel | array.join '.' }}

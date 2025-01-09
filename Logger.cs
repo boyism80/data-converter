@@ -132,7 +132,9 @@ namespace ExcelTableConverter
             else
             {
                 var beforeForeground = Console.ForegroundColor;
-                Console.WriteLine(text);
+                Console.ForegroundColor = foreground;
+                Console.WriteLine();
+                Console.Write(text);
                 _commentLine++;
                 _y++;
                 Console.ForegroundColor = beforeForeground;

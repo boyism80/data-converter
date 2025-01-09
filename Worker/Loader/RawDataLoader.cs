@@ -1,6 +1,5 @@
 ﻿using ExcelTableConverter.Model;
 using ExcelTableConverter.Util;
-using NPOI.SS.Formula.Functions;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using System.Collections;
@@ -135,7 +134,7 @@ namespace ExcelTableConverter.Worker.Loader
             }
 
             yield return new RawSheetData
-            { 
+            {
                 Parent = sheet,
                 Columns = columns.Values.ToList(),
                 Based = based,

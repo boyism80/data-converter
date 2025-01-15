@@ -52,11 +52,11 @@
             "desc": "intelligence"
         }
     ],
-    "dexteritry": [
+    "dexterity": [
         {
             "name": "value",
             "type": "uint8_t",
-            "desc": "dexteritry"
+            "desc": "dexterity"
         }
     ],
     "promotion": [

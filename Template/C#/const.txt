@@ -1,8 +1,19 @@
+{{~
+func const_keyword(t)
+    compile_const_type = ['bool', 'byte', 'sbyte', 'char', 'decimal', 'double', 'float', 'int', 'uint', 'nint', 'nuint', 'long', 'ulong', 'short', 'ushort', 'string']
+
+    if compile_const_type | array.contains t
+        ret 'const ' + t
+    else
+        ret 'static readonly ' + t
+    end
+end
+~}}
 {{~ for item in items ~}}
     public static class {{ item.key | @upper_camel }}
     {
 {{~ for prop in item.value ~}}
-        public const {{ prop.type }} {{ prop.name | @upper_camel }} = {{ prop.value }};
+        public {{ const_keyword(prop.type) }} {{ prop.name | @upper_camel }} = {{ prop.value }};
 {{~ end ~}}
     }
 {{~ if !for.last ~}}

@@ -37,7 +37,7 @@ namespace ExcelTableConverter.Model
         private readonly ConcurrentDictionary<object, object> _dp = new ConcurrentDictionary<object, object>();
 
         [JsonIgnore]
-        public static Config Config { get; private set; } = ReadConfigFile();
+        public static Config Config { get; private set; }
 
         [JsonIgnore]
         public string Output = "output";
@@ -68,9 +68,8 @@ namespace ExcelTableConverter.Model
                 Directory.CreateDirectory(CACHE_DIRECTORY);
         }
 
-        public Context(string dsl = "dsl.json")
+        public Context()
         {
-            DSL = ReadDslFile(dsl);
             _castFactory = new CastValueFactory(this);
         }
 
@@ -81,7 +80,7 @@ namespace ExcelTableConverter.Model
                 RawEnum = ctx1.RawEnum.Concat(ctx2.RawEnum).ToDictionary(x => x.Key, x => x.Value),
                 RawData = ctx1.RawData.Concat(ctx2.RawData).ToDictionary(x => x.Key, x => x.Value),
                 RawConst = ctx1.RawConst.Concat(ctx2.RawConst).ToDictionary(x => x.Key, x => x.Value),
-                CRC = ctx1.CRC.Concat(ctx2.CRC).ToDictionary(x => x.Key, x => x.Value),
+                CRC = ctx1.CRC.Concat(ctx2.CRC).ToDictionary(x => x.Key, x => x.Value)
             };
         }
 
@@ -104,17 +103,17 @@ namespace ExcelTableConverter.Model
             return callback.Invoke(File.ReadAllText(fname));
         }
 
-        private static Config ReadConfigFile()
+        public void ReadConfigFile()
         {
-            return ReadFileWithEnvironmentVariable("config.json", contents =>
+            Config = ReadFileWithEnvironmentVariable("config.json", contents =>
             {
                 return JsonConvert.DeserializeObject<Config>(contents);
             });
         }
 
-        private static JObject ReadDslFile(string path)
+        public void ReadDslFile(string path)
         {
-            return ReadFileWithEnvironmentVariable(path, contents =>
+            DSL = ReadFileWithEnvironmentVariable(path, contents =>
             {
                 return JObject.Parse(contents);
             });

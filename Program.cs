@@ -198,11 +198,13 @@ try
         dataSheets = new SheetLoader(loaded, dataWorkBooks).Run();
     });
 
-    var ctx = new Context(dsl);
+    var ctx = new Context();
     Scheduler.Add(() =>
     {
         new RawDataLoader(loaded, dataSheets).Run();
         ctx = cached + loaded;
+        ctx.ReadDslFile(dsl);
+        ctx.ReadConfigFile();
 
         if (File.Exists(Context.RAW_CACHE_PATH))
             File.Delete(Context.RAW_CACHE_PATH);

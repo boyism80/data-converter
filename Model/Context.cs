@@ -71,6 +71,8 @@ namespace ExcelTableConverter.Model
         public Context()
         {
             _castFactory = new CastValueFactory(this);
+            ReadDslFile("dsl.json");
+            ReadConfigFile();
         }
 
         public static Context operator +(Context ctx1, Context ctx2)

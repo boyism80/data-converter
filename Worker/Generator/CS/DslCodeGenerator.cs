@@ -15,11 +15,12 @@ namespace ExcelTableConverter.Worker.Generator.CS
 
     public class DslCodeGenerator : ParallelWorker<KeyValuePair<string, List<DSLParameter>>, DslCodeGeneratorResult>
     {
-        private static readonly Dictionary<string, List<DSLParameter>> _prototypes = JsonConvert.DeserializeObject<Dictionary<string, List<DSLParameter>>>(Context.DSL.ToString());
+        private readonly Dictionary<string, List<DSLParameter>> _prototypes;
         public string Result { get; private set; }
 
         public DslCodeGenerator(Context ctx) : base(ctx)
         {
+            _prototypes = JsonConvert.DeserializeObject<Dictionary<string, List<DSLParameter>>>(ctx.DSL.ToString());
         }
 
         protected override IEnumerable<KeyValuePair<string, List<DSLParameter>>> OnReady()

@@ -43,7 +43,7 @@ namespace ExcelTableConverter.Model
         public string Output = "output";
 
         [JsonIgnore]
-        public static JObject DSL { get; private set; } = ReadDslFile();
+        public JObject DSL { get; private set; }
 
         public RawConstContainer RawConst { get; private set; } = new RawConstContainer();
         public RawEnumContainer RawEnum { get; private set; } = new RawEnumContainer();
@@ -68,8 +68,9 @@ namespace ExcelTableConverter.Model
                 Directory.CreateDirectory(CACHE_DIRECTORY);
         }
 
-        public Context()
+        public Context(string dsl = "dsl.json")
         {
+            DSL = ReadDslFile(dsl);
             _castFactory = new CastValueFactory(this);
         }
 
@@ -105,15 +106,15 @@ namespace ExcelTableConverter.Model
 
         private static Config ReadConfigFile()
         {
-            return ReadFileWithEnvironmentVariable("config.json", contents => 
+            return ReadFileWithEnvironmentVariable("config.json", contents =>
             {
                 return JsonConvert.DeserializeObject<Config>(contents);
             });
         }
 
-        private static JObject ReadDslFile()
+        private static JObject ReadDslFile(string path)
         {
-            return ReadFileWithEnvironmentVariable("dsl.json", contents => 
+            return ReadFileWithEnvironmentVariable(path, contents =>
             {
                 return JObject.Parse(contents);
             });
@@ -129,7 +130,7 @@ namespace ExcelTableConverter.Model
                 var json = sheets.FirstOrDefault()?.Json;
                 var columns = sheets.FirstOrDefault()?.Columns;
                 var (boldColumns, normalColumns) = columns.Split();
-                
+
                 var root = string.Format(Config.ParentTableFormat, table);
 
                 if (boldColumns != null)
@@ -144,7 +145,7 @@ namespace ExcelTableConverter.Model
                             Scope = column.Scope
                         });
                     }
-                    
+
                     result.Add(string.Format(Config.ParentTableFormat, table), schemaSet);
                 }
 
@@ -245,7 +246,7 @@ namespace ExcelTableConverter.Model
             if (Result.Schema.TryGetValue(table, out var schema) == false)
                 return null;
 
-            var filter = schema.Where(pair => 
+            var filter = schema.Where(pair =>
             {
                 return scopeFilterType switch
                 {
@@ -277,7 +278,7 @@ namespace ExcelTableConverter.Model
                 dslFunctionTypes.Add(dsl.Key, new List<object> { i++ });
             }
             Result.Schema = GetSchema();
-            Result.Data = new DataTypeCaster(this).Run().GroupBy(x => x.FileName).ToDictionary(x => x.Key, x => 
+            Result.Data = new DataTypeCaster(this).Run().GroupBy(x => x.FileName).ToDictionary(x => x.Key, x =>
             {
                 return x.GroupBy(x => x.TableName).ToDictionary(x => x.Key, x => x.OrderBy(x => x.SheetName).ToList());
             });
@@ -393,7 +394,7 @@ namespace ExcelTableConverter.Model
         public List<Dictionary<string, object>> GetValues(string tableName)
         {
             var key = $"GetValues_{tableName}";
-            return _dp.GetOrAdd(key, _ => 
+            return _dp.GetOrAdd(key, _ =>
             {
                 return Result.Data
                 .SelectMany(x => x.Value)
@@ -422,7 +423,7 @@ namespace ExcelTableConverter.Model
         public IReadOnlyList<object> GetValuesFromJson(string jsonName, string columnName)
         {
             var key = $"GetValuesFromJson_{jsonName}_{columnName}";
-            return _dp.GetOrAdd(key, _ => 
+            return _dp.GetOrAdd(key, _ =>
             {
                 var tableNames = GetTableNamesFromJson(jsonName).ToList();
                 return tableNames.SelectMany(tableName =>

@@ -16,12 +16,14 @@ try
 {
     var dir = Path.Combine("..", "..", "..", "..");
     var languages = "c++";
+    var dsl = "dsl.json";
     var env = string.Empty;
     var options = new OptionSet
     {
         { "d|dir=", "input directory", v => dir = v },
         { "l|lang=", "code language", v => languages = v },
-        { "e|env=", "code language", v => env = v }
+        { "e|env=", "code language", v => env = v },
+        { "dsl=", "dsl file path", v => dsl = v },
     };
 
     options.Parse(args);
@@ -196,7 +198,7 @@ try
         dataSheets = new SheetLoader(loaded, dataWorkBooks).Run();
     });
 
-    var ctx = new Context();
+    var ctx = new Context(dsl);
     Scheduler.Add(() =>
     {
         new RawDataLoader(loaded, dataSheets).Run();

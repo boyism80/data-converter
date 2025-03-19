@@ -97,14 +97,14 @@ namespace ExcelTableConverter.Worker.Generator.Go
             var enumCodeGenerator = new EnumCodeGenerator(Context);
             enumCodeGenerator.Run();
 
-            //var constCodeGenerator = new ConstCodeGenerator(Context);
-            //constCodeGenerator.Run();
+            var constCodeGenerator = new ConstCodeGenerator(Context);
+            constCodeGenerator.Run();
 
             var dslCodeGenerator = new DslCodeGenerator(Context);
             dslCodeGenerator.Run();
 
-            //var bindCodeGenerator = new BindCodeGenerator(Context);
-            //bindCodeGenerator.Run();
+            var bindCodeGenerator = new BindCodeGenerator(Context);
+            bindCodeGenerator.Run();
 
             var g = output.GroupBy(x => x.Scope).ToDictionary(x => x.Key, x =>
             {
@@ -131,8 +131,8 @@ namespace ExcelTableConverter.Worker.Generator.Go
                     ["config"] = Context.Config,
                     ["class"] = GenerateClassCode(scope, items),
                     ["enum"] = enumCodeGenerator.Result,
-                    //["const"] = constCodeGenerator.Result[scope],
-                    //["container"] = bindCodeGenerator.Result[scope],
+                    ["const"] = constCodeGenerator.Result[scope],
+                    ["container"] = bindCodeGenerator.Result[scope],
                     ["dsl"] = dslCodeGenerator.Result,
                 };
                 var ctx = new TemplateContext();

@@ -1,8 +1,9 @@
+{{~ if items | array.size > 0 ~}}
 type Dsl struct {
     Type   DSL
     Params []any
 }
-
+{{~ end ~}}
 {{~ for item in items ~}}
 type {{ item.header | @upper_camel }}Dsl struct {
 {{~ for prop in item.props ~}}

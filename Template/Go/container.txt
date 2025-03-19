@@ -1,0 +1,40 @@
+{{~
+func containable(table)
+    ret table.name == table.json
+end
+~}}
+
+type Container struct {
+{{~ for table in tables | array.filter @containable ~}}
+    {{ table.name | @upper_camel }} {{ table.type }}{{ table.generic }}
+{{~ end ~}}
+}
+
+func load[T any](path string) T {
+    file, err := os.Open(path)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer file.Close()
+
+    bytes, err := io.ReadAll(file)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    var result T
+    err = json.Unmarshal(bytes, &result)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    return result
+}
+
+func Load() Container {
+    return Container{
+{{~ for table in tables | array.filter @containable ~}}
+        load[{{ table.type }}{{ table.generic }}]("json/{{ table.name }}.json"),
+{{~ end ~}}
+    }
+}

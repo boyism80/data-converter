@@ -1,6 +1,11 @@
 package model
 
-import "golang.org/x/exp/constraints"
+import (
+    "encoding/json"
+    "io"
+    "log"
+    "os"
+)
 
 type Point[T any] struct {
     X T
@@ -19,6 +24,10 @@ type Range[T any] struct {
 
 {{ enum }}
 
+{{ const }}
+
 {{ dsl }}
 
 {{ class }}
+
+{{ container }}

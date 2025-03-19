@@ -267,6 +267,10 @@ try
                 case "node":
                     Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.Node.ClassFileGenerator(ctx).Run());
                     break;
+
+                case "go":
+                    Scheduler.Add(() => new ExcelTableConverter.Worker.Generator.Go.ClassFileGenerator(ctx).Run());
+                    break;
             }
         }
         Scheduler.Add(() =>

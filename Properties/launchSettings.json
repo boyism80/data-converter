@@ -2,7 +2,7 @@
   "profiles": {
     "ExcelTableConverter": {
       "commandName": "Project",
-      "commandLineArgs": "--dir=D:\\git\\fb\\resources\\table --lang=c++|c#|node --dsl=D:\\git\\fb\\tools\\dsl.json"
+      "commandLineArgs": "--dir=D:\\git\\fb\\resources\\table --lang=go --dsl=D:\\git\\fb\\resources\\table\\dsl.json"
     }
   }
 }

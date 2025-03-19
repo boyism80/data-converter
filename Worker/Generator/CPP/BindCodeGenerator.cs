@@ -68,9 +68,11 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                     Json = Context.Result.Schema[tableName].Json,
                 });
             }
-            var obj = new ScribanEx();
-            obj.Add("tables", buffer);
-            obj.Add("config", Context.Config);
+            var obj = new ScribanEx
+            {
+                ["tables"] = buffer,
+                ["config"] = Context.Config
+            };
             var ctx = new TemplateContext();
             ctx.PushGlobal(obj);
             var code = _template.Render(ctx);

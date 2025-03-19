@@ -68,10 +68,12 @@ namespace ExcelTableConverter.Worker.Generator.CS
                 });
             }
 
-            var obj = new ScribanEx();
-            obj.Add("scope", scope);
-            obj.Add("tables", buffer);
-            obj.Add("config", Context.Config);
+            var obj = new ScribanEx
+            {
+                ["scope"] = scope,
+                ["tables"] = buffer,
+                ["config"] = Context.Config,
+            };
 
             var ctx = new TemplateContext();
             ctx.PushGlobal(obj);

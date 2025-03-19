@@ -35,7 +35,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
             var props = Context.Result.Enum[enumName].OrderBy(x => x, new Util.Enum.Comparer()).Select(x => new
             {
                 Name = x.Key,
-                Value = x.Value.Select(x => 
+                Value = x.Value.Select(x =>
                 {
                     if (x is string s)
                         return s;
@@ -69,9 +69,11 @@ namespace ExcelTableConverter.Worker.Generator.CS
                 x.Props
             } as object).ToList();
 
-            var obj = new ScribanEx();
-            obj.Add("items", items);
-            obj.Add("config", Context.Config);
+            var obj = new ScribanEx
+            {
+                ["items"] = items,
+                ["config"] = Context.Config,
+            };
 
             var ctx = new TemplateContext();
             ctx.PushGlobal(obj);

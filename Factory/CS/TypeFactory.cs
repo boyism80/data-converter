@@ -45,7 +45,7 @@ namespace ExcelTableConverter.Factory.CS
 
         protected override string DoubleType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return root;
+            return WithNullable("double", nullable);
         }
 
         protected override string DslType(object value, string root, bool nullable, DataFormatOption option)

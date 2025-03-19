@@ -46,11 +46,13 @@ namespace ExcelTableConverter.Worker.Generator.CS
                 items.Add(groupName, props);
             }
 
-            var obj = new ScribanEx();
-            obj.Add("super", scope == Scope.Common);
-            obj.Add("scope", scope);
-            obj.Add("items", items);
-            obj.Add("config", Context.Config);
+            var obj = new ScribanEx
+            {
+                ["super"] = scope == Scope.Common,
+                ["scope"] = scope,
+                ["items"] = items,
+                ["config"] = Context.Config,
+            };
 
             var ctx = new TemplateContext();
             ctx.PushGlobal(obj);

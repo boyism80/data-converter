@@ -56,12 +56,13 @@ namespace ExcelTableConverter.Worker.Generator.CPP
         protected override IReadOnlyList<DslCodeGeneratorResult> OnFinish(IReadOnlyList<DslCodeGeneratorResult> output)
         {
             var template = Template.Parse(File.ReadAllText($"Template/C++/dsl.txt"));
-            var obj = new ScribanEx();
+            var obj = new ScribanEx
+            {
+                ["items"] = output.OrderBy(x => x.Name).Select(x => new { x.Name, x.Props }),
+                ["dsls"] = _prototypes.Keys.OrderBy(x => x).ToList(),
+                ["config"] = Context.Config,
+            };
             var ctx = new TemplateContext();
-
-            obj.Add("items", output.OrderBy(x => x.Name).Select(x => new { x.Name, x.Props }));
-            obj.Add("dsls", _prototypes.Keys.OrderBy(x => x).ToList());
-            obj.Add("config", Context.Config);
             ctx.PushGlobal(obj);
             Result = template.Render(ctx);
             return base.OnFinish(output);

@@ -87,7 +87,8 @@ namespace ExcelTableConverter
             {
                 Write(text, foreground, align, decorate);
                 NewLine();
-            };
+            }
+            ;
         }
 
         public static void Position(int y)
@@ -95,8 +96,8 @@ namespace ExcelTableConverter
             if (!TTY)
                 return;
 
-            _y = Math.Max(0, Math.Min(Console.WindowHeight - 1, y));
-            Console.SetCursorPosition(0, _y);
+            y = Math.Max(0, Math.Min(Console.WindowHeight - 1, y));
+            Console.SetCursorPosition(0, y);
         }
 
         public static int Position()
@@ -120,7 +121,7 @@ namespace ExcelTableConverter
         private static void Clear()
         {
             Console.Write(new string(' ', Console.WindowWidth));
-            Position(_y);
+            Position(_y - _commentLine);
         }
 
         public static void Comment(string text, ConsoleColor foreground = ConsoleColor.White)

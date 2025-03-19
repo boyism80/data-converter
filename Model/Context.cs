@@ -100,7 +100,7 @@ namespace ExcelTableConverter.Model
             }
 
             if (File.Exists(fname) == false)
-                throw new FileNotFoundException();
+                throw new LogicException($"DSL 파일을 찾을 수 없습니다.");
 
             return callback.Invoke(File.ReadAllText(fname));
         }

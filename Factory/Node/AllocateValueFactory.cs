@@ -161,9 +161,9 @@ namespace ExcelTableConverter.Factory.Node
             var ts = (TimeSpan)value;
             var ms = (long)ts.TotalMilliseconds;
             if (ms == 0)
-                return $"new TimeSpan()";
+                return $"new timespan.TimeSpan()";
             else
-                return $"TimeSpan.FromMilliseconds({ms}/*{ts}*/)";
+                return $"timespan.fromMilliseconds({ms}/*{ts}*/)";
         }
 
         protected override string PointType(object value, string root, string e, bool nullable, DataFormatOption option)

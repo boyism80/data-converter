@@ -54,6 +54,7 @@ namespace ExcelTableConverter
                                 break;
 
                             case LogicException:
+                                Logger.Error(error.Message);
                                 break;
 
                             default:

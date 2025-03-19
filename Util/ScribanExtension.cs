@@ -3,8 +3,8 @@
 namespace ExcelTableConverter.Util
 {
     public enum LanguageType
-    { 
-        CPP, CS, NODE
+    {
+        CPP, CS, NODE, GO
     }
 
     public class ScribanEx : ScriptObject

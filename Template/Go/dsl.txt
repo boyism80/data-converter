@@ -1,0 +1,28 @@
+{{~ if items | array.size > 0 ~}}
+type Dsl struct {
+    Type   DSL
+    Params []any
+}
+{{~ end ~}}
+{{~ for item in items ~}}
+type {{ item.header | @upper_camel }}Dsl struct {
+{{~ for prop in item.props ~}}
+    {{ prop.name | @upper_camel }} {{ prop.type }} `json:"{{ prop.name }}"`
+{{~ end ~}}
+}
+
+func New{{ item.header | @upper_camel }}Dsl(params []any) {{ item.header | @upper_camel }}Dsl {
+    return {{ item.header | @upper_camel }}Dsl{
+{{~ for prop in item.props ~}}
+        {{ prop.deserialize }},
+{{~ end ~}}
+    }
+}
+
+func (dsl *{{ item.header | @upper_camel }}Dsl) ToDSL() Dsl {
+    return Dsl {
+        DSL_{{ item.header | string.upcase }},
+        []any { {{~ for prop in item.props ~}}dsl.{{ prop.serialize }}{{ prop.name | @upper_camel }},{{~ end ~}} },
+    }
+}
+{{~ end ~}}

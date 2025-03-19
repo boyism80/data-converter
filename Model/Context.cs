@@ -276,7 +276,7 @@ namespace ExcelTableConverter.Model
             int i = 0;
             foreach (var dsl in DSL)
             {
-                dslFunctionTypes.Add(dsl.Key, new List<object> { i++ });
+                dslFunctionTypes.Add(dsl.Key, [i++]);
             }
             Result.Schema = GetSchema();
             Result.Data = new DataTypeCaster(this).Run().GroupBy(x => x.FileName).ToDictionary(x => x.Key, x =>

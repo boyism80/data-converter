@@ -1,0 +1,33 @@
+package model
+
+import (
+    "encoding/json"
+    "io"
+    "log"
+    "os"
+)
+
+type Point[T any] struct {
+    X T
+    Y T
+}
+
+type Size[T any] struct {
+    Width T
+    Height T
+}
+
+type Range[T any] struct {
+    Min T
+    Max T
+}
+
+{{ enum }}
+
+{{ const }}
+
+{{ dsl }}
+
+{{ class }}
+
+{{ container }}

@@ -1,0 +1,49 @@
+{{~
+func enum_recursive(v)
+    if object.typeof(v) == 'array'
+        $result = ''
+        $index = 0
+        if v.size > 1
+            $result += '('
+        end
+        
+        for x in v
+            $index = $index + 1
+            $result += enum_recursive(x)
+
+            if $index < v.size && x != '~'
+                $result += ' '
+            end
+        end
+        
+        if v.size > 1
+            $result += ')'
+        end
+
+        ret $result
+    else
+        ret v
+    end
+end
+
+func enum(v)
+    $result = enum_recursive(v)
+    if ($result | string.starts_with '(') && ($result | string.ends_with(')'))
+        $result = $result | string.remove_first '('
+        $result = $result | string.remove_last ')'
+    end
+
+    ret $result
+end
+~}}
+{{~ for item in items ~}}
+type {{ item.name }} uint32
+const (
+{{~ for prop in item.props ~}}
+    {{ prop.name }} = {{ enum(prop.value)}}
+{{~ end ~}}
+)
+{{~ if !for.last ~}}
+
+{{~ end ~}}
+{{~ end ~}}

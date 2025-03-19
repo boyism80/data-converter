@@ -1,6 +1,6 @@
 {{~ for item in items ~}}
 type {{ item.name | @upper_camel }} struct {
-    {{ if item.based }}{{item.based | @upper_camel}} {{ item.based | @upper_camel }}{{ end }}
+    {{ if item.based }}{{ item.based | @upper_camel }}{{ end }}
 {{~ for prop in item.props ~}}
     {{ prop.name | @upper_camel }} {{ prop.type }} `json:"{{ prop.name }}"`
 {{~ end ~}}

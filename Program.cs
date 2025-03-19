@@ -203,6 +203,20 @@ try
     {
         new RawDataLoader(loaded, dataSheets).Run();
         ctx = cached + loaded;
+
+        if (languages.Split('|').Contains("go"))
+        {
+            var inheritTableNames = ctx.RawData.SelectMany(x => x.Value).Where(x => x.Based != null).Select(x => x.TableName).ToList();
+            if (inheritTableNames.Count > 0)
+            {
+                var errors = new List<Exception>();
+                foreach (var name in inheritTableNames)
+                    errors.Add(new LogicException($"golang 변환은 테이블 상속을 지원하지 않습니다. ({name})"));
+
+                throw new AggregateException(errors);
+            }
+        }
+
         ctx.ReadDslFile(dsl);
         ctx.ReadConfigFile();
 

@@ -335,7 +335,132 @@ namespace ExcelTableConverter.Model
             }).Where(pair => pair.Value != null).ToDictionary(x => x.Key, x => x.Value);
         }
 
-        public Dictionary<string, Dictionary<string, object>> GetEffectiveSortedDataSetWithSheetName(Scope scope) // {sheet:{table:container}}
+        public int EnumValueToInt(string root, object value)
+        {
+            if (value is int i)
+                return i;
+
+            var s = value as string;
+            if (Result.Enum[root].TryGetValue(s, out var x))
+            {
+                if (x.Count != 1)
+                    throw new LogicException("...?");
+
+                s = x[0] as string;
+            }
+
+            if (s.StartsWith("0x"))
+                return Convert.ToInt32(s, 16);
+
+            return int.Parse(s);
+        }
+
+        private Dictionary<string, object> IsA2HasA(string tableName, Dictionary<string, object> row)
+        {
+            var based = Result.Schema[tableName].Based;
+            if (based == null)
+                return row;
+
+            var inheritedFields = Result.Schema[tableName].Where(x => x.Value.Inherited).ToDictionary(x => x.Key, x => x.Value);
+            var inheritedValues = new Dictionary<string, object>();
+            row = row.ToDictionary(x => x.Key, x => x.Value);
+            foreach (var k in inheritedFields.Keys)
+            {
+                inheritedValues.Add(k, row[k]);
+                row.Remove(k);
+            }
+            row[based] = IsA2HasA(based, inheritedValues);
+            return row;
+        }
+
+        private Dictionary<string, object> FilterScope(string tableName, Scope scope, Dictionary<string, object> row)
+        {
+            var result = new Dictionary<string, object>();
+            var schema = Result.Schema[tableName].Values.Where(x => x.Scope.HasFlag(scope));
+            var columns = schema.Where(x => !x.Inherited).Select(x => x.Name).ToHashSet();
+
+            foreach (var column in columns)
+            {
+                result.Add(column, row[column]);
+            }
+
+            var based = Result.Schema[tableName].Based;
+            if (based != null)
+            {
+                result[based] = FilterScope(based, scope, row[based] as Dictionary<string, object>);
+            }
+
+            return row;
+        }
+
+        public Dictionary<string, object> HasAEffectiveSortedDataSet(Scope scope)
+        {
+            // {table:rows}
+            var tableRows = Result.Data.SelectMany(x => x.Value).GroupBy(x => x.Key).ToDictionary(x => x.Key, x =>
+            {
+                var table = x.Key;
+                return x.SelectMany(x => x.Value).SelectMany(x => x.Rows).ToList();
+            });
+
+            // enum value(string) to integer
+            foreach (var (tableName, rows) in tableRows)
+            {
+                for (int i = 0; i < rows.Count; i++)
+                {
+                    var row = rows[i];
+                    foreach (var (k, v) in row)
+                    {
+                        var schema = Result.Schema[tableName][k];
+                        var naked = Util.Type.Nake(schema.Type);
+                        if (Result.Enum.ContainsKey(naked))
+                        {
+                            if (v != null && v is string)
+                            {
+                                row[k] = EnumValueToInt(naked, v);
+                            }
+                        }
+                    }
+
+                    rows[i] = IsA2HasA(tableName, row);
+                }
+            }
+
+            // {json:rows}
+            var jsonRows = new Dictionary<string/*json*/, List<Dictionary<string/*column*/, object/*value*/>>>();
+            foreach (var g in Result.Schema.GroupBy(x => x.Value.Json))
+            {
+                var json = g.Key;
+                var rows = new List<Dictionary<string, object>>();
+                foreach (var tableName in g.Select(x => x.Key))
+                {
+                    var schema = Result.Schema[tableName].Values.Where(x => x.Scope.HasFlag(scope));
+                    var columns = schema.Select(x => x.Name).ToHashSet();
+                    if (columns.Count == 0)
+                        continue;
+
+                    var scopedRows = tableRows[tableName]
+                        .Select(row => row.Where(x => columns.Contains(x.Key)).ToDictionary(x => x.Key, x => x.Value))
+                        .Where(x => x.Count > 0)
+                        .ToList();
+
+                    foreach (var row in tableRows[tableName])
+                    {
+                        rows.Add(FilterScope(tableName, scope, row));
+                    }
+                }
+
+                jsonRows.Add(json, rows);
+            }
+
+            return jsonRows.ToDictionary(x => x.Key, x =>
+            {
+                var json = x.Key;
+                var rows = x.Value;
+                return new DataContainerFactory(scope).Build(this, json, rows);
+            }).Where(pair => pair.Value != null).ToDictionary(x => x.Key, x => x.Value);
+        }
+
+        public Dictionary<string, Dictionary<string, object>> IsAEffectiveSortedDataSetWithSheetName(Scope scope) // {sheet:{table:container}}
         {
             return Result.Data.SelectMany(x => x.Value.SelectMany(x => x.Value)).GroupBy(x => x.SheetName).ToDictionary(x => x.Key, x =>
             {

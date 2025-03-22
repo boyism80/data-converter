@@ -170,26 +170,6 @@ namespace ExcelTableConverter.Factory
             });
         }
 
-        private int EnumValueToInt(string root, object value)
-        {
-            if (value is int i)
-                return i;
-
-            var s = value as string;
-            if (Context.Result.Enum[root].TryGetValue(s, out var x))
-            {
-                if (x.Count != 1)
-                    throw new LogicException("...?");
-
-                s = x[0] as string;
-            }
-
-            if (s.StartsWith("0x"))
-                return Convert.ToInt32(s, 16);
-
-            return int.Parse(s);
-        }
-
         private List<object> ToPostfix(string root, List<object> values)
         {
             var data = new Stack<object>();
@@ -245,16 +225,16 @@ namespace ExcelTableConverter.Factory
                 {
                     case "&":
                         {
-                            var x1 = EnumValueToInt(root, stack.Pop());
-                            var x2 = EnumValueToInt(root, stack.Pop());
+                            var x1 = Context.EnumValueToInt(root, stack.Pop());
+                            var x2 = Context.EnumValueToInt(root, stack.Pop());
                             stack.Push(x1 & x2);
                         }
                         break;
 
                     case "|":
                         {
-                            var x1 = EnumValueToInt(root, stack.Pop());
-                            var x2 = EnumValueToInt(root, stack.Pop());
+                            var x1 = Context.EnumValueToInt(root, stack.Pop());
+                            var x2 = Context.EnumValueToInt(root, stack.Pop());
                             stack.Push(x1 | x2);
                         }
                         break;

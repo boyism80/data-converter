@@ -4,6 +4,7 @@ using ExcelTableConverter.Util;
 using ExcelTableConverter.Worker;
 using ExcelTableConverter.Worker.Cache;
 using ExcelTableConverter.Worker.Generator;
+using ExcelTableConverter.Worker.Generator.Go;
 using ExcelTableConverter.Worker.Loader;
 using ExcelTableConverter.Worker.Validator;
 using Force.Crc32;
@@ -203,20 +204,6 @@ try
     {
         new RawDataLoader(loaded, dataSheets).Run();
         ctx = cached + loaded;
-
-        if (languages.Split('|').Contains("go"))
-        {
-            var inheritTableNames = ctx.RawData.SelectMany(x => x.Value).Where(x => x.Based != null).Select(x => x.TableName).ToList();
-            if (inheritTableNames.Count > 0)
-            {
-                var errors = new List<Exception>();
-                foreach (var name in inheritTableNames)
-                    errors.Add(new LogicException($"golang 변환은 테이블 상속을 지원하지 않습니다. ({name})"));
-
-                throw new AggregateException(errors);
-            }
-        }
-
         ctx.ReadDslFile(dsl);
         ctx.ReadConfigFile();
 
@@ -264,6 +251,9 @@ try
     if (isComplete)
     {
         Scheduler.Add(() => new JsonFileGenerator(ctx).Run());
+        if (languages.Split('|').Contains("go"))
+            Scheduler.Add(() => new HasAJsonFileGenerator(ctx).Run());
+
         Scheduler.Add(() => new DiffFileGenerator(ctx).Run());
 
         foreach (var lang in languages.Split('|').Select(x => x.Trim().ToLower()).Distinct().ToHashSet())

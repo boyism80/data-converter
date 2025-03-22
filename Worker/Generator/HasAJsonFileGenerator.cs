@@ -3,9 +3,9 @@ using Newtonsoft.Json;
 
 namespace ExcelTableConverter.Worker.Generator
 {
-    public class JsonFileGenerator : ParallelWorker<(string FileName, object DataSet), bool>
+    public class HasAJsonFileGenerator : ParallelWorker<(string FileName, object DataSet), bool>
     {
-        public JsonFileGenerator(Context ctx) : base(ctx)
+        public HasAJsonFileGenerator(Context ctx) : base(ctx)
         {
 
         }
@@ -14,7 +14,7 @@ namespace ExcelTableConverter.Worker.Generator
         {
             foreach (var scope in new[] { Scope.Server, Scope.Client })
             {
-                var dir = Path.Combine(Context.Output, Context.Config.JsonFilePath, $"{scope}".ToLower());
+                var dir = Path.Combine(Context.Output, Context.Config.JsonFilePath, "go", $"{scope}".ToLower());
                 if (Directory.Exists(dir) == false)
                     Directory.CreateDirectory(dir);
 
@@ -41,12 +41,12 @@ namespace ExcelTableConverter.Worker.Generator
 
         protected override void OnWorked((string FileName, object DataSet) input, bool output, int percent)
         {
-            Logger.Write($"json 파일을 저장했습니다. - {input.FileName}");
+            Logger.Write($"json 파일을 저장했습니다. (golang) - {input.FileName}");
         }
 
         protected override IReadOnlyList<bool> OnFinish(IReadOnlyList<bool> output)
         {
-            Logger.Complete("json 파일을 저장했습니다.");
+            Logger.Complete("json 파일을 저장했습니다. (golang)");
             return base.OnFinish(output);
         }
     }

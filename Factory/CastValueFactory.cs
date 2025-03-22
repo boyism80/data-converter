@@ -236,7 +236,7 @@ namespace ExcelTableConverter.Factory
         private object GetEnumValue(string root, List<object> values)
         {
             if (values.Count == 1)
-                return EnumValueToInt(root, values[0] as string);
+                return values[0] as string;
 
             var stack = new Stack<object>();
             foreach (var x in ToPostfix(root, values))

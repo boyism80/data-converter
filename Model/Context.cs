@@ -295,7 +295,7 @@ namespace ExcelTableConverter.Model
             });
         }
 
-        public Dictionary<string, object> GetEffectiveSortedDataSet(Scope scope) // {json:container}
+        public Dictionary<string, object> IsAEffectiveSortedDataSet(Scope scope) // {json:container}
         {
             // {table:rows}
             var tableRows = Result.Data.SelectMany(x => x.Value).GroupBy(x => x.Key).ToDictionary(x => x.Key, x =>

@@ -21,7 +21,7 @@ namespace ExcelTableConverter.Worker.Generator
                 foreach (var file in Directory.GetFiles(dir))
                     File.Delete(file);
 
-                foreach (var (tableName, dataSet) in Context.HasAEffectiveSortedDataSet(scope))
+                foreach (var (tableName, dataSet) in Context.IsAEffectiveSortedDataSet(scope))
                 {
                     var path = Path.Combine(dir, $"{tableName}.json");
                     yield return (path, dataSet);

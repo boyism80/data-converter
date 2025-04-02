@@ -9,7 +9,7 @@ namespace ExcelTableConverter.Worker.Generator.Node
         private readonly string _dir;
 
         public ClassFileGenerator(Context ctx) : base(ctx)
-        { 
+        {
             _dir = Path.Join(Context.Output, "Node");
             foreach (var scope in new[] { Scope.Server, Scope.Client })
             {
@@ -65,7 +65,7 @@ namespace ExcelTableConverter.Worker.Generator.Node
 
         protected override void OnWorked(string input, (Scope Scope, string Name, List<object> Props) output, int percent)
         {
-            Logger.Write($"클래스 코드 파일을 저장했습니다. - {input}");
+            Logger.Write($"클래스 코드 파일을 저장했습니다. - {input}".AsSpan());
         }
 
         protected override IReadOnlyList<(Scope Scope, string Name, List<object> Props)> OnFinish(IReadOnlyList<(Scope Scope, string Name, List<object> Props)> output)

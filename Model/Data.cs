@@ -140,7 +140,7 @@ namespace ExcelTableConverter.Model
             var rows = buffer.Max(x => x.Count);
             for (int row = 0; row < rows; row++)
             {
-                yield return buffer.Select((chunkedColumns, col) => 
+                yield return buffer.Select((chunkedColumns, col) =>
                 {
                     return chunkedColumns.GetValueOrDefault(row) ?? new RawDataColumns
                     {

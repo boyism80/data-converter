@@ -4,7 +4,6 @@ using ExcelTableConverter.Util;
 using ExcelTableConverter.Worker;
 using ExcelTableConverter.Worker.Cache;
 using ExcelTableConverter.Worker.Generator;
-using ExcelTableConverter.Worker.Generator.Go;
 using ExcelTableConverter.Worker.Loader;
 using ExcelTableConverter.Worker.Validator;
 using Force.Crc32;
@@ -91,7 +90,7 @@ try
         }
         catch (IOException)
         {
-            throw new LogicException($"{Path.GetFileName(p)} 파일을 열 수 없습니다.");
+            throw new LogicException($"{Path.GetFileName(p)} 파일을 열 수 없습니다.".AsSpan());
         }
         catch (Exception e)
         {

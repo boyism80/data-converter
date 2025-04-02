@@ -38,33 +38,30 @@ namespace ExcelTableConverter
             Console.OutputEncoding = Encoding.UTF8;
         }
 
-        public static void Write(string text, ConsoleColor foreground = ConsoleColor.White, TextAlign align = TextAlign.Left, bool decorate = true)
+        public static void Write(ReadOnlySpan<char> text, ConsoleColor foreground = ConsoleColor.White, TextAlign align = TextAlign.Left, bool decorate = true)
         {
             if (OnDecorate != null && decorate)
-                text = OnDecorate(text);
-
-            var x = 0;
-            switch (align)
             {
-                case TextAlign.Left:
-                    x = 0;
-                    break;
-
-                case TextAlign.Center:
-                    x = (Console.WindowWidth - text.Length - 1) / 2;
-                    break;
-
-                case TextAlign.Right:
-                    x = Console.WindowWidth - text.Length - 1;
-                    break;
+                text = OnDecorate(text.ToString()).AsSpan(); // OnDecorate는 string 반환하므로 변환 필요
             }
-            text = $"{new string(' ', x)}{text}";
+
+            var x = align switch
+            {
+                TextAlign.Left => 0,
+                TextAlign.Center => (Console.WindowWidth - text.Length - 1) / 2,
+                TextAlign.Right => Console.WindowWidth - text.Length - 1,
+                _ => 0,
+            };
+
+            var sb = new StringBuilder(Console.WindowWidth);
+            sb.Append(' ', x); // 정렬된 위치에 공백 추가
+            sb.Append(text); // 본문 추가
 
             lock (Console.Out)
             {
                 if (!TTY)
                 {
-                    Console.WriteLine(text);
+                    Console.WriteLine(sb.ToString());
                     return;
                 }
 
@@ -72,9 +69,14 @@ namespace ExcelTableConverter
                 Console.ForegroundColor = foreground;
                 Position(_y - _commentLine);
                 Clear();
-                Console.Write(text);
+                Console.Write(sb.ToString());
                 Console.ForegroundColor = beforeForeground;
             }
+        }
+
+        public static void Write(string text, ConsoleColor foreground = ConsoleColor.White, TextAlign align = TextAlign.Left, bool decorate = true)
+        {
+            Write(text.AsSpan(), foreground, align, decorate);
         }
 
         public static void WriteLine(string text, ConsoleColor foreground = ConsoleColor.White, TextAlign align = TextAlign.Left, bool decorate = true)

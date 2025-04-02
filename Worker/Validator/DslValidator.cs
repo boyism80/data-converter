@@ -44,10 +44,10 @@ namespace ExcelTableConverter.Worker.Validator
                 {
                     rel = Util.Type.Nake(rel);
                     if (Context.AllTableNames.Contains(rel) == false)
-                        throw new LogicException($"'{format}'에 정의된 {i + 1}번째 인자 '{name}'의 타입 '{rel}'은 존재하지 않는 테이블입니다.");
+                        throw new LogicException($"'{format}'에 정의된 {i + 1}번째 인자 '{name}'의 타입 '{rel}'은 존재하지 않는 테이블입니다.".AsSpan());
 
                     if (Context.KeyTableNames.Contains(rel) == false)
-                        throw new LogicException($"'{format}'에 정의된 {i + 1}번째 인자 '{name}'의 타입 '{rel}'은 키가 정의되지 않는 테이블입니다.");
+                        throw new LogicException($"'{format}'에 정의된 {i + 1}번째 인자 '{name}'의 타입 '{rel}'은 키가 정의되지 않는 테이블입니다.".AsSpan());
                 }
             }
 
@@ -62,7 +62,7 @@ namespace ExcelTableConverter.Worker.Validator
                     {
                         var optionalParamName = optionalParam["name"].Value<string>();
                         var essentialParamName = parameters[i]["name"].Value<string>();
-                        throw new LogicException($"'{format}'에 정의된 {i + 1}번째 인자 '{essentialParamName}'은 디폴트 인자 '{optionalParamName}' 뒤에 올 수 없습니다.");
+                        throw new LogicException($"'{format}'에 정의된 {i + 1}번째 인자 '{essentialParamName}'은 디폴트 인자 '{optionalParamName}' 뒤에 올 수 없습니다.".AsSpan());
                     }
                 }
             }
@@ -71,7 +71,7 @@ namespace ExcelTableConverter.Worker.Validator
 
         protected override void OnWorked(KeyValuePair<string, JArray> input, bool output, int percent)
         {
-            Logger.Write($"DSL 정의문을 검사했습니다. - {input.Key}");
+            Logger.Write($"DSL 정의문을 검사했습니다. - {input.Key}".AsSpan());
             base.OnWorked(input, output, percent);
         }
 

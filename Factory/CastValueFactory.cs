@@ -82,7 +82,7 @@ namespace ExcelTableConverter.Factory
             foreach (var kvpair in _splitRgx.Split($"{value}").Select(x => x.Trim()).Where(x => string.IsNullOrEmpty(x) == false).Select(x => x.Trim().Split(":")))
             {
                 if (kvpair.Length != 2)
-                    throw new LogicException($"맵 데이터 포맷이 올바르지 않습니다. ({string.Join(", ", kvpair)})");
+                    throw new LogicException($"맵 데이터 포맷이 올바르지 않습니다. ({string.Join(", ", kvpair)})".AsSpan());
 
                 result.Add(Build(k, kvpair[0].Trim()), Build(v, kvpair[1].Trim()));
             }
@@ -130,23 +130,25 @@ namespace ExcelTableConverter.Factory
             }
 
             if (Util.Value.IsDSL(value, out var header, out var parameters) == false)
-                throw new LogicException($"{value}는 DSL로 변환할 수 없습니다.");
+                throw new LogicException($"{value}는 DSL로 변환할 수 없습니다.".AsSpan());
 
             if (Context.DSL.TryGetValue(header, out var dslRaw) == false)
-                throw new LogicException($"{header}는 정의되지 않은 dsl입니다.");
+                throw new LogicException($"{header}는 정의되지 않은 dsl입니다.".AsSpan());
 
             var dsl = dslRaw as JArray;
-            var definedParams = dsl.Select((x, i) => new KeyValuePair<int, JObject>(i, x as JObject)).ToDictionary(x => x.Key, x => x.Value);
+            var definedParams = dsl
+                .Select((x, i) => new { Index = i, Value = x as JObject })
+                .ToDictionary(item => item.Index, item => item.Value);
 
             var essentialGroupParams = definedParams.GroupBy(x => x.Value.ContainsKey("default") == false).ToDictionary(x => x.Key, x => x.ToDictionary(x => x.Key, x => x.Value));
             if (essentialGroupParams.TryGetValue(true, out var essentialParams) == false)
                 essentialParams = new Dictionary<int, JObject>();
 
             if (parameters.Count < essentialParams.Count)
-                throw new LogicException($"{value} 형식이 올바르지 않습니다. {header}는 최소 {essentialParams.Count}의 인자가 필요합니다. ");
+                throw new LogicException($"{value} 형식이 올바르지 않습니다. {header}는 최소 {essentialParams.Count}의 인자가 필요합니다. ".AsSpan());
 
             if (parameters.Count > definedParams.Count)
-                throw new LogicException($"{value} 형식이 올바르지 않습니다. {header}는 최대 {definedParams.Count}의 인자만 받습니다.");
+                throw new LogicException($"{value} 형식이 올바르지 않습니다. {header}는 최대 {definedParams.Count}의 인자만 받습니다.".AsSpan());
 
             var castedParams = new List<object>();
             for (int i = 0; i < definedParams.Count; i++)
@@ -155,7 +157,7 @@ namespace ExcelTableConverter.Factory
                 if (param == null)
                 {
                     if (definedParams[i].TryGetValue("default", out var defaultValue) == false)
-                        throw new LogicException($"{header}의 {i + 1}번째 파라미터 {definedParams[i]["name"]}은 디폴트로 정의할 수 없습니다.");
+                        throw new LogicException($"{header}의 {i + 1}번째 파라미터 {definedParams[i]["name"]}은 디폴트로 정의할 수 없습니다.".AsSpan());
 
                     param = defaultValue.Value<string>();
                 }
@@ -260,13 +262,13 @@ namespace ExcelTableConverter.Factory
 
             var naked = Util.Type.Nake(root);
             if (Context.Result.Enum.TryGetValue(naked, out var enumSet) == false)
-                throw new LogicException($"{naked}는 정의된 열거형 타입이 아닙니다.");
+                throw new LogicException($"{naked}는 정의된 열거형 타입이 아닙니다.".AsSpan());
 
             var parsed = (value as string).ParseValue(false);
             foreach (var x in parsed.ExtractEnumValues())
             {
                 if (enumSet.ContainsKey(x) == false)
-                    throw new LogicException($"{x}는 {naked}에 존재하지 않는 열거형 데이터입니다.");
+                    throw new LogicException($"{x}는 {naked}에 존재하지 않는 열거형 데이터입니다.".AsSpan());
             }
 
             return DP(root, value, GetEnumValue(root, parsed));
@@ -278,10 +280,10 @@ namespace ExcelTableConverter.Factory
             if (casted != null)
             {
                 if ((double)casted < float.MinValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.".AsSpan());
 
                 if ((double)casted > float.MaxValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.".AsSpan());
             }
 
             return casted;
@@ -293,10 +295,10 @@ namespace ExcelTableConverter.Factory
             if (casted != null)
             {
                 if ((long)casted < int.MinValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.".AsSpan());
 
                 if ((long)casted > int.MaxValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.".AsSpan());
             }
 
             return casted;
@@ -319,7 +321,7 @@ namespace ExcelTableConverter.Factory
 
                 case ulong v:
                     if (v > long.MaxValue)
-                        throw new LogicException($"{v}는 {root} 타입의 최대값보다 큰 값입니다.");
+                        throw new LogicException($"{v}는 {root} 타입의 최대값보다 큰 값입니다.".AsSpan());
 
                     return DP(root, value, v);
 
@@ -364,10 +366,10 @@ namespace ExcelTableConverter.Factory
             if (casted != null)
             {
                 if ((ulong)casted < byte.MinValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.".AsSpan());
 
                 if ((ulong)casted > byte.MaxValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.".AsSpan());
             }
 
             return casted;
@@ -379,10 +381,10 @@ namespace ExcelTableConverter.Factory
             if (casted != null)
             {
                 if ((long)casted < sbyte.MinValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.".AsSpan());
 
                 if ((long)casted > sbyte.MaxValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.".AsSpan());
             }
 
             return casted;
@@ -394,10 +396,10 @@ namespace ExcelTableConverter.Factory
             if (casted != null)
             {
                 if ((long)casted < short.MinValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.".AsSpan());
 
                 if ((long)casted > short.MaxValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.".AsSpan());
             }
 
             return casted;
@@ -409,10 +411,10 @@ namespace ExcelTableConverter.Factory
             if (casted != null)
             {
                 if ((ulong)casted < ushort.MinValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.".AsSpan());
 
                 if ((ulong)casted > ushort.MaxValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.".AsSpan());
             }
 
             return casted;
@@ -424,10 +426,10 @@ namespace ExcelTableConverter.Factory
             if (casted != null)
             {
                 if ((ulong)casted < uint.MinValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.".AsSpan());
 
                 if ((ulong)casted > uint.MaxValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.");
+                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.".AsSpan());
             }
 
             return casted;
@@ -459,35 +461,35 @@ namespace ExcelTableConverter.Factory
 
                 case float v:
                     if (v < 0)
-                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.");
+                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.".AsSpan());
 
                     return DP(root, value, (ulong)v);
 
                 case double v:
                     if (v < 0)
-                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.");
+                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.".AsSpan());
 
                     return DP(root, value, (ulong)v);
 
                 case long v:
                     if (v < 0)
-                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.");
+                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.".AsSpan());
 
                     return DP(root, value, v);
 
                 case sbyte v:
                     if (v < 0)
-                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.");
+                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.".AsSpan());
                     return DP(root, value, (ulong)v);
 
                 case short v:
                     if (v < 0)
-                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.");
+                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.".AsSpan());
                     return DP(root, value, (ulong)v);
 
                 case int v:
                     if (v < 0)
-                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.");
+                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.".AsSpan());
 
                     return DP(root, value, (ulong)v);
 

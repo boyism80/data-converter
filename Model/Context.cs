@@ -100,7 +100,7 @@ namespace ExcelTableConverter.Model
             }
 
             if (File.Exists(fname) == false)
-                throw new LogicException($"DSL 파일을 찾을 수 없습니다.");
+                throw new LogicException($"DSL 파일을 찾을 수 없습니다.".AsSpan());
 
             return callback.Invoke(File.ReadAllText(fname));
         }
@@ -197,21 +197,21 @@ namespace ExcelTableConverter.Model
                     var refer = split[1];
 
                     if (Result.Schema.TryGetValue(naked, out var schemaSet) == false)
-                        throw new LogicException($"{naked} 테이블은 정의되지 않았습니다.");
+                        throw new LogicException($"{naked} 테이블은 정의되지 않았습니다.".AsSpan());
 
                     if (schemaSet.TryGetValue(refer, out var x) == false)
-                        throw new LogicException($"{refer}는 {naked} 테이블에 정의되지 않았습니다.");
+                        throw new LogicException($"{refer}는 {naked} 테이블에 정의되지 않았습니다.".AsSpan());
 
                     type = Util.Type.Nake(x.Type, Util.NakeFlag.Key);
                 }
                 else
                 {
                     if (Result.Schema.TryGetValue(naked, out var schemaSet) == false)
-                        throw new LogicException($"{naked} 테이블은 정의되지 않았습니다.");
+                        throw new LogicException($"{naked} 테이블은 정의되지 않았습니다.".AsSpan());
 
                     var key = schemaSet.Key;
                     if (key == null)
-                        throw new LogicException($"{naked} 테이블은 키 정의가 되지 않았습니다.");
+                        throw new LogicException($"{naked} 테이블은 키 정의가 되지 않았습니다.".AsSpan());
 
                     type = Util.Type.Nake(schemaSet[key].Type, Util.NakeFlag.Key);
                 }

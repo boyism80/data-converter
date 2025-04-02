@@ -10,6 +10,9 @@ namespace ExcelTableConverter
         {
             Tracker = tracker;
         }
+
+        public LogicException(ReadOnlySpan<char> message, IExcelFileTrackable tracker = null) : this(message.ToString(), tracker)
+        { }
     }
 
     public class TypeCastException : LogicException

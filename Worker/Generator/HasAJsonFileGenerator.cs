@@ -41,7 +41,7 @@ namespace ExcelTableConverter.Worker.Generator
 
         protected override void OnWorked((string FileName, object DataSet) input, bool output, int percent)
         {
-            Logger.Write($"json 파일을 저장했습니다. (golang) - {input.FileName}");
+            Logger.Write($"json 파일을 저장했습니다. (golang) - {input.FileName}".AsSpan());
         }
 
         protected override IReadOnlyList<bool> OnFinish(IReadOnlyList<bool> output)

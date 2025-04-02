@@ -150,7 +150,7 @@ namespace ExcelTableConverter.Worker.Loader
                 Context.RawData.Add(input.Parent.FileName, datas);
             }
             datas.Add(output);
-            Logger.Write($"데이터 테이블을 읽었습니다. - {input.SheetName}");
+            Logger.Write($"데이터 테이블을 읽었습니다. - {input.SheetName}".AsSpan());
         }
 
         protected override IReadOnlyList<RawSheetData> OnFinish(IReadOnlyList<RawSheetData> output)

@@ -40,22 +40,22 @@ namespace ExcelTableConverter.Worker.Generator.Go
                 var gk = ftdSchemaSet.FirstOrDefault(x => Util.Type.IsGroupKey(x.Type, out _));
                 if (gk != null && pk != null)
                 {
-                    containerType = $"map";
+                    containerType = "map";
                     genericType = $"[{new TypeFactory(Context).Build(gk.Type)}]map[{new TypeFactory(Context).Build(pk.Type)}]{camelTableName}";
                 }
                 else if (pk != null)
                 {
-                    containerType = $"map";
+                    containerType = "map";
                     genericType = $"[{new TypeFactory(Context).Build(pk.Type)}]{camelTableName}";
                 }
                 else if (gk != null)
                 {
-                    containerType = $"map";
+                    containerType = "map";
                     genericType = $"[{new TypeFactory(Context).Build(gk.Type)}][]{camelTableName}";
                 }
                 else
                 {
-                    containerType = $"[]";
+                    containerType = "[]";
                     genericType = camelTableName;
                 }
 

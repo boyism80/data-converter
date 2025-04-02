@@ -90,7 +90,7 @@ namespace ExcelTableConverter.Worker.Validator
             if (Context.SplitReferenceType(refer, out var tableName, out var columnName) == false)
                 throw new LogicException("알 수 없는 에러", value.Tracker);
 
-            if(Context.AllTableNames.Contains(tableName) == false)
+            if (Context.AllTableNames.Contains(tableName) == false)
                 throw new LogicException($"{tableName}는 정의되지 않은 테이블입니다.", value.Tracker);
 
             if (Context.KeyTableNames.Contains(tableName) == false)
@@ -112,7 +112,7 @@ namespace ExcelTableConverter.Worker.Validator
 
         protected override void OnWorked(RelationTypeValidationData input, bool output, int percent)
         {
-            Logger.Write($"참조 타입을 검사했습니다. - {input.Type}");
+            Logger.Write($"참조 타입을 검사했습니다. - {input.Type}".AsSpan());
         }
 
         protected override IReadOnlyList<bool> OnFinish(IReadOnlyList<bool> output)

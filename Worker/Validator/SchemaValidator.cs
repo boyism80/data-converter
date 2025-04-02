@@ -6,7 +6,7 @@ namespace ExcelTableConverter.Worker.Validator
     {
         public SchemaValidator(Context ctx) : base(ctx)
         {
-            
+
         }
 
         protected override IEnumerable<List<RawSheetData>> OnReady()
@@ -30,7 +30,7 @@ namespace ExcelTableConverter.Worker.Validator
                 if (basedSet.Count > 1)
                 {
                     var trace = string.Join(", ", basedSet.Select(x => $"{x.Key}({x.Value.FileName}:{x.Value.SheetName})"));
-                    throw new LogicException($"{rsd.TableName} 테이블이 서로 다른 테이블을 상속받고 있습니다. - {trace}");
+                    throw new LogicException($"{rsd.TableName} 테이블이 서로 다른 테이블을 상속받고 있습니다. - {trace}".AsSpan());
                 }
             }
 
@@ -63,7 +63,7 @@ namespace ExcelTableConverter.Worker.Validator
 
         protected override void OnWorked(List<RawSheetData> input, bool output, int percent)
         {
-            Logger.Write($"스키마 병합 가능 여부를 검사했습니다. - {input[0].TableName}");
+            Logger.Write($"스키마 병합 가능 여부를 검사했습니다. - {input[0].TableName}".AsSpan());
         }
 
         protected override IReadOnlyList<bool> OnFinish(IReadOnlyList<bool> output)

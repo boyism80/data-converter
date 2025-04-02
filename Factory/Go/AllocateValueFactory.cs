@@ -24,7 +24,7 @@ namespace ExcelTableConverter.Factory.Go
 
         protected override string ArrayType(object value, string root, string e, DataFormatOption option)
         {
-            throw new LogicException($"golang에서는 지원하지 않는 상수 타입입니다. - {root}");
+            throw new LogicException($"golang에서는 지원하지 않는 상수 타입입니다. - {root}".AsSpan());
         }
 
         protected override string BooleanType(object value, string root, bool nullable, DataFormatOption option)
@@ -34,17 +34,17 @@ namespace ExcelTableConverter.Factory.Go
 
         protected override string DateRangeType(object value, string root, bool nullable, DataFormatOption option)
         {
-            throw new LogicException($"golang에서는 지원하지 않는 상수 타입입니다. - {root}");
+            throw new LogicException($"golang에서는 지원하지 않는 상수 타입입니다. - {root}".AsSpan());
         }
 
         protected override string DateTimeType(object value, string root, bool nullable, DataFormatOption option)
         {
-            throw new LogicException($"golang에서는 지원하지 않는 상수 타입입니다. - {root}");
+            throw new LogicException($"golang에서는 지원하지 않는 상수 타입입니다. - {root}".AsSpan());
         }
 
         protected override string DictionaryType(object value, string root, string k, string v, DataFormatOption option)
         {
-            throw new LogicException($"golang에서는 지원하지 않는 상수 타입입니다. - {root}");
+            throw new LogicException($"golang에서는 지원하지 않는 상수 타입입니다. - {root}".AsSpan());
         }
 
         protected override string DoubleType(object value, string root, bool nullable, DataFormatOption option)
@@ -54,7 +54,7 @@ namespace ExcelTableConverter.Factory.Go
 
         protected override string DslType(object value, string root, bool nullable, DataFormatOption option)
         {
-            throw new LogicException($"golang에서는 지원하지 않는 상수 타입입니다. - {root}");
+            throw new LogicException($"golang에서는 지원하지 않는 상수 타입입니다. - {root}".AsSpan());
         }
 
         protected override string EnumType(object value, string root, string e, bool nullable, DataFormatOption option)
@@ -64,7 +64,7 @@ namespace ExcelTableConverter.Factory.Go
                 return $"{root}.{k}";
             }
 
-            throw new LogicException($"{value}는 {root} 열거형에 존재하지 않는 값입니다.");
+            throw new LogicException($"{value}는 {root} 열거형에 존재하지 않는 값입니다.".AsSpan());
         }
 
         protected override string FloatType(object value, string root, bool nullable, DataFormatOption option)
@@ -125,7 +125,7 @@ namespace ExcelTableConverter.Factory.Go
 
         protected override string TimeSpanType(object value, string root, bool nullable, DataFormatOption option)
         {
-            throw new LogicException($"golang에서는 지원하지 않는 상수 타입입니다. - {root}");
+            throw new LogicException($"golang에서는 지원하지 않는 상수 타입입니다. - {root}".AsSpan());
         }
 
         public string Build(string type, object value)

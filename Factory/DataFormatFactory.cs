@@ -70,10 +70,10 @@ namespace ExcelTableConverter.Factory
                     .ToDictionary(x => x.Key, x => x.ToDictionary(x => x.Name));
 
                 if (sorted.TryGetValue(constTableName, out var constSet) == false)
-                    throw new LogicException($"{constTableName}은 상수 테이블에 정의되지 않았습니다.");
+                    throw new LogicException($"{constTableName}은 상수 테이블에 정의되지 않았습니다.".AsSpan());
 
                 if (constSet.TryGetValue(constValueName, out var constValue) == false)
-                    throw new LogicException($"{constValueName}은 {constTableName}에 정의되지 않았습니다.");
+                    throw new LogicException($"{constValueName}은 {constTableName}에 정의되지 않았습니다.".AsSpan());
 
                 return Build(constValue.Type, constValue.Value);
             }

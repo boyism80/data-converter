@@ -30,10 +30,10 @@ namespace ExcelTableConverter.Worker.Loader
                     CellType.Numeric => $"{line[1].NumericCellValue}",
                     _ => line[1].StringCellValue.Replace(" ", string.Empty)
                 };
-                
+
                 var parsed = value.ParseValue();
                 if (values.ContainsKey(name))
-                    throw new LogicException($"{sheet.FullName}에 {name}이 중복 정의되었습니다.");
+                    throw new LogicException($"{sheet.FullName}에 {name}이 중복 정의되었습니다.".AsSpan());
 
                 values.Add(name, parsed);
             }
@@ -55,7 +55,7 @@ namespace ExcelTableConverter.Worker.Loader
             }
             rawEnums.Add(output);
 
-            Logger.Write($"열거형 데이터를 읽었습니다. - {input.SheetName}");
+            Logger.Write($"열거형 데이터를 읽었습니다. - {input.SheetName}".AsSpan());
         }
 
         protected override IReadOnlyList<RawEnum> OnFinish(IReadOnlyList<RawEnum> output)

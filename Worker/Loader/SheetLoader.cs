@@ -36,7 +36,7 @@ namespace ExcelTableConverter.Worker.Loader
         {
             if (!_quiet)
             {
-                Logger.Write($"엑셀 시트를 읽고 있습니다. - {input.FileName}");
+                Logger.Write($"엑셀 시트를 읽고 있습니다. - {input.FileName}".AsSpan());
             }
         }
 
@@ -47,7 +47,7 @@ namespace ExcelTableConverter.Worker.Loader
 
             if (!_quiet)
             {
-                Logger.Write($"엑셀 시트를 읽었습니다. - {output.SheetName}");
+                Logger.Write($"엑셀 시트를 읽었습니다. - {output.SheetName}".AsSpan());
             }
         }
 

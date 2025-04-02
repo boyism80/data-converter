@@ -135,11 +135,14 @@ namespace ExcelTableConverter.Worker.Validator
             var errors = new List<(IExcelFileTrackable Tracker, Exception Error)>();
             foreach (var (table, pair) in _buffer)
             {
-                var duplicatedList = pair.GroupBy(x => x.Key).Where(x => x.Skip(1).Any()).ToDictionary(x => x.Key, x => x.Select(x => x.Tracker).ToList());
-                foreach (var (key, trackers) in duplicatedList)
+                foreach (var group in pair.GroupBy(x => x.Key))
                 {
+                    if (group.Skip(1).Any() == false)
+                        continue;
+
+                    var trackers = group.Select(x => x.Tracker).ToList();
                     var roots = string.Join(", ", trackers.Select(x => $"{x.FileName}:{x.SheetName}"));
-                    errors.Add((trackers[0], new Exception($"키 {key}가 중복 정의되었습니다. ({roots})")));
+                    errors.Add((trackers[0], new Exception($"키 {group.Key}가 중복 정의되었습니다. ({roots})")));
                 }
             }
 

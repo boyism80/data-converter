@@ -70,7 +70,7 @@ namespace ExcelTableConverter.Worker.Generator.Go
 
         protected override void OnWorked(string input, EnumCodeGeneratorResult output, int percent)
         {
-            Logger.Write($"열거형 코드 파일을 생성했습니다. - {input}");
+            Logger.Write($"열거형 코드 파일을 생성했습니다. - {input}".AsSpan());
             base.OnWorked(input, output, percent);
         }
 

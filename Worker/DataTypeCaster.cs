@@ -206,7 +206,7 @@ namespace ExcelTableConverter.Worker
 
         protected override void OnWorked(CastTypeChunkData input, DataConvertResult output, int percent)
         {
-            Logger.Write($"테이블 데이터를 변환했습니다. - {input.Tracker.GetRootName()}");
+            Logger.Write($"테이블 데이터를 변환했습니다. - {input.Tracker.GetRootName()}".AsSpan());
         }
 
         protected override int RuntimeAdditionalCount()

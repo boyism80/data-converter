@@ -77,7 +77,7 @@ namespace ExcelTableConverter.Factory.CS
             var dsl = value as DSL;
 
             if (Context.DSL.TryGetValue(dsl.Type, out var prototype) == false)
-                throw new LogicException($"{dsl.Type}는 정의되지 않은 DSL 형식입니다.");
+                throw new LogicException($"{dsl.Type}는 정의되지 않은 DSL 형식입니다.".AsSpan());
 
             var args = dsl.Parameters.Select((x, i) =>
             {
@@ -97,7 +97,7 @@ namespace ExcelTableConverter.Factory.CS
                 return $"{root}.{k}";
             }
 
-            throw new LogicException($"{value}는 {root} 열거형에 존재하지 않는 값입니다.");
+            throw new LogicException($"{value}는 {root} 열거형에 존재하지 않는 값입니다.".AsSpan());
         }
 
         protected override string FloatType(object value, string root, bool nullable, DataFormatOption option)

@@ -29,7 +29,7 @@ namespace ExcelTableConverter.Worker.Loader
                 var value = GetValue(line[3], type);
 
                 yield return new RawConst
-                { 
+                {
                     Parent = sheet,
                     Name = name,
                     Scope = scope,
@@ -48,7 +48,7 @@ namespace ExcelTableConverter.Worker.Loader
             }
             rawConsts.Add(output);
 
-            Logger.Write($"상수 데이터를 읽었습니다 - {input.SheetName}");
+            Logger.Write($"상수 데이터를 읽었습니다 - {input.SheetName}".AsSpan());
         }
 
         protected override IReadOnlyList<RawConst> OnFinish(IReadOnlyList<RawConst> output)

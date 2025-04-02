@@ -4,7 +4,7 @@ using ExcelTableConverter.Util;
 namespace ExcelTableConverter.Worker.Validator
 {
     public class StrongTypeValidationData
-    { 
+    {
         public IExcelFileTrackable Tracker { get; set; }
         public string Type { get; set; }
         public string Name { get; set; }
@@ -35,7 +35,7 @@ namespace ExcelTableConverter.Worker.Validator
                         continue;
 
                     yield return new StrongTypeValidationData
-                    { 
+                    {
                         Tracker = Context.FindRawSheetData(column),
                         Type = strong,
                         Name = column.Name,
@@ -90,7 +90,7 @@ namespace ExcelTableConverter.Worker.Validator
 
         protected override void OnWorked(StrongTypeValidationData input, bool output, int percent)
         {
-            Logger.Write($"강연결 타입 데이터를 검사했습니다. - {input.Type}");
+            Logger.Write($"강연결 타입 데이터를 검사했습니다. - {input.Type}".AsSpan());
         }
 
         protected override void OnError(StrongTypeValidationData input, Exception e, IExcelFileTrackable tracker = null)

@@ -137,7 +137,7 @@ namespace ExcelTableConverter.Worker.Validator
             {
                 foreach (var group in pair.GroupBy(x => x.Key))
                 {
-                    if (group.Skip(1).Any() == false)
+                    if (group.Count() <= 1)
                         continue;
 
                     var trackers = group.Select(x => x.Tracker).ToList();

@@ -154,14 +154,14 @@ try
 
         foreach (var (files, suffix) in new[] { (updatedFiles, "변경된 파일"), (errorFiles, "에러 파일") })
         {
-            if (files.Count == 0)
+            if (files.Any() == false)
                 continue;
 
             var fileName = files[0];
-            var anotherFiles = files.Skip(1).ToList();
+            var anotherFileCount = files.Count - 1;
             var message = fileName;
-            if (anotherFiles.Count > 0)
-                message = $"{fileName} 외 {anotherFiles.Count}개 파일";
+            if (anotherFileCount > 0)
+                message = $"{fileName} 외 {anotherFileCount}개 파일";
             Logger.Comment($"{message} ({suffix})", ConsoleColor.DarkGray);
         }
     }

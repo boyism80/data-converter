@@ -295,7 +295,13 @@ namespace ExcelTableConverter.Model
             });
         }
 
-        public Dictionary<string, object> IsAEffectiveSortedDataSet(Scope scope) // {json:container}
+        /// <summary>
+        /// Generates data set maintaining inheritance hierarchy for languages that support inheritance.
+        /// Used for C++, C#, and Node.js code generation.
+        /// </summary>
+        /// <param name="scope">The scope to filter data</param>
+        /// <returns>Dictionary mapping JSON names to data containers with hierarchical structure</returns>
+        public Dictionary<string, object> GetHierarchicalDataSet(Scope scope) // {json:container}
         {
             // {table:rows}
             var tableRows = Result.Data.SelectMany(x => x.Value).GroupBy(x => x.Key).ToDictionary(x => x.Key, x =>
@@ -355,7 +361,14 @@ namespace ExcelTableConverter.Model
             return int.Parse(s);
         }
 
-        private Dictionary<string, object> IsA2HasA(string tableName, Dictionary<string, object> row)
+        /// <summary>
+        /// Flattens inheritance hierarchy by moving inherited fields into the main object.
+        /// Converts "Is-A" relationship to "Has-A" relationship for composition-based languages.
+        /// </summary>
+        /// <param name="tableName">Name of the table to process</param>
+        /// <param name="row">Row data to convert</param>
+        /// <returns>Converted row with composition structure</returns>
+        private Dictionary<string, object> FlattenInheritanceStructure(string tableName, Dictionary<string, object> row)
         {
             var based = Result.Schema[tableName].Based;
             if (based == null)
@@ -369,7 +382,7 @@ namespace ExcelTableConverter.Model
                 inheritedValues.Add(k, row[k]);
                 row.Remove(k);
             }
-            row[based] = IsA2HasA(based, inheritedValues);
+            row[based] = FlattenInheritanceStructure(based, inheritedValues);
             return row;
         }
 
@@ -393,7 +406,14 @@ namespace ExcelTableConverter.Model
             return row;
         }
 
-        public Dictionary<string, object> HasAEffectiveSortedDataSet(Scope scope)
+        /// <summary>
+        /// Generates data set with flattened structure for languages without inheritance support.
+        /// Converts inheritance relationships to composition for Go code generation.
+        /// Also applies enum string-to-integer conversion.
+        /// </summary>
+        /// <param name="scope">The scope to filter data</param>
+        /// <returns>Dictionary mapping JSON names to data containers with flattened structure</returns>
+        public Dictionary<string, object> GetFlattenedDataSet(Scope scope)
         {
             // {table:rows}
             var tableRows = Result.Data.SelectMany(x => x.Value).GroupBy(x => x.Key).ToDictionary(x => x.Key, x =>
@@ -421,7 +441,7 @@ namespace ExcelTableConverter.Model
                         }
                     }
 
-                    rows[i] = IsA2HasA(tableName, row);
+                    rows[i] = FlattenInheritanceStructure(tableName, row);
                 }
             }
 
@@ -460,7 +480,12 @@ namespace ExcelTableConverter.Model
             }).Where(pair => pair.Value != null).ToDictionary(x => x.Key, x => x.Value);
         }
 
-        public Dictionary<string, Dictionary<string, object>> IsAEffectiveSortedDataSetWithSheetName(Scope scope) // {sheet:{table:container}}
+        /// <summary>
+        /// Generates hierarchical data set grouped by sheet name for inheritance-supporting languages.
+        /// </summary>
+        /// <param name="scope">The scope to filter data</param>
+        /// <returns>Dictionary mapping sheet names to table containers with hierarchical structure</returns>
+        public Dictionary<string, Dictionary<string, object>> GetHierarchicalDataSetWithSheetName(Scope scope) // {sheet:{table:container}}
         {
             return Result.Data.SelectMany(x => x.Value.SelectMany(x => x.Value)).GroupBy(x => x.SheetName).ToDictionary(x => x.Key, x =>
             {

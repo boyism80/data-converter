@@ -27,6 +27,9 @@ jobs:
           git clone --recurse-submodules https://x-access-token:${GH_PAT}@github.com/boyism80/fb.git
           cd fb
 
+          # Checkout develop branch
+          git checkout develop
+
           # Update the data-converter submodule
           git submodule update --remote --merge
 
@@ -34,9 +37,9 @@ jobs:
           git add tools/data-converter
 
           # Commit only if there's a change
-                      if ! git diff --cached --quiet; then
-              git commit -m "chore: update data-converter submodule"
-              git push origin release/latest
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: update data-converter submodule"
+            git push origin develop
           else
             echo "No changes to commit."
           fi

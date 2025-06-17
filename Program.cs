@@ -10,14 +10,24 @@ using Force.Crc32;
 using NDesk.Options;
 using Newtonsoft.Json;
 
+/// <summary>
+/// Excel Table Converter - Main program entry point
+/// 
+/// This application converts Excel files to various programming language formats
+/// including C++, C#, Node.js, and Go. It processes Excel files containing
+/// game data tables and generates strongly-typed code representations.
+/// </summary>
 Logger.OnDecorate = Scheduler.ConsoleDecorator;
 
 try
 {
-    var dir = Path.Combine("..", "..", "..", "..");
-    var languages = "c++";
-    var dsl = "dsl.json";
-    var env = string.Empty;
+    // Initialize command line parameters with default values
+    var dir = Path.Combine("..", "..", "..", "..");  // Default input directory
+    var languages = "c++";                           // Default target language
+    var dsl = "dsl.json";                            // Default DSL configuration file
+    var env = string.Empty;                          // Environment variable
+
+    // Configure command line option parser
     var options = new OptionSet
     {
         { "d|dir=", "input directory", v => dir = v },
@@ -28,12 +38,16 @@ try
 
     options.Parse(args);
 
+    // Set environment variable for configuration
     Environment.SetEnvironmentVariable("env", env);
+    
+    // Clear console if running in TTY mode
     if (Logger.TTY)
     {
         Console.Clear();
     }
 
+    // Load or initialize cached context
     Context cached;
     try
     {
@@ -44,6 +58,7 @@ try
         cached = new Context();
     }
 
+    // Check if build version has changed and clear cache if necessary
     if (cached.BuildVersion != Context.BUILD_VERSION)
     {
         cached = new Context();
@@ -55,25 +70,33 @@ try
 
         Logger.WriteLine(" 컨버터 빌드 버전이 변경되어 캐시파일을 전부 제거했습니다.", foreground: ConsoleColor.Blue, decorate: false);
     }
+    
     var loaded = new Context();
 
+    // Categorize Excel files by type (enum, const, data)
     var enumFiles = new List<string>();
     var constFiles = new List<string>();
     var dataFiles = new List<string>();
     var paths = Directory.GetFiles(dir, "*.xlsx", SearchOption.TopDirectoryOnly);
+    
     foreach (var p in paths)
     {
         try
         {
+            // Skip temporary Excel files (starting with ~$)
             if (Path.GetFileName(p).StartsWith("~$"))
                 continue;
 
+            // Calculate CRC32 checksum for change detection
             var bytes = File.ReadAllBytes(p);
             var crc = $"{Crc32Algorithm.Compute(bytes)}.{bytes.Length}";
             var fname = Path.GetFileName(p);
+            
+            // Skip processing if file hasn't changed (same CRC)
             if (cached.CRC.TryGetValue(fname, out var old) && old == crc)
                 continue;
 
+            // Categorize files based on filename prefix
             if (fname.StartsWith(Context.Config.ConstFilePrefix))
             {
                 constFiles.Add(p);
@@ -98,6 +121,7 @@ try
         }
     }
 
+    // Handle deleted files - remove from cache
     var deletedFiles = cached.CRC.Keys.Except(paths.Select(p => Path.GetFileName(p))).ToList();
     foreach (var deletedFile in deletedFiles)
     {
@@ -117,6 +141,7 @@ try
         cached.CRC.Remove(deletedFile);
     }
 
+    // Handle updated files - remove from cache to force reprocessing
     var updatedFiles = loaded.CRC.Keys.ToList();
     foreach (var updatedFile in updatedFiles)
     {
@@ -136,8 +161,10 @@ try
         cached.CRC.Remove(updatedFile);
     }
 
+    // Load error files from previous run
     var errorFiles = File.Exists(Context.ERROR_CACHE_PATH) ? JsonConvert.DeserializeObject<List<string>>(File.ReadAllText(Context.ERROR_CACHE_PATH)) : new List<string>();
 
+    // Clean up cache files for deleted, updated, and error files
     foreach (var fileName in deletedFiles.Concat(updatedFiles).Concat(errorFiles))
     {
         var cacheFilePath = Context.GetCacheFilePath(fileName);
@@ -147,6 +174,7 @@ try
         }
     }
 
+    // Display processing information
     var processFiles = updatedFiles.Concat(errorFiles).ToList();
     if (processFiles.Any())
     {
@@ -171,6 +199,7 @@ try
     }
     Logger.NewLine();
 
+    // Schedule constant file processing
     Scheduler.Add(() =>
     {
         var constWorkBooks = new ExcelFileLoader(loaded, constFiles, quiet: true).Run();
@@ -178,6 +207,7 @@ try
         new RawConstLoader(loaded, constSheets).Run();
     });
 
+    // Schedule enum file processing
     Scheduler.Add(() =>
     {
         var enumWorkBooks = new ExcelFileLoader(loaded, enumFiles, quiet: true).Run();
@@ -185,19 +215,21 @@ try
         new RawEnumLoader(loaded, enumSheets).Run();
     });
 
+    // Schedule data file loading
     IReadOnlyList<Workbook> dataWorkBooks = null;
     Scheduler.Add(() =>
     {
         dataWorkBooks = new ExcelFileLoader(loaded, dataFiles).Run();
     });
 
-
+    // Schedule data sheet processing
     IReadOnlyList<Sheet> dataSheets = null;
     Scheduler.Add(() =>
     {
         dataSheets = new SheetLoader(loaded, dataWorkBooks).Run();
     });
 
+    // Process data files and merge contexts
     var ctx = new Context();
     Scheduler.Add(() =>
     {
@@ -206,14 +238,14 @@ try
         ctx.ReadDslFile(dsl);
         ctx.ReadConfigFile();
 
+        // Update cache file
         if (File.Exists(Context.RAW_CACHE_PATH))
             File.Delete(Context.RAW_CACHE_PATH);
 
         File.WriteAllBytes(Context.RAW_CACHE_PATH, ZipUtil.Zip(ctx));
     });
 
-
-
+    // Arrange data and prepare for validation
     var isCastValues = false;
     Scheduler.Add(() =>
     {
@@ -221,6 +253,7 @@ try
         isCastValues = true;
     }, stopOnError: true);
 
+    // Schedule validation tasks
     Scheduler.Add(() => new NameValidator(ctx, processFiles).Run());
     Scheduler.Add(() => new SchemaValidator(ctx).Run());
     Scheduler.Add(() => new KeyValidator(ctx).Run());
@@ -228,33 +261,40 @@ try
     Scheduler.Add(() => new DslValidator(ctx).Run());
     Scheduler.Add(() => new RelationTypeValidator(ctx).Run());
 
+    // Schedule relation value validation
     var rvds = new List<RelationValueValidationData>();
     Scheduler.Add(() => rvds.AddRange(new RelationValueTraveller(ctx, processFiles).Run().SelectMany(x => x)));
     Scheduler.Add(() => new RelationValueValidator(ctx, rvds).Run());
     Scheduler.Add(() => new StrongTypeValidator(ctx, processFiles).Run());
 
+    // Execute all scheduled validation tasks
     Scheduler.Run();
 
     Logger.NewLine();
     Logger.NewLine();
 
+    // Check if validation completed successfully
     var isComplete = !Scheduler.Suspended;
     if (!isComplete)
         Logger.WriteLine("테이블 변환 과정에서 에러가 발생했습니다.", foreground: ConsoleColor.Red, decorate: false);
     else
         Logger.WriteLine("테이블 변환과 검증을 완료했습니다.", foreground: ConsoleColor.Blue, decorate: false);
 
+    // Reset logger and scheduler for code generation phase
     Logger.Reset();
     Scheduler.Reset();
 
+    // If validation successful, proceed with code generation
     if (isComplete)
     {
+        // Generate JSON files
         Scheduler.Add(() => new JsonFileGenerator(ctx).Run());
         if (languages.Split('|').Contains("go"))
             Scheduler.Add(() => new HasAJsonFileGenerator(ctx).Run());
 
         Scheduler.Add(() => new DiffFileGenerator(ctx).Run());
 
+        // Generate code for each specified language
         foreach (var lang in languages.Split('|').Select(x => x.Trim().ToLower()).Distinct().ToHashSet())
         {
             switch (lang)
@@ -276,6 +316,8 @@ try
                     break;
             }
         }
+        
+        // Generate CRC files for integrity checking
         Scheduler.Add(() =>
         {
             foreach (var scope in new[] { Scope.Server, Scope.Client })
@@ -293,14 +335,19 @@ try
             Logger.Complete($"CRC 파일을 생성했습니다.");
         });
     }
+    
+    // Schedule data cache update if values were processed
     if (isCastValues)
         Scheduler.Add(() => new DataCacheWorker(ctx, updatedFiles).Run());
 
+    // Execute all scheduled generation tasks
     Scheduler.Run();
 
+    // Write performance metrics and error tracking
     File.WriteAllText("ElapsedTime.txt", ElapsedTimeMeasurer.Display());
     File.WriteAllText(Context.ERROR_CACHE_PATH, JsonConvert.SerializeObject(Logger.ErrorFiles));
 
+    // Exit with error code if processing failed
     if (!isComplete || Scheduler.Suspended)
         Environment.Exit(1);
 }
@@ -311,6 +358,7 @@ catch (LogicException e)
 }
 catch (Exception e)
 {
+    // Handle and log all exceptions in the exception hierarchy
     var queue = new Stack<Exception>();
     queue.Push(e);
     while (queue.TryPop(out var error))

@@ -11,7 +11,7 @@ namespace ExcelTableConverter
         /// <summary>
         /// Gets or sets the action to execute
         /// </summary>
-        public Action Func { get; set; }
+        public Action Func { get; set; } = null!;
         
         /// <summary>
         /// Gets or sets a value indicating whether to stop execution on error

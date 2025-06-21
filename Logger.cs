@@ -41,7 +41,7 @@ namespace ExcelTableConverter
         /// <summary>
         /// Gets or sets the text decoration function for output formatting
         /// </summary>
-        public static Func<string, string> OnDecorate;
+        public static Func<string, string>? OnDecorate;
 
         /// <summary>
         /// Initializes the Logger static class

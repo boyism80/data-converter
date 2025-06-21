@@ -49,7 +49,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             {
                 ["super"] = scope == Scope.Common,
                 ["items"] = items,
-                ["config"] = Context.Config,
+                ["config"] = Context.Configuration,
             };
             var ctx = new TemplateContext();
             ctx.PushGlobal(obj);

@@ -50,7 +50,7 @@ namespace ExcelTableConverter.Worker.Generator.Go
                 ["super"] = scope == Scope.Common,
                 ["scope"] = scope,
                 ["items"] = items,
-                ["config"] = Context.Config,
+                ["config"] = Context.Configuration,
             };
 
             var ctx = new TemplateContext();

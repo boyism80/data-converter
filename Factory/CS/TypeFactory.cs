@@ -55,7 +55,7 @@ namespace ExcelTableConverter.Factory.CS
 
         protected override string EnumType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            var namespaces = Context.Config.Namespace.Concat(Context.Config.EnumNamespace).Select(x => ScribanEx.UpperCamel(x));
+            var namespaces = Context.Configuration.Namespace.Concat(Context.Configuration.EnumNamespace).Select(x => ScribanEx.UpperCamel(x));
             var prefix = ScribanEx.NamespaceAccess(namespaces, LanguageType.CS);
 
             return $"{prefix}.{ScribanEx.UpperCamel(Util.Type.Nake(root))}";

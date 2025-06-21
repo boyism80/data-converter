@@ -17,6 +17,16 @@ namespace ExcelTableConverter.Services
     /// </summary>
     public class ProcessingPipelineService : IProcessingPipelineService
     {
+        private readonly IConfigurationService _configuration;
+
+        /// <summary>
+        /// Initializes a new instance of the ProcessingPipelineService
+        /// </summary>
+        /// <param name="configuration">The configuration service</param>
+        public ProcessingPipelineService(IConfigurationService configuration)
+        {
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        }
         /// <summary>
         /// Executes the complete data processing pipeline
         /// </summary>
@@ -63,7 +73,7 @@ namespace ExcelTableConverter.Services
             });
 
             // Process data files and merge contexts
-            var context = new Context();
+            var context = new Context(cachedContext.Configuration);
 
             Scheduler.Add(() =>
             {
@@ -72,8 +82,6 @@ namespace ExcelTableConverter.Services
                     new RawDataLoader(loaded, dataSheets).Run();
                 }
                 context = cachedContext + loaded;
-                context.ReadDslFile(dslFilePath);
-                context.ReadConfigFile();
             });
 
             // Arrange data and prepare for validation
@@ -98,9 +106,21 @@ namespace ExcelTableConverter.Services
         /// </summary>
         /// <param name="context">The context to validate</param>
         /// <param name="processFiles">The list of files that need processing</param>
+        /// <param name="config">The configuration</param>
         /// <returns>True if validation passes, false otherwise</returns>
-        public Task<bool> ExecuteValidationPipelineAsync(Context context, IReadOnlyList<string> processFiles)
+        public async Task<bool> ExecuteValidationPipelineAsync(Context context, IReadOnlyList<string> processFiles, bool dslFileChanged)
         {
+            var additionalFiles = await GetAdditionalFilesForValidation(context, processFiles, dslFileChanged);
+            if (additionalFiles.Any())
+            {
+                foreach (var file in additionalFiles)
+                {
+                    Logger.Comment($"  {file} 파일이 연관되어 추가로 검증합니다.", ConsoleColor.DarkGray);
+                }
+                Logger.NewLine();
+                processFiles = processFiles.Concat(additionalFiles).ToList();
+            }
+
             // Schedule validation tasks
             Scheduler.Add(() => new NameValidator(context, processFiles.ToList()).Run());
             Scheduler.Add(() => new SchemaValidator(context).Run());
@@ -119,7 +139,7 @@ namespace ExcelTableConverter.Services
             Scheduler.Run();
 
             var isComplete = !Scheduler.Suspended;
-            
+
             Logger.NewLine();
             Logger.NewLine();
 
@@ -136,7 +156,7 @@ namespace ExcelTableConverter.Services
             Logger.Reset();
             Scheduler.Reset();
 
-            return Task.FromResult(isComplete);
+            return isComplete;
         }
 
         /// <summary>
@@ -149,7 +169,7 @@ namespace ExcelTableConverter.Services
         {
             // Generate JSON files
             Scheduler.Add(() => new JsonFileGenerator(context).Run());
-            
+
             if (targetLanguages.Contains("go"))
             {
                 Scheduler.Add(() => new HasAJsonFileGenerator(context).Run());
@@ -212,7 +232,7 @@ namespace ExcelTableConverter.Services
         {
             if (processFiles.Any())
             {
-                Logger.WriteLine(" 변경된 파일 또는 가장 마지막 에러 발생 파일에 대해서만 작업을 진행합니다.", 
+                Logger.WriteLine(" 변경된 파일 또는 가장 마지막 에러 발생 파일에 대해서만 작업을 진행합니다.",
                     foreground: ConsoleColor.Blue, decorate: false);
 
                 foreach (var (files, suffix) in new[] { (updatedFiles, "변경된 파일"), (errorFiles, "에러 파일") })
@@ -230,7 +250,7 @@ namespace ExcelTableConverter.Services
             }
             else
             {
-                Logger.WriteLine(" 변경된 파일 또는 가장 마지막 에러 발생 파일이 없습니다.", 
+                Logger.WriteLine(" 변경된 파일 또는 가장 마지막 에러 발생 파일이 없습니다.",
                     foreground: ConsoleColor.Blue, decorate: false);
             }
             Logger.NewLine();
@@ -240,11 +260,11 @@ namespace ExcelTableConverter.Services
         /// Generates CRC files for integrity checking
         /// </summary>
         /// <param name="context">The context containing the output configuration</param>
-        private static void GenerateCrcFiles(Context context)
+        private void GenerateCrcFiles(Context context)
         {
             foreach (var scope in new[] { Scope.Server, Scope.Client })
             {
-                var jsonDir = Path.Combine(context.Output, Context.Config.JsonFilePath, $"{scope}".ToLower());
+                var jsonDir = Path.Combine(context.Output, _configuration.JsonFilePath, $"{scope}".ToLower());
                 if (!Directory.Exists(jsonDir))
                     continue;
 
@@ -261,5 +281,74 @@ namespace ExcelTableConverter.Services
             }
             Logger.Complete("CRC 파일을 생성했습니다.");
         }
+
+        /// <summary>
+        /// Gets additional files that need validation due to dependencies on modified files
+        /// </summary>
+        /// <param name="context">The processing context</param>
+        /// <param name="modifiedFiles">List of files that were modified and need processing</param>
+        /// <returns>Set of additional files that need validation</returns>
+        private async Task<HashSet<string>> GetAdditionalFilesForValidation(Context context, IEnumerable<string> modifiedFiles, bool dslFileChanged)
+        {
+            var additionalFiles = new HashSet<string>();
+
+            foreach (var (fileName, sheets) in context.RawData)
+            {
+                // Skip if file is already in modified list
+                if (modifiedFiles.Contains(fileName))
+                    continue;
+
+                foreach (var sheet in sheets)
+                {
+                    foreach (var column in sheet.Columns)
+                    {
+                        var type = Util.Type.Nake(column.Type);
+
+                        // Check relation type dependencies
+                        if (Util.Type.IsRelation(column.Type, out _))
+                        {
+                            if (Context.SplitReferenceType(type, out var referencedTable, out _))
+                            {
+                                // Find which file contains the referenced table
+                                var referencedFile = context.RawData
+                                    .FirstOrDefault(x => x.Value.Any(s => s.TableName == referencedTable))
+                                    .Key;
+
+                                if (modifiedFiles.Contains(referencedFile))
+                                {
+                                    additionalFiles.Add(fileName);
+                                    break;
+                                }
+                            }
+                        }
+
+                        // Check enum dependencies
+                        if (context.TryGetRawEnum(type, out var raw))
+                        {
+                            // Check direct enum usage
+                            var enumFile = raw.FileName;
+
+                            if (modifiedFiles.Contains(enumFile))
+                            {
+                                additionalFiles.Add(fileName);
+                                break;
+                            }
+                        }
+
+                        // Check DSL dependencies
+                        if (context.DSL != null && context.DSL[type] != null)
+                        {
+                            if (dslFileChanged)
+                            {
+                                additionalFiles.Add(fileName);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return additionalFiles;
+        }
     }
-} 
+}

@@ -1,7 +1,6 @@
 ﻿using ExcelTableConverter.Factory.CPP;
 using ExcelTableConverter.Model;
 using ExcelTableConverter.Util;
-using NPOI.OpenXmlFormats.Spreadsheet;
 using Scriban;
 
 namespace ExcelTableConverter.Worker.Generator.CPP
@@ -16,6 +15,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
     public class ClassFileGenerator : ParallelWorker<string, ClassFileGeneratorResult>
     {
         private readonly string _dir;
+        private readonly Context _context;
 
         public ClassFileGenerator(Context ctx) : base(ctx)
         {
@@ -28,12 +28,12 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             }
         }
 
-        private static string GenerateClassCode(List<object> items)
+        private string GenerateClassCode(List<object> items)
         {
             var obj = new ScribanEx
             {
                 ["items"] = items,
-                ["config"] = Context.Config,
+                ["config"] = Context.Configuration,
             };
 
             var ctx = new TemplateContext();
@@ -43,11 +43,11 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             return template.Render(ctx);
         }
 
-        private static string GenerateTypeCode()
+        private string GenerateTypeCode()
         {
             var obj = new ScribanEx
             {
-                ["config"] = Context.Config,
+                ["config"] = Context.Configuration,
             };
             var ctx = new TemplateContext();
             ctx.PushGlobal(obj);
@@ -56,11 +56,11 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             return template.Render(ctx);
         }
 
-        private static string GenerateDateTimeCode()
+        private string GenerateDateTimeCode()
         {
             var obj = new ScribanEx
             {
-                ["config"] = Context.Config
+                ["config"] = Context.Configuration
             };
 
             var ctx = new TemplateContext();
@@ -70,12 +70,12 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             return template.Render(ctx);
         }
 
-        private static string GenerateLuaCode(EnumCodeGenerator enumCodeGenerator)
+        private string GenerateLuaCode(EnumCodeGenerator enumCodeGenerator)
         {
             var obj = new ScribanEx
             {
                 ["enums"] = enumCodeGenerator.Enums,
-                ["config"] = Context.Config,
+                ["config"] = Context.Configuration,
             };
 
             var ctx = new TemplateContext();
@@ -181,7 +181,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                     ["dsl"] = dslCodeGenerator.Result,
                     ["container"] = bindCodeGenerator.Result[scope],
                     ["lua"] = GenerateLuaCode(enumCodeGenerator),
-                    ["config"] = Context.Config,
+                    ["config"] = Context.Configuration,
                 };
                 ctx.PushGlobal(obj);
                 File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", $"model.h"), modelTemplate.Render(ctx));

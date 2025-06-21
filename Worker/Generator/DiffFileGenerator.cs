@@ -11,7 +11,7 @@ namespace ExcelTableConverter.Worker.Generator
 
         public DiffFileGenerator(Context ctx) : base(ctx)
         {
-            _dir = Path.Combine(Context.Output, Context.Config.DiffFilePath);
+            _dir = Path.Combine(Context.Output, Context.Configuration.DiffFilePath);
         }
 
         protected override IEnumerable<RawSheetData> OnReady()

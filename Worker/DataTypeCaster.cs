@@ -94,7 +94,7 @@ namespace ExcelTableConverter.Worker
                 Interlocked.Add(ref _runtimeAdditionalCount, 1);
 
                 var boldColumnSet = boldColumns.ToDictionary(x => x.Name);
-                var table = string.Format(Context.Config.ParentTableFormat, chunkData.Tracker.GetTableName());
+                var table = string.Format(Context.Configuration.ParentTableFormat, chunkData.Tracker.GetTableName());
                 var models = boldColumns.ToModels();
                 var dataSet = new List<Dictionary<string, object>>();
                 for (int row = 0; row < models.Count; row++)
@@ -162,7 +162,7 @@ namespace ExcelTableConverter.Worker
                             if (parentRows.Length == 0)
                                 throw new LogicException($"부모 컬럼에 문제가 있습니다. {parentOffset} 라인을 확인하세요.", chunkData.Tracker);
                             var parent = parentRows.First().Value;
-                            values.Add(Context.Config.ParentPropName, Context.Cast(boldKeyColumns.Type, parent));
+                            values.Add(Context.Configuration.ParentPropName, Context.Cast(boldKeyColumns.Type, parent));
                         }
                         catch (Exception e)
                         {

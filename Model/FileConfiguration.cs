@@ -1,6 +1,6 @@
 ﻿namespace ExcelTableConverter.Model
 {
-    public class Config
+    public class FileConfiguration
     {
         public List<string> Namespace { get; set; }
         public List<string> EnumNamespace { get; set; }

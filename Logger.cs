@@ -32,12 +32,12 @@ namespace ExcelTableConverter
         /// Gets the list of files that encountered errors during processing
         /// </summary>
         public static IReadOnlyList<string> ErrorFiles => _errorFiles.ToList();
-        
+
         /// <summary>
         /// Gets a value indicating whether the application is running in TTY mode
         /// </summary>
         public static bool TTY { get; private set; }
-        
+
         /// <summary>
         /// Gets or sets the text decoration function for output formatting
         /// </summary>
@@ -206,7 +206,6 @@ namespace ExcelTableConverter
                 Console.WriteLine();
                 Console.Write(text);
                 _commentLine++;
-                _y++;
                 Console.ForegroundColor = beforeForeground;
             }
 

@@ -1,3 +1,4 @@
+using ExcelTableConverter.Configuration;
 using ExcelTableConverter.Model;
 
 namespace ExcelTableConverter.Services
@@ -30,7 +31,12 @@ namespace ExcelTableConverter.Services
         /// <summary>
         /// Gets or sets the loaded context with CRC information
         /// </summary>
-        public Context LoadedContext { get; set; } = new Context();
+        public Context LoadedContext { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether the DSL file was changed
+        /// </summary>
+        public bool DslFileChanged { get; set; }
     }
 
     /// <summary>
@@ -46,16 +52,18 @@ namespace ExcelTableConverter.Services
         /// </summary>
         /// <param name="inputDirectory">The directory containing Excel files</param>
         /// <param name="cachedContext">The cached context from previous runs</param>
+        /// <param name="dslFilePath">The path to the DSL configuration file</param>
         /// <returns>A FileProcessingResult containing categorized files and processing information</returns>
         /// <exception cref="DirectoryNotFoundException">Thrown when the input directory does not exist</exception>
         /// <exception cref="IOException">Thrown when file access fails</exception>
-        Task<FileProcessingResult> ProcessFilesAsync(string inputDirectory, Context cachedContext);
+        Task<FileProcessingResult> ProcessFilesAsync(string inputDirectory, Context cachedContext, string dslFilePath);
 
         /// <summary>
         /// Loads or creates a cached context from the cache file
         /// </summary>
+        /// <param name="configuration">The configuration service</param>
         /// <returns>The cached context or a new context if cache is invalid</returns>
-        Task<Context> LoadCachedContextAsync();
+        Task<Context> LoadCachedContextAsync(IConfigurationService configuration);
 
         /// <summary>
         /// Saves the context to the cache file
@@ -84,4 +92,4 @@ namespace ExcelTableConverter.Services
         /// <returns>A task representing the asynchronous operation</returns>
         Task SaveErrorFilesAsync(IEnumerable<string> errorFiles);
     }
-} 
+}

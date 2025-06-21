@@ -47,7 +47,7 @@ namespace ExcelTableConverter.Worker.Generator.Go
 
             yield return new DslCodeGeneratorResult
             {
-                DslFunctionType = Context.Config.DslTypeEnumName,
+                DslFunctionType = Context.Configuration.DslTypeEnumName,
                 Header = header,
                 Props = props
             };
@@ -66,7 +66,7 @@ namespace ExcelTableConverter.Worker.Generator.Go
             {
                 ["items"] = output.OrderBy(x => x.Header).ToList(),
                 ["dsls"] = _prototypes.Keys.OrderBy(x => x).ToList(),
-                ["config"] = Context.Config,
+                ["config"] = Context.Configuration,
             };
 
             var ctx = new TemplateContext();

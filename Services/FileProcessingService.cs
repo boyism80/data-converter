@@ -1,3 +1,4 @@
+using ExcelTableConverter.Configuration;
 using ExcelTableConverter.Model;
 using ExcelTableConverter.Util;
 using Force.Crc32;
@@ -13,15 +14,26 @@ namespace ExcelTableConverter.Services
     /// </summary>
     public class FileProcessingService : IFileProcessingService
     {
+        private readonly IConfigurationService _configuration;
+
+        /// <summary>
+        /// Initializes a new instance of the FileProcessingService
+        /// </summary>
+        /// <param name="configuration">The configuration service</param>
+        public FileProcessingService(IConfigurationService configuration)
+        {
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        }
         /// <summary>
         /// Processes Excel files in the specified directory and categorizes them
         /// </summary>
         /// <param name="inputDirectory">The directory containing Excel files</param>
         /// <param name="cachedContext">The cached context from previous runs</param>
+        /// <param name="dslFilePath">The path to the DSL configuration file</param>
         /// <returns>A FileProcessingResult containing categorized files and processing information</returns>
         /// <exception cref="DirectoryNotFoundException">Thrown when the input directory does not exist</exception>
         /// <exception cref="IOException">Thrown when file access fails</exception>
-        public async Task<FileProcessingResult> ProcessFilesAsync(string inputDirectory, Context cachedContext)
+        public async Task<FileProcessingResult> ProcessFilesAsync(string inputDirectory, Context cachedContext, string dslFilePath)
         {
             if (!Directory.Exists(inputDirectory))
             {
@@ -29,7 +41,8 @@ namespace ExcelTableConverter.Services
             }
 
             var result = new FileProcessingResult();
-            var loaded = new Context();
+            var loaded = new Context(cachedContext.Configuration);
+            var dslFileKey = "dsl.json";
 
             var enumFiles = new List<string>();
             var constFiles = new List<string>();
@@ -54,11 +67,11 @@ namespace ExcelTableConverter.Services
                         continue;
 
                     // Categorize files based on filename prefix
-                    if (fileName.StartsWith(Context.Config.ConstFilePrefix))
+                    if (fileName.StartsWith(_configuration.ConstFilePrefix))
                     {
                         constFiles.Add(path);
                     }
-                    else if (fileName.StartsWith(Context.Config.EnumFilePrefix))
+                    else if (fileName.StartsWith(_configuration.EnumFilePrefix))
                     {
                         enumFiles.Add(path);
                     }
@@ -82,7 +95,8 @@ namespace ExcelTableConverter.Services
             // Handle deleted files - remove from cache
             var existingFileNames = paths.Select(p => Path.GetFileName(p)).ToHashSet();
             var deletedFiles = cachedContext.CRC.Keys.Except(existingFileNames).ToList();
-            
+            deletedFiles.Remove(dslFileKey);
+
             foreach (var deletedFile in deletedFiles)
             {
                 RemoveFromCache(cachedContext, deletedFile);
@@ -104,11 +118,24 @@ namespace ExcelTableConverter.Services
             // Determine files that need processing
             var processFiles = updatedFiles.Concat(errorFiles).ToList();
 
+            // Check if DSL file has changed
+            var dslFileBytes = await File.ReadAllBytesAsync(dslFilePath);
+            var dslCrc = $"{Crc32Algorithm.Compute(dslFileBytes)}.{dslFileBytes.Length}";
+            var dslFileChanged = false;
+            if (cachedContext.CRC.TryGetValue(dslFileKey, out var oldDslCrc))
+                dslFileChanged = (oldDslCrc != dslCrc);
+            else
+                dslFileChanged = true;
+
+            loaded.CRC.Add(dslFileKey, dslCrc);
+            cachedContext.CRC.Remove(dslFileKey);
+
             result.ConstFiles = constFiles;
             result.EnumFiles = enumFiles;
             result.DataFiles = dataFiles;
             result.ProcessFiles = processFiles;
             result.LoadedContext = loaded;
+            result.DslFileChanged = dslFileChanged;
 
             return result;
         }
@@ -116,26 +143,28 @@ namespace ExcelTableConverter.Services
         /// <summary>
         /// Loads or creates a cached context from the cache file
         /// </summary>
+        /// <param name="configuration">The configuration service</param>
         /// <returns>The cached context or a new context if cache is invalid</returns>
-        public async Task<Context> LoadCachedContextAsync()
+        public async Task<Context> LoadCachedContextAsync(IConfigurationService configuration)
         {
             try
             {
                 if (!File.Exists(Context.RAW_CACHE_PATH))
                 {
-                    return new Context();
+                    return new Context(configuration);
                 }
 
                 var cacheBytes = await File.ReadAllBytesAsync(Context.RAW_CACHE_PATH);
                 var cached = ZipUtil.Unzip<Context>(cacheBytes);
+                cached.SetConfiguration(configuration);
 
                 // Check if build version has changed and clear cache if necessary
                 if (cached.BuildVersion != Context.BUILD_VERSION)
                 {
                     await ClearCacheDirectoryAsync();
-                    Logger.WriteLine(" 컨버터 빌드 버전이 변경되어 캐시파일을 전부 제거했습니다.", 
+                    Logger.WriteLine(" 컨버터 빌드 버전이 변경되어 캐시파일을 전부 제거했습니다.",
                         foreground: ConsoleColor.Blue, decorate: false);
-                    return new Context();
+                    return new Context(configuration);
                 }
 
                 return cached;
@@ -143,7 +172,7 @@ namespace ExcelTableConverter.Services
             catch (Exception)
             {
                 // If cache loading fails, return new context
-                return new Context();
+                return new Context(configuration);
             }
         }
 
@@ -272,4 +301,4 @@ namespace ExcelTableConverter.Services
             }
         }
     }
-} 
+}

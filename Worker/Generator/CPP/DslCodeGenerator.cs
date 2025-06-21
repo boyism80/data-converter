@@ -60,7 +60,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             {
                 ["items"] = output.OrderBy(x => x.Name).Select(x => new { x.Name, x.Props }),
                 ["dsls"] = _prototypes.Keys.OrderBy(x => x).ToList(),
-                ["config"] = Context.Config,
+                ["config"] = Context.Configuration,
             };
             var ctx = new TemplateContext();
             ctx.PushGlobal(obj);

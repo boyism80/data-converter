@@ -1,4 +1,5 @@
 ﻿using ExcelTableConverter.Factory;
+using ExcelTableConverter.Services;
 using ExcelTableConverter.Util;
 using ExcelTableConverter.Worker;
 using Newtonsoft.Json;
@@ -37,7 +38,13 @@ namespace ExcelTableConverter.Model
         private readonly ConcurrentDictionary<object, object> _dp = new ConcurrentDictionary<object, object>();
 
         [JsonIgnore]
-        public static Config Config { get; private set; }
+        private IConfigurationService _configuration;
+
+        /// <summary>
+        /// Gets the configuration service instance
+        /// </summary>
+        [JsonIgnore]
+        public IConfigurationService Configuration => _configuration;
 
         [JsonIgnore]
         public string Output = "output";
@@ -71,13 +78,17 @@ namespace ExcelTableConverter.Model
         public Context()
         {
             _castFactory = new CastValueFactory(this);
-            ReadDslFile("dsl.json");
-            ReadConfigFile();
+        }
+
+        public Context(IConfigurationService configuration) : this()
+        {
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            DSL = JObject.Parse(File.ReadAllText(_configuration.DslFilePath));
         }
 
         public static Context operator +(Context ctx1, Context ctx2)
         {
-            return new Context
+            return new Context(ctx1._configuration)
             {
                 RawEnum = ctx1.RawEnum.Concat(ctx2.RawEnum).ToDictionary(x => x.Key, x => x.Value),
                 RawData = ctx1.RawData.Concat(ctx2.RawData).ToDictionary(x => x.Key, x => x.Value),
@@ -86,39 +97,9 @@ namespace ExcelTableConverter.Model
             };
         }
 
-        private static T ReadFileWithEnvironmentVariable<T>(string fname, Func<string, T> callback)
+        public void SetConfiguration(IConfigurationService configuration)
         {
-            var file = Path.GetFileNameWithoutExtension(fname);
-            var ext = Path.GetExtension(fname);
-            var env = Environment.GetEnvironmentVariable("env");
-
-            if (!string.IsNullOrEmpty(env))
-            {
-                var envFileName = $"{file}.{env}{ext}";
-                if (File.Exists(envFileName))
-                    fname = envFileName;
-            }
-
-            if (File.Exists(fname) == false)
-                throw new LogicException($"DSL 파일을 찾을 수 없습니다.".AsSpan());
-
-            return callback.Invoke(File.ReadAllText(fname));
-        }
-
-        public void ReadConfigFile()
-        {
-            Config = ReadFileWithEnvironmentVariable("config.json", contents =>
-            {
-                return JsonConvert.DeserializeObject<Config>(contents);
-            });
-        }
-
-        public void ReadDslFile(string path)
-        {
-            DSL = ReadFileWithEnvironmentVariable(path, contents =>
-            {
-                return JObject.Parse(contents);
-            });
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
 
         private SchemaContainer GetSchema()
@@ -132,7 +113,7 @@ namespace ExcelTableConverter.Model
                 var columns = sheets.FirstOrDefault()?.Columns;
                 var (boldColumns, normalColumns) = columns.Split();
 
-                var root = string.Format(Config.ParentTableFormat, table);
+                var root = string.Format(_configuration.ParentTableFormat, table);
 
                 if (boldColumns != null)
                 {
@@ -147,7 +128,7 @@ namespace ExcelTableConverter.Model
                         });
                     }
 
-                    result.Add(string.Format(Config.ParentTableFormat, table), schemaSet);
+                    result.Add(string.Format(_configuration.ParentTableFormat, table), schemaSet);
                 }
 
                 if (normalColumns != null)
@@ -156,9 +137,9 @@ namespace ExcelTableConverter.Model
                     if (boldColumns != null)
                     {
                         var parentKeyColumn = boldColumns.FirstOrDefault(x => Util.Type.IsPrimaryKey(x.Type, out _));
-                        schemaSet.Add(Config.ParentPropName, new Model.SchemaData
+                        schemaSet.Add(_configuration.ParentPropName, new Model.SchemaData
                         {
-                            Name = Config.ParentPropName,
+                            Name = _configuration.ParentPropName,
                             Type = $"(${root})",
                             Scope = parentKeyColumn.Scope
                         });
@@ -272,7 +253,7 @@ namespace ExcelTableConverter.Model
         {
             Result.Enum = RawEnum.SelectMany(x => x.Value).GroupBy(x => x.Table).ToDictionary(x => x.Key, x => x.SelectMany(x => x.Values).ToDictionary(x => x.Key, x => x.Value));
             var dslFunctionTypes = new Dictionary<string, List<object>>();
-            Result.Enum.Add(Config.DslTypeEnumName, dslFunctionTypes);
+            Result.Enum.Add(_configuration.DslTypeEnumName, dslFunctionTypes);
             int i = 0;
             foreach (var dsl in DSL)
             {
@@ -624,6 +605,21 @@ namespace ExcelTableConverter.Model
                 return 0;
 
             return 1 + GetInheritanceLevel(based);
+        }
+
+        public bool TryGetRawEnum(string type, out RawEnum o)
+        {
+            foreach (var x in RawEnum.SelectMany(x => x.Value))
+            {
+                if (x.SheetName == type)
+                {
+                    o = x;
+                    return true;
+                }
+            }
+
+            o = null;
+            return false;
         }
     }
 }

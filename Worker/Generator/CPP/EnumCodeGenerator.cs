@@ -21,12 +21,12 @@ namespace ExcelTableConverter.Worker.Generator.CPP
         {
         }
 
-        private static string GenerateDeclarationCode(List<object> enums)
+        private string GenerateDeclarationCode(List<object> enums)
         {
             var obj = new ScribanEx
             {
                 ["enums"] = enums,
-                ["config"] = Context.Config,
+                ["config"] = Context.Configuration,
             };
             var ctx = new TemplateContext();
             ctx.PushGlobal(obj);

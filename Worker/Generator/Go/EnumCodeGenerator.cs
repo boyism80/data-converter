@@ -85,7 +85,7 @@ namespace ExcelTableConverter.Worker.Generator.Go
             var obj = new ScribanEx
             {
                 ["items"] = items,
-                ["config"] = Context.Config,
+                ["config"] = Context.Configuration,
             };
 
             var ctx = new TemplateContext();

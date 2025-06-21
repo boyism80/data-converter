@@ -28,13 +28,13 @@ namespace ExcelTableConverter.Worker.Generator.Go
             }
         }
 
-        private static string GenerateClassCode(Scope scope, List<object> items)
+        private string GenerateClassCode(Scope scope, List<object> items)
         {
             var obj = new ScribanEx
             {
                 ["scope"] = scope,
                 ["items"] = items,
-                ["config"] = Context.Config,
+                ["config"] = Context.Configuration,
             };
 
             var ctx = new TemplateContext();
@@ -128,7 +128,7 @@ namespace ExcelTableConverter.Worker.Generator.Go
                 var obj = new ScribanEx
                 {
                     ["scope"] = scope,
-                    ["config"] = Context.Config,
+                    ["config"] = Context.Configuration,
                     ["class"] = GenerateClassCode(scope, items),
                     ["enum"] = enumCodeGenerator.Result,
                     ["const"] = constCodeGenerator.Result[scope],

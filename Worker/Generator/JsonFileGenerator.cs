@@ -14,7 +14,7 @@ namespace ExcelTableConverter.Worker.Generator
         {
             foreach (var scope in new[] { Scope.Server, Scope.Client })
             {
-                var dir = Path.Combine(Context.Output, Context.Config.JsonFilePath, $"{scope}".ToLower());
+                var dir = Path.Combine(Context.Output, Context.Configuration.JsonFilePath, $"{scope}".ToLower());
                 if (Directory.Exists(dir) == false)
                     Directory.CreateDirectory(dir);
 

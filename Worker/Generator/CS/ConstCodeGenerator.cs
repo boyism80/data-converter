@@ -51,7 +51,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
                 ["super"] = scope == Scope.Common,
                 ["scope"] = scope,
                 ["items"] = items,
-                ["config"] = Context.Config,
+                ["config"] = Context.Configuration,
             };
 
             var ctx = new TemplateContext();

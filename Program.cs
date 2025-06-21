@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using ExcelTableConverter.Configuration;
 using ExcelTableConverter.Services;
+using ExcelTableConverter.Util;
 
 /// <summary>
 /// Excel Table Converter - Main program entry point
@@ -35,7 +36,7 @@ namespace ExcelTableConverter
                 config.ApplyToEnvironment();
 
                 // Setup services
-                ConfigureServices();
+                ConfigureServices(config);
 
                 // Clear console if running in TTY mode
                 if (Logger.TTY)
@@ -68,10 +69,18 @@ namespace ExcelTableConverter
         /// <summary>
         /// Configures the dependency injection container with services
         /// </summary>
-        private static void ConfigureServices()
+        private static void ConfigureServices(AppConfiguration appConfig)
         {
-            _serviceContainer.Register<IFileProcessingService, FileProcessingService>();
-            _serviceContainer.Register<IProcessingPipelineService, ProcessingPipelineService>();
+            // Register configuration service as singleton
+            var configService = new ConfigurationService(appConfig);
+            _serviceContainer.RegisterInstance<IConfigurationService>(configService);
+
+            // Register services with factory methods to handle constructor dependencies
+            _serviceContainer.RegisterFactory<IFileProcessingService>(() =>
+                new FileProcessingService(_serviceContainer.Resolve<IConfigurationService>()));
+
+            _serviceContainer.RegisterFactory<IProcessingPipelineService>(() =>
+                new ProcessingPipelineService(_serviceContainer.Resolve<IConfigurationService>()));
         }
 
         /// <summary>
@@ -83,14 +92,15 @@ namespace ExcelTableConverter
         {
             var fileService = _serviceContainer.Resolve<IFileProcessingService>();
             var pipelineService = _serviceContainer.Resolve<IProcessingPipelineService>();
+            var configService = _serviceContainer.Resolve<IConfigurationService>();
 
             try
             {
                 // Load cached context
-                var cachedContext = await fileService.LoadCachedContextAsync();
+                var cachedContext = await fileService.LoadCachedContextAsync(configService);
 
                 // Process files and categorize them
-                var fileResult = await fileService.ProcessFilesAsync(config.InputDirectory, cachedContext);
+                var fileResult = await fileService.ProcessFilesAsync(config.InputDirectory, cachedContext, config.DslFilePath);
 
                 // Display processing information
                 var errorFiles = await fileService.LoadErrorFilesAsync();
@@ -106,7 +116,7 @@ namespace ExcelTableConverter
 
                 // Execute validation pipeline
                 var validationSuccess = await pipelineService.ExecuteValidationPipelineAsync(
-                    processedContext, fileResult.ProcessFiles);
+                    processedContext, fileResult.ProcessFiles, fileResult.DslFileChanged);
 
                 if (!validationSuccess)
                 {
@@ -192,7 +202,7 @@ namespace ExcelTableConverter
 
                 Logger.Error($"Exception Type: {error.GetType().Name}");
                 Logger.Error($"Message: {error.Message}");
-                
+
                 if (!string.IsNullOrEmpty(error.StackTrace))
                 {
                     Logger.Error($"Stack Trace: {error.StackTrace}");

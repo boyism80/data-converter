@@ -32,7 +32,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 if (ftdSchemaSet.Count == 0)
                     continue;
 
-                var ns = Util.CPP.Namespace.Access(Context.Config.Namespace);
+                var ns = Util.CPP.Namespace.Access(Context.Configuration.Namespace);
                 var modelName = $"{ns}{tableName}";
 
                 var containerType = string.Empty;
@@ -71,7 +71,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             var obj = new ScribanEx
             {
                 ["tables"] = buffer,
-                ["config"] = Context.Config
+                ["config"] = Context.Configuration
             };
             var ctx = new TemplateContext();
             ctx.PushGlobal(obj);

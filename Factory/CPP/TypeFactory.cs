@@ -27,7 +27,7 @@ namespace ExcelTableConverter.Factory.CPP
 
         protected override string DateRangeType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable($"{Util.CPP.Namespace.Access(Context.Config.Namespace)}date_range", nullable, option);
+            return WithNullable($"{Util.CPP.Namespace.Access(Context.Configuration.Namespace)}date_range", nullable, option);
         }
 
         protected override string DateTimeType(object value, string root, bool nullable, DataFormatOption option)
@@ -47,12 +47,12 @@ namespace ExcelTableConverter.Factory.CPP
 
         protected override string DslType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable($"{Util.CPP.Namespace.Access(Context.Config.Namespace)}dsl", nullable, option);
+            return WithNullable($"{Util.CPP.Namespace.Access(Context.Configuration.Namespace)}dsl", nullable, option);
         }
 
         protected override string EnumType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            return WithNullable($"{Util.CPP.Namespace.Access(Context.Config.Namespace)}{Util.CPP.Namespace.Access(Context.Config.EnumNamespace)}{Util.Type.Nake(root)}", nullable, option);
+            return WithNullable($"{Util.CPP.Namespace.Access(Context.Configuration.Namespace)}{Util.CPP.Namespace.Access(Context.Configuration.EnumNamespace)}{Util.Type.Nake(root)}", nullable, option);
         }
 
         protected override string FloatType(object value, string root, bool nullable, DataFormatOption option)

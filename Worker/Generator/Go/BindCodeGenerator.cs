@@ -72,7 +72,7 @@ namespace ExcelTableConverter.Worker.Generator.Go
             {
                 ["scope"] = scope,
                 ["tables"] = buffer,
-                ["config"] = Context.Config,
+                ["config"] = Context.Configuration,
             };
 
             var ctx = new TemplateContext();

@@ -2,7 +2,7 @@
 
 namespace ExcelTableConverter.Model
 {
-    public class RawConst : IExcelFileTrackable
+    public class SourceConst : IExcelFileTrackable
     {
         private string _fileName, _sheetName, _tableName;
 
@@ -32,7 +32,7 @@ namespace ExcelTableConverter.Model
     }
 
     public class ConstData
-    { 
+    {
         public string Name { get; set; }
         public object Value { get; set; }
         public string Type { get; set; }

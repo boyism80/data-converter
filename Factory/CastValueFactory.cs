@@ -132,10 +132,10 @@ namespace ExcelTableConverter.Factory
             if (Util.Value.IsDSL(value, out var header, out var parameters) == false)
                 throw new LogicException($"{value}는 DSL로 변환할 수 없습니다.".AsSpan());
 
-            if (Context.DSL.TryGetValue(header, out var dslRaw) == false)
+            if (Context.DSL.TryGetValue(header, out var sourceDSL) == false)
                 throw new LogicException($"{header}는 정의되지 않은 dsl입니다.".AsSpan());
 
-            var dsl = dslRaw as JArray;
+            var dsl = sourceDSL as JArray;
             var definedParams = dsl
                 .Select((x, i) => new { Index = i, Value = x as JObject })
                 .ToDictionary(item => item.Index, item => item.Value);
@@ -227,16 +227,16 @@ namespace ExcelTableConverter.Factory
                 {
                     case "&":
                         {
-                            var x1 = Context.EnumValueToInt(root, stack.Pop());
-                            var x2 = Context.EnumValueToInt(root, stack.Pop());
+                            var x1 = Context.Completed.Enum.ConvertToInt(root, stack.Pop());
+                            var x2 = Context.Completed.Enum.ConvertToInt(root, stack.Pop());
                             stack.Push(x1 & x2);
                         }
                         break;
 
                     case "|":
                         {
-                            var x1 = Context.EnumValueToInt(root, stack.Pop());
-                            var x2 = Context.EnumValueToInt(root, stack.Pop());
+                            var x1 = Context.Completed.Enum.ConvertToInt(root, stack.Pop());
+                            var x2 = Context.Completed.Enum.ConvertToInt(root, stack.Pop());
                             stack.Push(x1 | x2);
                         }
                         break;
@@ -261,7 +261,7 @@ namespace ExcelTableConverter.Factory
             }
 
             var naked = Util.Type.Nake(root);
-            if (Context.Result.Enum.TryGetValue(naked, out var enumSet) == false)
+            if (Context.Completed.Enum.TryGetValue(naked, out var enumSet) == false)
                 throw new LogicException($"{naked}는 정의된 열거형 타입이 아닙니다.".AsSpan());
 
             var parsed = (value as string).ParseValue(false);

@@ -1,5 +1,4 @@
-﻿using NPOI.SS.Formula.Functions;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 namespace ExcelTableConverter.Util
 {
@@ -294,6 +293,20 @@ namespace ExcelTableConverter.Util
                 e = null;
                 return false;
             }
+        }
+
+        public static bool SplitReferenceType(string type, out string tableName, out string columnName)
+        {
+            var split = type.Split('.');
+            if (split.Length > 2)
+            {
+                tableName = columnName = null;
+                return false;
+            }
+
+            tableName = split[0];
+            columnName = split.ElementAtOrDefault(1);
+            return true;
         }
     }
 }

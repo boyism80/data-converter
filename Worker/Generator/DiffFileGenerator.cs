@@ -5,7 +5,7 @@ using System.Text;
 
 namespace ExcelTableConverter.Worker.Generator
 {
-    public class DiffFileGenerator : ParallelWorker<RawSheetData, bool>
+    public class DiffFileGenerator : ParallelWorker<SourceSheetData, bool>
     {
         private readonly string _dir;
 
@@ -14,7 +14,7 @@ namespace ExcelTableConverter.Worker.Generator
             _dir = Path.Combine(Context.Output, Context.Configuration.DiffFilePath);
         }
 
-        protected override IEnumerable<RawSheetData> OnReady()
+        protected override IEnumerable<SourceSheetData> OnReady()
         {
             if (Directory.Exists(_dir) == false)
                 Directory.CreateDirectory(_dir);
@@ -22,13 +22,13 @@ namespace ExcelTableConverter.Worker.Generator
             foreach (var file in Directory.GetFiles(_dir))
                 File.Delete(file);
 
-            foreach (var rsd in Context.RawData.SelectMany(x => x.Value))
+            foreach (var rsd in Context.Source.Data.SelectMany(x => x.Value))
             {
                 yield return rsd;
             }
         }
 
-        private void WriteFile(IEnumerable<RawDataColumns> rdcs, string fname)
+        private void WriteFile(IEnumerable<SourceDataColumns> rdcs, string fname)
         {
             var result = rdcs.ToModels();
             var stringify = JsonConvert.SerializeObject(result, Formatting.Indented).Replace("\r\n", "\n");
@@ -36,7 +36,7 @@ namespace ExcelTableConverter.Worker.Generator
             File.WriteAllText(path, stringify, Encoding.UTF8);
         }
 
-        protected override IEnumerable<bool> OnWork(RawSheetData value)
+        protected override IEnumerable<bool> OnWork(SourceSheetData value)
         {
             var (boldColumns, normalColumns) = value.Columns.Split();
             if (boldColumns != null)
@@ -53,7 +53,7 @@ namespace ExcelTableConverter.Worker.Generator
             yield return true;
         }
 
-        protected override void OnWorked(RawSheetData input, bool output, int percent)
+        protected override void OnWorked(SourceSheetData input, bool output, int percent)
         {
             Logger.Write($"diff 파일을 저장했습니다. - {input.FileName}".AsSpan());
         }

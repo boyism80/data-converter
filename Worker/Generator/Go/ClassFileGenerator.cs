@@ -46,7 +46,7 @@ namespace ExcelTableConverter.Worker.Generator.Go
 
         protected override IEnumerable<string> OnReady()
         {
-            foreach (var tableName in Context.Result.Schema.Keys)
+            foreach (var tableName in Context.Completed.Schema.Keys)
             {
                 yield return tableName;
             }
@@ -54,7 +54,7 @@ namespace ExcelTableConverter.Worker.Generator.Go
 
         protected override IEnumerable<ClassFileGeneratorResult> OnWork(string tableName)
         {
-            var schemaSet = Context.Result.Schema[tableName];
+            var schemaSet = Context.Completed.Schema[tableName];
             var result = new[] { Scope.Server, Scope.Client }.ToDictionary(x => x, x => new List<object>());
             var properties = schemaSet.Values.ToList();
             for (int i = 0; i < properties.Count; i++)
@@ -108,11 +108,11 @@ namespace ExcelTableConverter.Worker.Generator.Go
 
             var g = output.GroupBy(x => x.Scope).ToDictionary(x => x.Key, x =>
             {
-                return x.OrderBy(x => Context.GetInheritanceLevel(x.Table)).ThenBy(x => x.Table).Select(x => new
+                return x.OrderBy(x => Context.Completed.Schema.GetInheritanceLevel(x.Table)).ThenBy(x => x.Table).Select(x => new
                 {
                     x.Name,
                     x.Props,
-                    Based = Context.Result.Schema[x.Table].Based
+                    Based = Context.Completed.Schema[x.Table].Based
                 } as object).ToList();
             });
 

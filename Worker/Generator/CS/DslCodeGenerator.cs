@@ -23,6 +23,20 @@ namespace ExcelTableConverter.Worker.Generator.CS
             _prototypes = JsonConvert.DeserializeObject<Dictionary<string, List<DSLParameter>>>(ctx.DSL.ToString());
         }
 
+        private string GetCSharpSerializeCode(string type, string name)
+        {
+            var naked = Util.Type.Nake(Context.Completed.Schema.GetRootTableType(type));
+            if (naked != "int")
+                return string.Empty;
+
+            var nullable = Util.Type.IsNullable(type);
+            var prefix = string.Empty;
+            if (nullable)
+                prefix = $"{name} == null ? (long?)null : (long?)";
+
+            return $"{prefix}(long)";
+        }
+
         protected override IEnumerable<KeyValuePair<string, List<DSLParameter>>> OnReady()
         {
             foreach (var pair in _prototypes)
@@ -40,7 +54,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
                 {
                     Name = prototype.Name,
                     Type = new TypeFactory(Context).Build(prototype.Type),
-                    Serialize = Context.GetCSharpSerializeCode(prototype.Type, prototype.Name),
+                    Serialize = GetCSharpSerializeCode(prototype.Type, prototype.Name),
                     Deserialize = new ValueDeserializeFactory(Context).Build(prototype.Type, $"parameters[{i}]")
                 } as object;
             }).ToList();

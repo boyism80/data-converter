@@ -1,41 +1,25 @@
-﻿using ExcelTableConverter.Factory;
+﻿using ExcelTableConverter.Controller;
+using ExcelTableConverter.Factory;
 using ExcelTableConverter.Services;
-using ExcelTableConverter.Util;
 using ExcelTableConverter.Worker;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Collections.Concurrent;
+using System.IO.Compression;
 using System.Reflection;
+using System.Text;
 
 namespace ExcelTableConverter.Model
 {
-    using ConstContainer = Dictionary<string, Dictionary<string, ConstData>>;
-    using DataContainer = Dictionary<string, Dictionary<string, List<DataConvertResult>>>;
-    using EnumContainer = Dictionary<string, Dictionary<string, List<object>>>;
-    using RawConstContainer = Dictionary<string, List<RawConst>>;
-    using RawDataContainer = Dictionary<string, List<RawSheetData>>;
-    using RawEnumContainer = Dictionary<string, List<RawEnum>>;
-    using SchemaContainer = Dictionary<string, SchemaSet>;
-
-    public class CompleteContainers
-    {
-        public SchemaContainer Schema { get; set; } = new SchemaContainer();
-        public DataContainer Data { get; set; } = new DataContainer();
-        public EnumContainer Enum { get; set; } = new EnumContainer();
-        public ConstContainer Const { get; set; } = new ConstContainer();
-    }
-
     public class Context
     {
         public static string BUILD_VERSION = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
         public const string CACHE_DIRECTORY = "cache";
-        public const string RAW_CACHE_FILE = "raw";
+        public const string SOURCE_CACHE_FILE = "raw";
         public const string ERROR_FILE = "err";
-        public readonly static string RAW_CACHE_PATH = GetCacheFilePath(RAW_CACHE_FILE);
+        public readonly static string SOURCE_CACHE_PATH = GetCacheFilePath(SOURCE_CACHE_FILE);
         public readonly static string ERROR_CACHE_PATH = GetCacheFilePath(ERROR_FILE);
 
         private readonly CastValueFactory _castFactory;
-        private readonly ConcurrentDictionary<object, object> _dp = new ConcurrentDictionary<object, object>();
 
         [JsonIgnore]
         private IConfigurationService _configuration;
@@ -52,22 +36,10 @@ namespace ExcelTableConverter.Model
         [JsonIgnore]
         public JObject DSL { get; private set; }
 
-        public RawConstContainer RawConst { get; private set; } = new RawConstContainer();
-        public RawEnumContainer RawEnum { get; private set; } = new RawEnumContainer();
-        public RawDataContainer RawData { get; private set; } = new RawDataContainer();
-        public Dictionary<string, string> CRC { get; private set; } = new Dictionary<string, string>();
+        public SourceController Source { get; private set; }
         public string BuildVersion { get; set; } = BUILD_VERSION;
 
-        [JsonIgnore] public CompleteContainers Result { get; set; } = new CompleteContainers();
-
-        [JsonIgnore]
-        public HashSet<string> RawAllTableNames => RawData.SelectMany(x => x.Value).Select(x => x.TableName).ToHashSet();
-
-        [JsonIgnore]
-        public HashSet<string> AllTableNames => Result.Schema.Keys.ToHashSet();
-
-        [JsonIgnore]
-        public HashSet<string> KeyTableNames => Result.Schema.Keys.Where(x => GetKey(x) != null).ToHashSet();
+        [JsonIgnore] public CompletedController Completed { get; set; }
 
         static Context()
         {
@@ -77,6 +49,8 @@ namespace ExcelTableConverter.Model
 
         public Context()
         {
+            Source = new SourceController(this);
+            Completed = new CompletedController(this);
             _castFactory = new CastValueFactory(this);
         }
 
@@ -88,13 +62,21 @@ namespace ExcelTableConverter.Model
 
         public static Context operator +(Context ctx1, Context ctx2)
         {
-            return new Context(ctx1._configuration)
-            {
-                RawEnum = ctx1.RawEnum.Concat(ctx2.RawEnum).ToDictionary(x => x.Key, x => x.Value),
-                RawData = ctx1.RawData.Concat(ctx2.RawData).ToDictionary(x => x.Key, x => x.Value),
-                RawConst = ctx1.RawConst.Concat(ctx2.RawConst).ToDictionary(x => x.Key, x => x.Value),
-                CRC = ctx1.CRC.Concat(ctx2.CRC).ToDictionary(x => x.Key, x => x.Value)
-            };
+            var result = new Context(ctx1._configuration);
+
+            // Merge Source controllers
+            var mergedSourceEnum = ctx1.Source.Enum.Container.Concat(ctx2.Source.Enum.Container)
+                .ToDictionary(x => x.Key, x => x.Value);
+            var mergedSourceData = ctx1.Source.Data.Container.Concat(ctx2.Source.Data.Container)
+                .ToDictionary(x => x.Key, x => x.Value);
+            var mergedSourceConst = ctx1.Source.Const.Container.Concat(ctx2.Source.Const.Container)
+                .ToDictionary(x => x.Key, x => x.Value);
+            var mergedCRC = ctx1.Source.CRC.Concat(ctx2.Source.CRC)
+                .ToDictionary(x => x.Key, x => x.Value);
+
+            result.Source = new SourceController(result, mergedSourceConst, mergedSourceData, mergedSourceEnum, mergedCRC);
+
+            return result;
         }
 
         public void SetConfiguration(IConfigurationService configuration)
@@ -102,524 +84,92 @@ namespace ExcelTableConverter.Model
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
 
-        private SchemaContainer GetSchema()
-        {
-            var result = new SchemaContainer();
-            var group = RawData.SelectMany(x => x.Value).GroupBy(x => x.TableName).ToDictionary(x => x.Key, x => x.ToList());
-            foreach (var (table, sheets) in group)
-            {
-                var based = sheets.FirstOrDefault()?.Based;
-                var json = sheets.FirstOrDefault()?.Json;
-                var columns = sheets.FirstOrDefault()?.Columns;
-                var (boldColumns, normalColumns) = columns.Split();
-
-                var root = string.Format(_configuration.ParentTableFormat, table);
-
-                if (boldColumns != null)
-                {
-                    var schemaSet = new SchemaSet(null, root);
-                    foreach (var column in boldColumns)
-                    {
-                        schemaSet.Add(column.Name, new Model.SchemaData
-                        {
-                            Name = column.Name,
-                            Type = column.Type,
-                            Scope = column.Scope
-                        });
-                    }
-
-                    result.Add(string.Format(_configuration.ParentTableFormat, table), schemaSet);
-                }
-
-                if (normalColumns != null)
-                {
-                    var schemaSet = new SchemaSet(based, json);
-                    if (boldColumns != null)
-                    {
-                        var parentKeyColumn = boldColumns.FirstOrDefault(x => Util.Type.IsPrimaryKey(x.Type, out _));
-                        schemaSet.Add(_configuration.ParentPropName, new Model.SchemaData
-                        {
-                            Name = _configuration.ParentPropName,
-                            Type = $"(${root})",
-                            Scope = parentKeyColumn.Scope
-                        });
-                    }
-
-                    foreach (var column in normalColumns)
-                    {
-                        var inherited = string.IsNullOrEmpty(based) == false && (group[based].FirstOrDefault()?.Columns.Select(x => x.Name).Contains(column.Name) ?? false);
-
-                        schemaSet.Add(column.Name, new Model.SchemaData
-                        {
-                            Name = column.Name,
-                            Type = column.Type,
-                            Scope = column.Scope,
-                            Inherited = inherited
-                        });
-                    }
-                    result.Add(table, schemaSet);
-                }
-            }
-
-            return result;
-        }
-
-        public string GetRootTableType(string type, bool recursion = true)
-        {
-            if (Util.Type.IsRelation(type, out var rel))
-            {
-                var naked = Util.Type.Nake(rel);
-                var nullable = Util.Type.IsNullable(rel);
-
-                if (naked.Contains("."))
-                {
-                    var split = naked.Split(".");
-                    naked = split[0];
-                    var refer = split[1];
-
-                    if (Result.Schema.TryGetValue(naked, out var schemaSet) == false)
-                        throw new LogicException($"{naked} 테이블은 정의되지 않았습니다.".AsSpan());
-
-                    if (schemaSet.TryGetValue(refer, out var x) == false)
-                        throw new LogicException($"{refer}는 {naked} 테이블에 정의되지 않았습니다.".AsSpan());
-
-                    type = Util.Type.Nake(x.Type, Util.NakeFlag.Key);
-                }
-                else
-                {
-                    if (Result.Schema.TryGetValue(naked, out var schemaSet) == false)
-                        throw new LogicException($"{naked} 테이블은 정의되지 않았습니다.".AsSpan());
-
-                    var key = schemaSet.Key;
-                    if (key == null)
-                        throw new LogicException($"{naked} 테이블은 키 정의가 되지 않았습니다.".AsSpan());
-
-                    type = Util.Type.Nake(schemaSet[key].Type, Util.NakeFlag.Key);
-                }
-                if (recursion)
-                    type = GetRootTableType(type, recursion);
-
-                if (nullable)
-                    type = Util.Type.MakeNullable(type);
-
-                return type;
-            }
-            else if (Util.Type.IsSequence(type, out _))
-            {
-                var nullable = Util.Type.IsNullable(type);
-                if (nullable)
-                    return Util.Type.MakeNullable("int");
-                else
-                    return "int";
-            }
-            else
-            {
-                return Util.Type.Nake(type, NakeFlag.All & ~NakeFlag.Nullable);
-            }
-        }
-
         public object Cast(string type, object value)
         {
             return _castFactory.Build(type, value);
         }
 
-        public SchemaSet GetScopeSchema(string table, Scope scope, ScopeFilterType scopeFilterType = ScopeFilterType.Match)
+        public bool Save()
         {
-            if (Result.Schema.TryGetValue(table, out var schema) == false)
-                return null;
-
-            var filter = schema.Where(pair =>
+            try
             {
-                return scopeFilterType switch
-                {
-                    ScopeFilterType.Match => scope == pair.Value.Scope,
-                    ScopeFilterType.Contains => pair.Value.Scope.HasFlag(scope),
-                    _ => throw new InvalidOperationException(),
-                };
-            }).ToDictionary(x => x.Key, x => x.Value);
-            if (filter.Count == 0)
-                return null;
+                using var fs = new FileStream(GetCacheFilePath(SOURCE_CACHE_FILE), FileMode.Create);
+                using var gs = new GZipStream(fs, CompressionMode.Compress);
+                using var writer = new BinaryWriter(gs);
+                writer.Write(BuildVersion);
 
-            var schemaSet = new SchemaSet(schema.Based, schema.Json);
-            foreach (var (k, v) in filter)
+                var sourceBytes = Source.ToBytes();
+                writer.Write(sourceBytes.Length);
+                writer.Write(sourceBytes);
+
+                var completedBytes = Completed.ToBytes();
+                writer.Write(completedBytes.Length);
+                writer.Write(completedBytes);
+
+                var dslBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(DSL));
+                writer.Write(dslBytes.Length);
+                writer.Write(dslBytes);
+            }
+            catch (Exception)
             {
-                schemaSet.Add(k, v);
+                return false;
             }
 
-            return schemaSet;
+            return true;
+        }
+
+        public bool Load()
+        {
+            try
+            {
+                using var fs = new FileStream(GetCacheFilePath(SOURCE_CACHE_FILE), FileMode.Open);
+                using var gs = new GZipStream(fs, CompressionMode.Decompress);
+                using var reader = new BinaryReader(gs);
+
+                BuildVersion = reader.ReadString();
+
+                // Read Source
+                var sourceLength = reader.ReadInt32();
+                var sourceBytes = reader.ReadBytes(sourceLength);
+                Source.FromBytes(sourceBytes);
+
+                // Read Completed
+                var completedLength = reader.ReadInt32();
+                var completedBytes = reader.ReadBytes(completedLength);
+                Completed.FromBytes(completedBytes);
+
+                // Read DSL
+                var dslLength = reader.ReadInt32();
+                var dslBytes = reader.ReadBytes(dslLength);
+                DSL = JObject.Parse(Encoding.UTF8.GetString(dslBytes));
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         public void Arrange()
         {
-            Result.Enum = RawEnum.SelectMany(x => x.Value).GroupBy(x => x.Table).ToDictionary(x => x.Key, x => x.SelectMany(x => x.Values).ToDictionary(x => x.Key, x => x.Value));
-            var dslFunctionTypes = new Dictionary<string, List<object>>();
-            Result.Enum.Add(_configuration.DslTypeEnumName, dslFunctionTypes);
-            int i = 0;
-            foreach (var dsl in DSL)
-            {
-                dslFunctionTypes.Add(dsl.Key, [i++]);
-            }
-            Result.Schema = GetSchema();
-            Result.Data = new DataTypeCaster(this).Run().GroupBy(x => x.FileName).ToDictionary(x => x.Key, x =>
-            {
-                return x.GroupBy(x => x.TableName).ToDictionary(x => x.Key, x => x.OrderBy(x => x.SheetName).ToList());
-            });
-            Result.Const = RawConst.SelectMany(x => x.Value).GroupBy(x => x.TableName).ToDictionary(x => x.Key, x =>
-            {
-                return x.OrderBy(x => x.FileName).ToDictionary(x => x.Name, x => new ConstData
-                {
-                    Name = x.Name,
-                    Type = x.Type,
-                    Scope = x.Scope,
-                    Value = Cast(x.Type, x.Value)
-                });
-            });
-        }
+            // Step 1: Build Enum data first (needed for DataTypeCaster)
+            Completed.Enum.BuildFromSourceData(Source.Enum, _configuration.DslTypeEnumName, DSL);
 
-        /// <summary>
-        /// Generates data set maintaining inheritance hierarchy for languages that support inheritance.
-        /// Used for C++, C#, and Node.js code generation.
-        /// </summary>
-        /// <param name="scope">The scope to filter data</param>
-        /// <returns>Dictionary mapping JSON names to data containers with hierarchical structure</returns>
-        public Dictionary<string, object> GetHierarchicalDataSet(Scope scope) // {json:container}
-        {
-            // {table:rows}
-            var tableRows = Result.Data.SelectMany(x => x.Value).GroupBy(x => x.Key).ToDictionary(x => x.Key, x =>
-            {
-                var table = x.Key;
-                return x.SelectMany(x => x.Value).SelectMany(x => x.Rows).ToList();
-            });
+            // Step 2: Build Schema data (needed for DataTypeCaster)
+            Completed.Schema.BuildFromSourceData(Source.Data, _configuration);
 
-            // {json:rows}
-            var jsonRows = new Dictionary<string/*json*/, List<Dictionary<string/*column*/, object/*value*/>>>();
-            foreach (var g in Result.Schema.GroupBy(x => x.Value.Json))
-            {
-                var json = g.Key;
-                var rows = new List<Dictionary<string, object>>();
-                foreach (var tableName in g.Select(x => x.Key))
-                {
-                    var schema = Result.Schema[tableName].Values.Where(x => x.Scope.HasFlag(scope));
-                    var columns = schema.Select(x => x.Name).ToHashSet();
-                    if (columns.Count == 0)
-                        continue;
+            // Step 3: Build Data (requires Schema and Enum to be ready)
+            var dataConvertResults = new DataTypeCaster(this).Run();
+            Completed.Data.BuildFromDataTypeCaster(dataConvertResults);
 
-                    var scopedRows = tableRows[tableName]
-                        .Select(row => row.Where(x => columns.Contains(x.Key)).ToDictionary(x => x.Key, x => x.Value))
-                        .Where(x => x.Count > 0)
-                        .ToList();
-                    rows.AddRange(scopedRows);
-                }
-
-                jsonRows.Add(json, rows);
-            }
-
-            return jsonRows.ToDictionary(x => x.Key, x =>
-            {
-                var json = x.Key;
-                var rows = x.Value;
-                return new DataContainerFactory(scope).Build(this, json, rows);
-            }).Where(pair => pair.Value != null).ToDictionary(x => x.Key, x => x.Value);
-        }
-
-        public int EnumValueToInt(string root, object value)
-        {
-            if (value is int i)
-                return i;
-
-            var s = value as string;
-            if (Result.Enum[root].TryGetValue(s, out var x))
-            {
-                if (x.Count != 1)
-                    throw new LogicException("...?");
-
-                s = x[0] as string;
-            }
-
-            if (s.StartsWith("0x"))
-                return Convert.ToInt32(s, 16);
-
-            return int.Parse(s);
-        }
-
-        /// <summary>
-        /// Flattens inheritance hierarchy by moving inherited fields into the main object.
-        /// Converts "Is-A" relationship to "Has-A" relationship for composition-based languages.
-        /// </summary>
-        /// <param name="tableName">Name of the table to process</param>
-        /// <param name="row">Row data to convert</param>
-        /// <returns>Converted row with composition structure</returns>
-        private Dictionary<string, object> FlattenInheritanceStructure(string tableName, Dictionary<string, object> row)
-        {
-            var based = Result.Schema[tableName].Based;
-            if (based == null)
-                return row;
-
-            var inheritedFields = Result.Schema[tableName].Where(x => x.Value.Inherited).ToDictionary(x => x.Key, x => x.Value);
-            var inheritedValues = new Dictionary<string, object>();
-            row = row.ToDictionary(x => x.Key, x => x.Value);
-            foreach (var k in inheritedFields.Keys)
-            {
-                inheritedValues.Add(k, row[k]);
-                row.Remove(k);
-            }
-            row[based] = FlattenInheritanceStructure(based, inheritedValues);
-            return row;
-        }
-
-        private Dictionary<string, object> FilterScope(string tableName, Scope scope, Dictionary<string, object> row)
-        {
-            var result = new Dictionary<string, object>();
-            var schema = Result.Schema[tableName].Values.Where(x => x.Scope.HasFlag(scope));
-            var columns = schema.Where(x => !x.Inherited).Select(x => x.Name).ToHashSet();
-
-            foreach (var column in columns)
-            {
-                result.Add(column, row[column]);
-            }
-
-            var based = Result.Schema[tableName].Based;
-            if (based != null)
-            {
-                result[based] = FilterScope(based, scope, row[based] as Dictionary<string, object>);
-            }
-
-            return row;
-        }
-
-        /// <summary>
-        /// Generates data set with flattened structure for languages without inheritance support.
-        /// Converts inheritance relationships to composition for Go code generation.
-        /// Also applies enum string-to-integer conversion.
-        /// </summary>
-        /// <param name="scope">The scope to filter data</param>
-        /// <returns>Dictionary mapping JSON names to data containers with flattened structure</returns>
-        public Dictionary<string, object> GetFlattenedDataSet(Scope scope)
-        {
-            // {table:rows}
-            var tableRows = Result.Data.SelectMany(x => x.Value).GroupBy(x => x.Key).ToDictionary(x => x.Key, x =>
-            {
-                var table = x.Key;
-                return x.SelectMany(x => x.Value).SelectMany(x => x.Rows).ToList();
-            });
-
-            // enum value(string) to integer
-            foreach (var (tableName, rows) in tableRows)
-            {
-                for (int i = 0; i < rows.Count; i++)
-                {
-                    var row = rows[i];
-                    foreach (var (k, v) in row)
-                    {
-                        var schema = Result.Schema[tableName][k];
-                        var naked = Util.Type.Nake(schema.Type);
-                        if (Result.Enum.ContainsKey(naked))
-                        {
-                            if (v != null && v is string)
-                            {
-                                row[k] = EnumValueToInt(naked, v);
-                            }
-                        }
-                    }
-
-                    rows[i] = FlattenInheritanceStructure(tableName, row);
-                }
-            }
-
-            // {json:rows}
-            var jsonRows = new Dictionary<string/*json*/, List<Dictionary<string/*column*/, object/*value*/>>>();
-            foreach (var g in Result.Schema.GroupBy(x => x.Value.Json))
-            {
-                var json = g.Key;
-                var rows = new List<Dictionary<string, object>>();
-                foreach (var tableName in g.Select(x => x.Key))
-                {
-                    var schema = Result.Schema[tableName].Values.Where(x => x.Scope.HasFlag(scope));
-                    var columns = schema.Select(x => x.Name).ToHashSet();
-                    if (columns.Count == 0)
-                        continue;
-
-                    var scopedRows = tableRows[tableName]
-                        .Select(row => row.Where(x => columns.Contains(x.Key)).ToDictionary(x => x.Key, x => x.Value))
-                        .Where(x => x.Count > 0)
-                        .ToList();
-
-                    foreach (var row in tableRows[tableName])
-                    {
-                        rows.Add(FilterScope(tableName, scope, row));
-                    }
-                }
-
-                jsonRows.Add(json, rows);
-            }
-
-            return jsonRows.ToDictionary(x => x.Key, x =>
-            {
-                var json = x.Key;
-                var rows = x.Value;
-                return new DataContainerFactory(scope).Build(this, json, rows);
-            }).Where(pair => pair.Value != null).ToDictionary(x => x.Key, x => x.Value);
-        }
-
-        /// <summary>
-        /// Generates hierarchical data set grouped by sheet name for inheritance-supporting languages.
-        /// </summary>
-        /// <param name="scope">The scope to filter data</param>
-        /// <returns>Dictionary mapping sheet names to table containers with hierarchical structure</returns>
-        public Dictionary<string, Dictionary<string, object>> GetHierarchicalDataSetWithSheetName(Scope scope) // {sheet:{table:container}}
-        {
-            return Result.Data.SelectMany(x => x.Value.SelectMany(x => x.Value)).GroupBy(x => x.SheetName).ToDictionary(x => x.Key, x =>
-            {
-                return x.GroupBy(x => x.TableName).ToDictionary(x => x.Key, x =>
-                {
-                    var tableName = x.Key;
-                    var schema = Result.Schema[tableName].Values.Where(x => x.Scope.HasFlag(scope));
-                    var columns = schema.Select(x => x.Name).ToHashSet();
-                    if (columns.Count == 0)
-                        return null;
-
-                    var rows = x.SelectMany(x => x.Rows)
-                        .Select(row => row.Where(x => columns.Contains(x.Key)).ToDictionary(x => x.Key, x => x.Value))
-                        .Where(x => x.Count > 0)
-                        .ToList();
-
-                    return new DataContainerFactory(scope).Build(this, x.Key, rows);
-                }).Where(pair => pair.Value != null).ToDictionary(x => x.Key, x => x.Value);
-            });
+            // Step 4: Build Const data
+            Completed.Const.BuildFromSourceData(Source.Const, Cast);
         }
 
         public static string GetCacheFilePath(string fileName)
         {
             return Path.Combine(CACHE_DIRECTORY, $"{fileName}.dat");
-        }
-
-        public List<RawDataColumns> GetRawColumns(string tableName)
-        {
-            var key = $"GetRawColumns_{tableName}";
-            return _dp.GetOrAdd(key, _ =>
-            {
-                return RawData.SelectMany(x => x.Value)
-                .Where(x => x.TableName == tableName)
-                .FirstOrDefault()?.Columns;
-            }) as List<RawDataColumns>;
-        }
-
-        public RawSheetData FindRawSheetData(RawDataColumns column)
-        {
-            return RawData.SelectMany(x => x.Value).FirstOrDefault(x => x.Columns.Contains(column));
-        }
-
-        public static bool SplitReferenceType(string type, out string tableName, out string columnName)
-        {
-            var split = type.Split('.');
-            if (split.Length > 2)
-            {
-                tableName = columnName = null;
-                return false;
-            }
-
-            tableName = split[0];
-            columnName = split.ElementAtOrDefault(1);
-            return true;
-        }
-
-        public List<Dictionary<string, object>> GetValues(string tableName)
-        {
-            var key = $"GetValues_{tableName}";
-            return _dp.GetOrAdd(key, _ =>
-            {
-                return Result.Data
-                .SelectMany(x => x.Value)
-                .Where(x => x.Key == tableName)
-                .SelectMany(x => x.Value)
-                .SelectMany(x => x.Rows)
-                .ToList();
-            }) as List<Dictionary<string, object>>;
-        }
-
-        public IEnumerable<string> GetTableNamesFromJson(string json)
-        {
-            foreach (var (tableName, schema) in Result.Schema)
-            {
-                if (schema.Json == json)
-                    yield return tableName;
-            }
-        }
-
-        public IReadOnlyList<object> GetValues(string tableName, string columnName)
-        {
-            var key = $"GetValues_{tableName}_{columnName}";
-            return _dp.GetOrAdd(key, _ => GetValues(tableName).Select(x => x[columnName]).ToList()) as List<object>;
-        }
-
-        public IReadOnlyList<object> GetValuesFromJson(string jsonName, string columnName)
-        {
-            var key = $"GetValuesFromJson_{jsonName}_{columnName}";
-            return _dp.GetOrAdd(key, _ =>
-            {
-                var tableNames = GetTableNamesFromJson(jsonName).ToList();
-                return tableNames.SelectMany(tableName =>
-                {
-                    return GetValues(tableName).Select(x => x[columnName]).ToList();
-                }).ToList();
-            }) as List<object>;
-        }
-
-        public SchemaData GetKey(string tableName)
-        {
-            var key = $"GetKey_{tableName}";
-            return _dp.GetOrAdd(key, __ =>
-            {
-                var values = Result.Schema[tableName].Values;
-                return values.FirstOrDefault(x => Util.Type.IsGroupKey(x.Type, out _)) ??
-                    values.FirstOrDefault(x => Util.Type.IsPrimaryKey(x.Type, out _));
-            }) as SchemaData;
-        }
-
-        public bool ContainsColumn(string tableName, string columnName)
-        {
-            if (Result.Schema.TryGetValue(tableName, out var schema) == false)
-                return false;
-
-            return schema.ContainsKey(columnName);
-        }
-
-        public string GetCSharpSerializeCode(string type, string name)
-        {
-            var naked = Util.Type.Nake(GetRootTableType(type));
-            if (naked != "int")
-                return string.Empty;
-
-            var nullable = Util.Type.IsNullable(type);
-            var prefix = string.Empty;
-            if (nullable)
-                prefix = $"{name} == null ? (long?)null : (long?)";
-
-            return $"{prefix}(long)";
-        }
-
-        public int GetInheritanceLevel(string tableName)
-        {
-            var based = Result.Schema[tableName].Based;
-            if (string.IsNullOrEmpty(based))
-                return 0;
-
-            return 1 + GetInheritanceLevel(based);
-        }
-
-        public bool TryGetRawEnum(string type, out RawEnum o)
-        {
-            foreach (var x in RawEnum.SelectMany(x => x.Value))
-            {
-                if (x.SheetName == type)
-                {
-                    o = x;
-                    return true;
-                }
-            }
-
-            o = null;
-            return false;
         }
     }
 }

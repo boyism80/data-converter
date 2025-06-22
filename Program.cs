@@ -1,7 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
-using ExcelTableConverter.Configuration;
+﻿using ExcelTableConverter.Configuration;
+using ExcelTableConverter.Model;
 using ExcelTableConverter.Services;
-using ExcelTableConverter.Util;
+using System.ComponentModel.DataAnnotations;
 
 /// <summary>
 /// Excel Table Converter - Main program entry point
@@ -97,7 +97,8 @@ namespace ExcelTableConverter
             try
             {
                 // Load cached context
-                var cachedContext = await fileService.LoadCachedContextAsync(configService);
+                var cachedContext = new Context(configService);
+                cachedContext.Load();
 
                 // Process files and categorize them
                 var fileResult = await fileService.ProcessFilesAsync(config.InputDirectory, cachedContext, config.DslFilePath);
@@ -112,11 +113,11 @@ namespace ExcelTableConverter
                     fileResult, cachedContext, config.DslFilePath);
 
                 // Save processed context to cache
-                await fileService.SaveContextToCacheAsync(processedContext);
+                processedContext.Save();
 
                 // Execute validation pipeline
-                var validationSuccess = await pipelineService.ExecuteValidationPipelineAsync(
-                    processedContext, fileResult.ProcessFiles, fileResult.DslFileChanged);
+                var validationSuccess = pipelineService.ExecuteValidationPipeline(
+                    processedContext, fileResult);
 
                 if (!validationSuccess)
                 {

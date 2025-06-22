@@ -1,6 +1,5 @@
-using ExcelTableConverter.Configuration;
+using ExcelTableConverter.Controller;
 using ExcelTableConverter.Model;
-using ExcelTableConverter.Util;
 using Force.Crc32;
 using Newtonsoft.Json;
 
@@ -25,12 +24,13 @@ namespace ExcelTableConverter.Services
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
         /// <summary>
-        /// Processes Excel files in the specified directory and categorizes them
+        /// Processes Excel files in the specified directory and categorizes them.
+        /// Handles deleted files by moving their data to a separate SourceController for dependency validation.
         /// </summary>
         /// <param name="inputDirectory">The directory containing Excel files</param>
         /// <param name="cachedContext">The cached context from previous runs</param>
         /// <param name="dslFilePath">The path to the DSL configuration file</param>
-        /// <returns>A FileProcessingResult containing categorized files and processing information</returns>
+        /// <returns>A FileProcessingResult containing categorized files, processing information, and deleted files data</returns>
         /// <exception cref="DirectoryNotFoundException">Thrown when the input directory does not exist</exception>
         /// <exception cref="IOException">Thrown when file access fails</exception>
         public async Task<FileProcessingResult> ProcessFilesAsync(string inputDirectory, Context cachedContext, string dslFilePath)
@@ -63,7 +63,7 @@ namespace ExcelTableConverter.Services
                     var crc = $"{Crc32Algorithm.Compute(bytes)}.{bytes.Length}";
 
                     // Skip processing if file hasn't changed (same CRC)
-                    if (cachedContext.CRC.TryGetValue(fileName, out var oldCrc) && oldCrc == crc)
+                    if (cachedContext.Source.CRC.TryGetValue(fileName, out var oldCrc) && oldCrc == crc)
                         continue;
 
                     // Categorize files based on filename prefix
@@ -80,7 +80,7 @@ namespace ExcelTableConverter.Services
                         dataFiles.Add(path);
                     }
 
-                    loaded.CRC.Add(fileName, crc);
+                    loaded.Source.CRC.Add(fileName, crc);
                 }
                 catch (IOException ex)
                 {
@@ -92,18 +92,39 @@ namespace ExcelTableConverter.Services
                 }
             }
 
-            // Handle deleted files - remove from cache
+            // Handle deleted files - move their data to a separate SourceController
             var existingFileNames = paths.Select(p => Path.GetFileName(p)).ToHashSet();
-            var deletedFiles = cachedContext.CRC.Keys.Except(existingFileNames).ToList();
+            var deletedFiles = cachedContext.Source.CRC.Keys.Except(existingFileNames).ToList();
             deletedFiles.Remove(dslFileKey);
+
+            // Create a SourceController for deleted files
+            var deletedFilesSource = new SourceController(cachedContext);
 
             foreach (var deletedFile in deletedFiles)
             {
+                // Move data to deleted files source before removing from cache
+                if (cachedContext.Source.Data.TryGetValue(deletedFile, out var data))
+                {
+                    deletedFilesSource.Data.Add(deletedFile, data);
+                }
+                if (cachedContext.Source.Enum.Container.TryGetValue(deletedFile, out var enums))
+                {
+                    deletedFilesSource.Enum.Container.Add(deletedFile, enums);
+                }
+                if (cachedContext.Source.Const.Container.TryGetValue(deletedFile, out var consts))
+                {
+                    deletedFilesSource.Const.Container.Add(deletedFile, consts);
+                }
+                if (cachedContext.Source.CRC.TryGetValue(deletedFile, out var crc))
+                {
+                    deletedFilesSource.CRC.Add(deletedFile, crc);
+                }
+
                 RemoveFromCache(cachedContext, deletedFile);
             }
 
             // Handle updated files - remove from cache to force reprocessing
-            var updatedFiles = loaded.CRC.Keys.ToList();
+            var updatedFiles = loaded.Source.CRC.Keys.ToList();
             foreach (var updatedFile in updatedFiles)
             {
                 RemoveFromCache(cachedContext, updatedFile);
@@ -122,81 +143,24 @@ namespace ExcelTableConverter.Services
             var dslFileBytes = await File.ReadAllBytesAsync(dslFilePath);
             var dslCrc = $"{Crc32Algorithm.Compute(dslFileBytes)}.{dslFileBytes.Length}";
             var dslFileChanged = false;
-            if (cachedContext.CRC.TryGetValue(dslFileKey, out var oldDslCrc))
+            if (cachedContext.Source.CRC.TryGetValue(dslFileKey, out var oldDslCrc))
                 dslFileChanged = (oldDslCrc != dslCrc);
             else
                 dslFileChanged = true;
 
-            loaded.CRC.Add(dslFileKey, dslCrc);
-            cachedContext.CRC.Remove(dslFileKey);
+            loaded.Source.CRC.Add(dslFileKey, dslCrc);
+            cachedContext.Source.CRC.Remove(dslFileKey);
 
             result.ConstFiles = constFiles;
             result.EnumFiles = enumFiles;
             result.DataFiles = dataFiles;
             result.ProcessFiles = processFiles;
+            result.DeletedFiles = deletedFiles;
+            result.DeletedFilesSource = deletedFilesSource;
             result.LoadedContext = loaded;
             result.DslFileChanged = dslFileChanged;
 
             return result;
-        }
-
-        /// <summary>
-        /// Loads or creates a cached context from the cache file
-        /// </summary>
-        /// <param name="configuration">The configuration service</param>
-        /// <returns>The cached context or a new context if cache is invalid</returns>
-        public async Task<Context> LoadCachedContextAsync(IConfigurationService configuration)
-        {
-            try
-            {
-                if (!File.Exists(Context.RAW_CACHE_PATH))
-                {
-                    return new Context(configuration);
-                }
-
-                var cacheBytes = await File.ReadAllBytesAsync(Context.RAW_CACHE_PATH);
-                var cached = ZipUtil.Unzip<Context>(cacheBytes);
-                cached.SetConfiguration(configuration);
-
-                // Check if build version has changed and clear cache if necessary
-                if (cached.BuildVersion != Context.BUILD_VERSION)
-                {
-                    await ClearCacheDirectoryAsync();
-                    Logger.WriteLine(" 컨버터 빌드 버전이 변경되어 캐시파일을 전부 제거했습니다.",
-                        foreground: ConsoleColor.Blue, decorate: false);
-                    return new Context(configuration);
-                }
-
-                return cached;
-            }
-            catch (Exception)
-            {
-                // If cache loading fails, return new context
-                return new Context(configuration);
-            }
-        }
-
-        /// <summary>
-        /// Saves the context to the cache file
-        /// </summary>
-        /// <param name="context">The context to save</param>
-        /// <returns>A task representing the asynchronous operation</returns>
-        public async Task SaveContextToCacheAsync(Context context)
-        {
-            try
-            {
-                if (File.Exists(Context.RAW_CACHE_PATH))
-                {
-                    File.Delete(Context.RAW_CACHE_PATH);
-                }
-
-                var cacheBytes = ZipUtil.Zip(context);
-                await File.WriteAllBytesAsync(Context.RAW_CACHE_PATH, cacheBytes);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to save context to cache: {ex.Message}");
-            }
         }
 
         /// <summary>
@@ -274,10 +238,10 @@ namespace ExcelTableConverter.Services
         /// <param name="fileName">The name of the file to remove</param>
         private static void RemoveFromCache(Context context, string fileName)
         {
-            context.RawConst.Remove(fileName);
-            context.RawEnum.Remove(fileName);
-            context.RawData.Remove(fileName);
-            context.CRC.Remove(fileName);
+            context.Source.Const.Remove(fileName);
+            context.Source.Enum.Remove(fileName);
+            context.Source.Data.Remove(fileName);
+            context.Source.CRC.Remove(fileName);
         }
 
         /// <summary>

@@ -16,7 +16,7 @@ namespace ExcelTableConverter.Worker.Cache
 
         protected override IEnumerable<(string FileName, CacheDataType Data)> OnReady()
         {
-            foreach (var (fileName, pairs) in Context.Result.Data)
+            foreach (var (fileName, pairs) in Context.Completed.Data)
             {
                 if (File.Exists(Context.GetCacheFilePath(fileName)) && _updatedFiles.Contains(fileName) == false)
                     continue;

@@ -40,7 +40,7 @@ namespace ExcelTableConverter.Worker.Generator.Go
                 {
                     Name = prototype.Name,
                     Type = new TypeFactory(Context).Build(prototype.Type),
-                    Serialize = Context.GetCSharpSerializeCode(prototype.Type, prototype.Name),
+                    //Serialize = GetCSharpSerializeCode(prototype.Type, prototype.Name),
                     Deserialize = $"params[{i}].({new TypeFactory(Context).Build(prototype.Type)})"
                 } as object;
             }).ToList();

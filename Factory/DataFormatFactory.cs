@@ -65,7 +65,7 @@ namespace ExcelTableConverter.Factory
 
             if (Util.Value.IsConst(value, out var constTableName, out var constValueName))
             {
-                var sorted = Context.RawConst.SelectMany(x => x.Value)
+                var sorted = Context.Source.Const.SelectMany(x => x.Value)
                     .GroupBy(x => x.TableName)
                     .ToDictionary(x => x.Key, x => x.ToDictionary(x => x.Name));
 
@@ -78,7 +78,7 @@ namespace ExcelTableConverter.Factory
                 return Build(constValue.Type, constValue.Value);
             }
 
-            var root = Context.GetRootTableType(type);
+            var root = Context.Completed.Schema.GetRootTableType(type);
             var naked = Util.Type.Nake(root);
             var nullable = Util.Type.IsNullable(root);
 
@@ -192,7 +192,7 @@ namespace ExcelTableConverter.Factory
                 return AreaType(value, root, string.IsNullOrEmpty(areaType) ? "uint" : areaType, nullable, option);
             }
 
-            if (Context.Result.Enum.ContainsKey(naked))
+            if (Context.Completed.Enum.ContainsKey(naked))
             {
                 return EnumType(value, root, naked, nullable, option);
             }

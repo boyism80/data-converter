@@ -21,7 +21,7 @@ namespace ExcelTableConverter.Worker.Generator.Node
 
         protected override IEnumerable<string> OnReady()
         {
-            foreach (var tableName in Context.Result.Schema.Keys)
+            foreach (var tableName in Context.Completed.Schema.Keys)
             {
                 yield return tableName;
             }
@@ -29,7 +29,7 @@ namespace ExcelTableConverter.Worker.Generator.Node
 
         protected override IEnumerable<(Scope Scope, string Name, List<object> Props)> OnWork(string tableName)
         {
-            var schemaSet = Context.Result.Schema[tableName];
+            var schemaSet = Context.Completed.Schema[tableName];
             var result = new[] { Scope.Server, Scope.Client }.ToDictionary(x => x, x => new List<object>());
             var properties = schemaSet.Values.ToList();
             for (int i = 0; i < properties.Count; i++)
@@ -87,11 +87,11 @@ namespace ExcelTableConverter.Worker.Generator.Node
 
             var g = output.GroupBy(x => x.Scope).ToDictionary(x => x.Key, x =>
             {
-                return x.OrderBy(x => Context.GetInheritanceLevel(x.Name)).Select(x => new
+                return x.OrderBy(x => Context.Completed.Schema.GetInheritanceLevel(x.Name)).Select(x => new
                 {
                     x.Name,
                     x.Props,
-                    Context.Result.Schema[x.Name].Based
+                    Context.Completed.Schema[x.Name].Based
                 } as object).ToList();
             });
 
@@ -110,12 +110,12 @@ namespace ExcelTableConverter.Worker.Generator.Node
                     Const = constCodeGenerator.Result[scope],
                     Class = classTemplate.Render(new { Items = items }),
                     Bind = bindCodeGenerator.Result[scope],
-                    Tables = Context.Result.Schema.Where(x =>
+                    Tables = Context.Completed.Schema.Where(x =>
                     {
                         var schemaSet = x.Value;
                         var filter = schemaSet.Values.Where(x => x.Scope.HasFlag(scope)).ToList();
                         return filter.Count > 0;
-                    }).Select(x => new { Name = x.Key, Json = Context.Result.Schema[x.Key].Json }).OrderBy(x => x.Name).ToList()
+                    }).Select(x => new { Name = x.Key, Json = Context.Completed.Schema[x.Key].Json }).OrderBy(x => x.Name).ToList()
                 }));
             }
 

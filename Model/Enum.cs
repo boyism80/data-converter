@@ -2,7 +2,7 @@
 
 namespace ExcelTableConverter.Model
 {
-    public class RawEnum : IExcelFileTrackable
+    public class SourceEnum : IExcelFileTrackable
     {
         private string _fileName, _sheetName;
 

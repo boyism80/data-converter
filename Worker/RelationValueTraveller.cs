@@ -4,7 +4,7 @@ using Newtonsoft.Json.Linq;
 
 namespace ExcelTableConverter.Worker
 {
-    public class RelationValueTraveller : ParallelWorker<RawSheetData[], List<RelationValueValidationData>>
+    public class RelationValueTraveller : ParallelWorker<SourceSheetData[], List<RelationValueValidationData>>
     {
         private const int CHUNK_SIZE = 250;
 
@@ -15,9 +15,9 @@ namespace ExcelTableConverter.Worker
             _files = files.ToHashSet();
         }
 
-        protected override IEnumerable<RawSheetData[]> OnReady()
+        protected override IEnumerable<SourceSheetData[]> OnReady()
         {
-            foreach (var g in Context.RawData.SelectMany(x => x.Value).GroupBy(x => (x.FileName, x.SheetName)))
+            foreach (var g in Context.Source.Data.SelectMany(x => x.Value).GroupBy(x => (x.FileName, x.SheetName)))
             {
                 if (_files.Contains(g.Key.FileName) == false)
                     continue;
@@ -27,20 +27,20 @@ namespace ExcelTableConverter.Worker
             }
         }
 
-        protected override IEnumerable<List<RelationValueValidationData>> OnWork(RawSheetData[] rsds)
+        protected override IEnumerable<List<RelationValueValidationData>> OnWork(SourceSheetData[] rsds)
         {
             var queue = new Queue<RelationValueValidationData>();
             var buffer = new List<RelationValueValidationData>();
 
-            foreach (var rawData in rsds)
+            foreach (var sourceData in rsds)
             {
-                foreach (var column in rawData.Columns)
+                foreach (var column in sourceData.Columns)
                 {
                     foreach (var value in column.RowValuePairs.Values)
                     {
                         queue.Enqueue(new RelationValueValidationData
                         {
-                            Tracker = rawData,
+                            Tracker = sourceData,
                             Name = column.Name,
                             Type = column.Type,
                             Value = Context.Cast(column.Type, value),
@@ -131,13 +131,13 @@ namespace ExcelTableConverter.Worker
             yield return buffer;
         }
 
-        protected override void OnWorked(RawSheetData[] input, List<RelationValueValidationData> output, int percent)
+        protected override void OnWorked(SourceSheetData[] input, List<RelationValueValidationData> output, int percent)
         {
             var tracker = input[0] as IExcelFileTrackable;
             Logger.Write($"관계타입 데이터를 순회중입니다. - {tracker.FileName}:{tracker.SheetName}".AsSpan());
         }
 
-        protected override void OnError(RawSheetData[] input, Exception e, IExcelFileTrackable tracker = null)
+        protected override void OnError(SourceSheetData[] input, Exception e, IExcelFileTrackable tracker = null)
         {
             base.OnError(input, e, tracker);
         }

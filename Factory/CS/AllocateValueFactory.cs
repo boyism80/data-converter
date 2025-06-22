@@ -92,7 +92,7 @@ namespace ExcelTableConverter.Factory.CS
 
         protected override string EnumType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            foreach (var (k, v) in Context.Result.Enum[root])
+            foreach (var (k, v) in Context.Completed.Enum[root])
             {
                 return $"{root}.{k}";
             }

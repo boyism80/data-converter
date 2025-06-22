@@ -5,30 +5,30 @@ using NPOI.XSSF.UserModel;
 namespace ExcelTableConverter.Model
 {
     public class Workbook
-    { 
-        public XSSFWorkbook Raw { get; private set; }
+    {
+        public XSSFWorkbook Source { get; private set; }
         public string Path { get; private set; }
         public string FileName => System.IO.Path.GetFileName(Path);
 
-        public Workbook(XSSFWorkbook raw, string path)
+        public Workbook(XSSFWorkbook source, string path)
         {
-            Raw = raw;
+            Source = source;
             Path = path;
         }
     }
 
     public class Sheet : IExcelFileTrackable
     {
-        public ISheet Raw { get; private set; }
+        public ISheet Source { get; private set; }
         public Workbook Parent { get; private set; }
         public string Name => this.GetTableName();
         public string FileName => Parent.FileName;
-        public string SheetName => Raw.SheetName;
+        public string SheetName => Source.SheetName;
         public string FullName => $"{Parent.FileName}:{SheetName}";
 
-        public Sheet(ISheet raw, Workbook parent)
+        public Sheet(ISheet source, Workbook parent)
         {
-            Raw = raw;
+            Source = source;
             Parent = parent;
         }
     }

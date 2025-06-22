@@ -44,7 +44,7 @@ namespace ExcelTableConverter.Services
             {
                 var constWorkBooks = new ExcelFileLoader(loaded, fileResult.ConstFiles.ToList(), quiet: true).Run();
                 var constSheets = new SheetLoader(loaded, constWorkBooks, quiet: true).Run();
-                new RawConstLoader(loaded, constSheets).Run();
+                new SourceConstLoader(loaded, constSheets).Run();
             });
 
             // Schedule enum file processing
@@ -52,7 +52,7 @@ namespace ExcelTableConverter.Services
             {
                 var enumWorkBooks = new ExcelFileLoader(loaded, fileResult.EnumFiles.ToList(), quiet: true).Run();
                 var enumSheets = new SheetLoader(loaded, enumWorkBooks, quiet: true).Run();
-                new RawEnumLoader(loaded, enumSheets).Run();
+                new SourceEnumLoader(loaded, enumSheets).Run();
             });
 
             // Schedule data file loading
@@ -79,7 +79,7 @@ namespace ExcelTableConverter.Services
             {
                 if (dataSheets != null)
                 {
-                    new RawDataLoader(loaded, dataSheets).Run();
+                    new SourceDataLoader(loaded, dataSheets).Run();
                 }
                 context = cachedContext + loaded;
             });
@@ -105,24 +105,44 @@ namespace ExcelTableConverter.Services
         /// Executes the validation pipeline
         /// </summary>
         /// <param name="context">The context to validate</param>
-        /// <param name="processFiles">The list of files that need processing</param>
-        /// <param name="config">The configuration</param>
+        /// <param name="fileResult">The result of file processing containing categorized files</param>
         /// <returns>True if validation passes, false otherwise</returns>
-        public async Task<bool> ExecuteValidationPipelineAsync(Context context, IReadOnlyList<string> processFiles, bool dslFileChanged)
+        public bool ExecuteValidationPipeline(Context context, FileProcessingResult fileResult)
         {
-            var additionalFiles = await GetAdditionalFilesForValidation(context, processFiles, dslFileChanged);
+            var processFiles = new List<string>(fileResult.ProcessFiles);
+            var additionalFiles = GetAdditionalFilesForValidation(context, processFiles, fileResult.DslFileChanged, fileResult);
+
+            // Check for deleted file dependencies and warn user
+            if (fileResult.DeletedFiles.Any())
+            {
+                var deletedFilesDependencies = CheckDeletedFilesDependencies(context, fileResult);
+                if (deletedFilesDependencies.Any())
+                {
+                    foreach (var (deletedFile, referencingFiles) in deletedFilesDependencies)
+                    {
+                        foreach (var referencingFile in referencingFiles)
+                        {
+                            additionalFiles.Add(referencingFile);
+                        }
+                    }
+                    Logger.NewLine();
+                }
+            }
+
+
             if (additionalFiles.Any())
             {
+                Logger.Comment("변경 또는 삭제된 파일을 참조하는 파일들이 발견되었습니다.", ConsoleColor.DarkGray);
                 foreach (var file in additionalFiles)
                 {
-                    Logger.Comment($"  {file} 파일이 연관되어 추가로 검증합니다.", ConsoleColor.DarkGray);
+                    Logger.Comment($"  참조하는 파일 : {file}", ConsoleColor.DarkGray);
                 }
                 Logger.NewLine();
                 processFiles = processFiles.Concat(additionalFiles).ToList();
             }
 
             // Schedule validation tasks
-            Scheduler.Add(() => new NameValidator(context, processFiles.ToList()).Run());
+            Scheduler.Add(() => new NameValidator(context, processFiles).Run());
             Scheduler.Add(() => new SchemaValidator(context).Run());
             Scheduler.Add(() => new KeyValidator(context).Run());
             Scheduler.Add(() => new EnumValidator(context).Run());
@@ -131,9 +151,9 @@ namespace ExcelTableConverter.Services
 
             // Schedule relation value validation
             var rvds = new List<RelationValueValidationData>();
-            Scheduler.Add(() => rvds.AddRange(new RelationValueTraveller(context, processFiles.ToList()).Run().SelectMany(x => x)));
+            Scheduler.Add(() => rvds.AddRange(new RelationValueTraveller(context, processFiles).Run().SelectMany(x => x)));
             Scheduler.Add(() => new RelationValueValidator(context, rvds).Run());
-            Scheduler.Add(() => new StrongTypeValidator(context, processFiles.ToList()).Run());
+            Scheduler.Add(() => new StrongTypeValidator(context, processFiles).Run());
 
             // Execute all scheduled validation tasks
             Scheduler.Run();
@@ -283,16 +303,18 @@ namespace ExcelTableConverter.Services
         }
 
         /// <summary>
-        /// Gets additional files that need validation due to dependencies on modified files
+        /// Gets additional files that need validation due to dependencies on modified or deleted files
         /// </summary>
         /// <param name="context">The processing context</param>
         /// <param name="modifiedFiles">List of files that were modified and need processing</param>
+        /// <param name="dslFileChanged">Whether DSL file was changed</param>
+        /// <param name="fileResult">The file processing result containing deleted files source controller</param>
         /// <returns>Set of additional files that need validation</returns>
-        private async Task<HashSet<string>> GetAdditionalFilesForValidation(Context context, IEnumerable<string> modifiedFiles, bool dslFileChanged)
+        private HashSet<string> GetAdditionalFilesForValidation(Context context, IEnumerable<string> modifiedFiles, bool dslFileChanged, FileProcessingResult fileResult)
         {
             var additionalFiles = new HashSet<string>();
 
-            foreach (var (fileName, sheets) in context.RawData)
+            foreach (var (fileName, sheets) in context.Source.Data)
             {
                 // Skip if file is already in modified list
                 if (modifiedFiles.Contains(fileName))
@@ -307,12 +329,25 @@ namespace ExcelTableConverter.Services
                         // Check relation type dependencies
                         if (Util.Type.IsRelation(column.Type, out _))
                         {
-                            if (Context.SplitReferenceType(type, out var referencedTable, out _))
+                            if (Util.Type.SplitReferenceType(type, out var referencedTable, out _))
                             {
                                 // Find which file contains the referenced table
-                                var referencedFile = context.RawData
+                                var referencedFile = context.Source.Data
                                     .FirstOrDefault(x => x.Value.Any(s => s.TableName == referencedTable))
                                     .Key;
+
+                                // If not found in current context, check in deleted files
+                                if (string.IsNullOrEmpty(referencedFile) && fileResult.DeletedFilesSource != null)
+                                {
+                                    foreach (var (deletedFileName, deletedSheets) in fileResult.DeletedFilesSource.Data)
+                                    {
+                                        if (deletedSheets.Any(s => s.TableName == referencedTable))
+                                        {
+                                            referencedFile = deletedFileName;
+                                            break;
+                                        }
+                                    }
+                                }
 
                                 if (modifiedFiles.Contains(referencedFile))
                                 {
@@ -323,15 +358,27 @@ namespace ExcelTableConverter.Services
                         }
 
                         // Check enum dependencies
-                        if (context.TryGetRawEnum(type, out var raw))
+                        if (context.Source.Enum.TryGetSourceEnum(type, out var source))
                         {
                             // Check direct enum usage
-                            var enumFile = raw.FileName;
+                            var enumFile = source.FileName;
 
                             if (modifiedFiles.Contains(enumFile))
                             {
                                 additionalFiles.Add(fileName);
                                 break;
+                            }
+                        }
+                        else if (fileResult.DeletedFilesSource != null)
+                        {
+                            // Check deleted enum dependencies
+                            foreach (var (deletedFileName, deletedEnums) in fileResult.DeletedFilesSource.Enum.Container)
+                            {
+                                if (deletedEnums.Any(e => e.Table == type) && modifiedFiles.Contains(deletedFileName))
+                                {
+                                    additionalFiles.Add(fileName);
+                                    break;
+                                }
                             }
                         }
 
@@ -349,6 +396,71 @@ namespace ExcelTableConverter.Services
             }
 
             return additionalFiles;
+        }
+
+        /// <summary>
+        /// Checks for dependencies on deleted files and returns which files reference them
+        /// </summary>
+        /// <param name="context">The current context</param>
+        /// <param name="fileResult">The file processing result containing deleted files source controller</param>
+        /// <returns>Dictionary mapping deleted files to files that reference them</returns>
+        private Dictionary<string, List<string>> CheckDeletedFilesDependencies(Context context, FileProcessingResult fileResult)
+        {
+            var dependencies = new Dictionary<string, List<string>>();
+
+            if (fileResult.DeletedFilesSource == null)
+                return dependencies;
+
+            foreach (var deletedFile in fileResult.DeletedFiles)
+            {
+                var referencingFiles = new List<string>();
+
+                // Check if any current files reference tables/enums from deleted files
+                foreach (var (fileName, sheets) in context.Source.Data)
+                {
+                    foreach (var sheet in sheets)
+                    {
+                        foreach (var column in sheet.Columns)
+                        {
+                            var type = Util.Type.Nake(column.Type);
+
+                            // Check relation dependencies
+                            if (Util.Type.IsRelation(column.Type, out _))
+                            {
+                                if (Util.Type.SplitReferenceType(type, out var referencedTable, out _))
+                                {
+                                    // Check if referenced table is from deleted file
+                                    if (fileResult.DeletedFilesSource.Data.TryGetValue(deletedFile, out var deletedSheets))
+                                    {
+                                        var hasReferencedTable = deletedSheets.Any(s => s.TableName == referencedTable);
+                                        if (hasReferencedTable && !referencingFiles.Contains(fileName))
+                                        {
+                                            referencingFiles.Add(fileName);
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Check enum dependencies
+                            if (fileResult.DeletedFilesSource.Enum.Container.TryGetValue(deletedFile, out var deletedEnums))
+                            {
+                                var hasReferencedEnum = deletedEnums.Any(e => e.Table == type);
+                                if (hasReferencedEnum && !referencingFiles.Contains(fileName))
+                                {
+                                    referencingFiles.Add(fileName);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (referencingFiles.Any())
+                {
+                    dependencies[deletedFile] = referencingFiles;
+                }
+            }
+
+            return dependencies;
         }
     }
 }

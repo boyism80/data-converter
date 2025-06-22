@@ -1,5 +1,4 @@
-﻿using NPOI.SS.UserModel;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 namespace ExcelTableConverter.Util
 {

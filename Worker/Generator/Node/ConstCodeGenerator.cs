@@ -25,12 +25,12 @@ namespace ExcelTableConverter.Worker.Generator.Node
         protected override IEnumerable<string> OnWork(Scope scope)
         {
             var items = new List<object>();
-            foreach (var (groupName, constSet) in Context.Result.Const.OrderBy(x => x.Key))
+            foreach (var (groupName, constSet) in Context.Completed.Const.OrderBy(x => x.Key))
             {
                 var props = new List<object>();
                 foreach (var constData in constSet.Values.Where(x => x.Scope.HasFlag(scope)))
                 {
-                    props.Add(new 
+                    props.Add(new
                     {
                         Name = constData.Name,
                         Value = new AllocateValueFactory(Context).Build(constData.Type, constData.Value),
@@ -40,7 +40,7 @@ namespace ExcelTableConverter.Worker.Generator.Node
                 if (props.Count == 0)
                     continue;
 
-                items.Add(new 
+                items.Add(new
                 {
                     Name = groupName,
                     Props = props,

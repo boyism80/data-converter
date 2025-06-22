@@ -2,22 +2,22 @@
 
 namespace ExcelTableConverter.Worker.Validator
 {
-    public class SchemaValidator : ParallelWorker<List<RawSheetData>, bool>
+    public class SchemaValidator : ParallelWorker<List<SourceSheetData>, bool>
     {
         public SchemaValidator(Context ctx) : base(ctx)
         {
 
         }
 
-        protected override IEnumerable<List<RawSheetData>> OnReady()
+        protected override IEnumerable<List<SourceSheetData>> OnReady()
         {
-            foreach (var g in Context.RawData.SelectMany(x => x.Value).GroupBy(x => x.TableName))
+            foreach (var g in Context.Source.Data.SelectMany(x => x.Value).GroupBy(x => x.TableName))
             {
                 yield return g.ToList();
             }
         }
 
-        protected override IEnumerable<bool> OnWork(List<RawSheetData> value)
+        protected override IEnumerable<bool> OnWork(List<SourceSheetData> value)
         {
             var basedSet = new Dictionary<string, IExcelFileTrackable>();
             foreach (var rsd in value)
@@ -43,7 +43,7 @@ namespace ExcelTableConverter.Worker.Validator
 
             if (string.IsNullOrEmpty(pivot.Based) == false)
             {
-                var basedSheet = Context.RawData.SelectMany(x => x.Value).FirstOrDefault(x => x.TableName == pivot.Based) ??
+                var basedSheet = Context.Source.Data.SelectMany(x => x.Value).FirstOrDefault(x => x.TableName == pivot.Based) ??
                     throw new LogicException($"{pivot.Based}는 존재하지 않는 테이블입니다.", pivot);
 
                 foreach (var (name, type, scope) in basedSheet.Schema.Select(x => (Name: x.Name, Type: x.Type, Scope: x.Scope)))
@@ -61,7 +61,7 @@ namespace ExcelTableConverter.Worker.Validator
             yield return true;
         }
 
-        protected override void OnWorked(List<RawSheetData> input, bool output, int percent)
+        protected override void OnWorked(List<SourceSheetData> input, bool output, int percent)
         {
             Logger.Write($"스키마 병합 가능 여부를 검사했습니다. - {input[0].TableName}".AsSpan());
         }
@@ -72,7 +72,7 @@ namespace ExcelTableConverter.Worker.Validator
             return base.OnFinish(output);
         }
 
-        protected override void OnError(List<RawSheetData> input, Exception e, IExcelFileTrackable tracker = null)
+        protected override void OnError(List<SourceSheetData> input, Exception e, IExcelFileTrackable tracker = null)
         {
             base.OnError(input, e, tracker);
         }

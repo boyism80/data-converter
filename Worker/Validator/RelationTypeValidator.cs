@@ -19,24 +19,24 @@ namespace ExcelTableConverter.Worker.Validator
         protected override IEnumerable<RelationTypeValidationData> OnReady()
         {
             var queue = new Queue<RelationTypeValidationData>();
-            foreach (var rawConst in Context.RawConst.SelectMany(x => x.Value))
+            foreach (var sourceConst in Context.Source.Const.SelectMany(x => x.Value))
             {
                 queue.Enqueue(new RelationTypeValidationData
                 {
-                    Tracker = rawConst,
-                    Name = rawConst.Name,
-                    Type = rawConst.Type,
-                    Scope = rawConst.Scope
+                    Tracker = sourceConst,
+                    Name = sourceConst.Name,
+                    Type = sourceConst.Type,
+                    Scope = sourceConst.Scope
                 });
             }
 
-            foreach (var rawData in Context.RawData.SelectMany(x => x.Value))
+            foreach (var sourceData in Context.Source.Data.SelectMany(x => x.Value))
             {
-                foreach (var column in rawData.Columns)
+                foreach (var column in sourceData.Columns)
                 {
                     queue.Enqueue(new RelationTypeValidationData
                     {
-                        Tracker = rawData,
+                        Tracker = sourceData,
                         Name = column.Name,
                         Type = column.Type,
                         Scope = column.Scope
@@ -87,18 +87,18 @@ namespace ExcelTableConverter.Worker.Validator
         protected override IEnumerable<bool> OnWork(RelationTypeValidationData value)
         {
             var refer = Util.Type.Nake(value.Type);
-            if (Context.SplitReferenceType(refer, out var tableName, out var columnName) == false)
+            if (Util.Type.SplitReferenceType(refer, out var tableName, out var columnName) == false)
                 throw new LogicException("알 수 없는 에러", value.Tracker);
 
-            if (Context.AllTableNames.Contains(tableName) == false)
+            if (Context.Completed.Schema.GetAllTableNames().Contains(tableName) == false)
                 throw new LogicException($"{tableName}는 정의되지 않은 테이블입니다.", value.Tracker);
 
-            if (Context.KeyTableNames.Contains(tableName) == false)
+            if (Context.Completed.Schema.GetKeyTableNames().Contains(tableName) == false)
                 throw new LogicException($"{tableName}는 키가 존재하지 않는 테이블입니다.", value.Tracker);
 
             if (string.IsNullOrEmpty(columnName) == false)
             {
-                if (Context.ContainsColumn(tableName, columnName) == false)
+                if (Context.Completed.Schema.ContainsColumn(tableName, columnName) == false)
                     throw new LogicException($"{tableName}에 {columnName} 컬럼이 존재하지 않습니다.", value.Tracker);
             }
 

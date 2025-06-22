@@ -4,13 +4,13 @@ using Newtonsoft.Json.Linq;
 
 namespace ExcelTableConverter.Worker.Validator
 {
-    public class EnumValidator : ParallelWorker<RawEnum, bool>
+    public class EnumValidator : ParallelWorker<SourceEnum, bool>
     {
         private readonly Dictionary<string, Dictionary<string, List<object>>> _merge = new Dictionary<string, Dictionary<string, List<object>>>();
 
         public EnumValidator(Context ctx) : base(ctx)
         {
-            
+
         }
 
         private void Assert(IExcelFileTrackable tracker, List<object> array)
@@ -87,9 +87,9 @@ namespace ExcelTableConverter.Worker.Validator
             }
         }
 
-        protected override IEnumerable<RawEnum> OnReady()
+        protected override IEnumerable<SourceEnum> OnReady()
         {
-            foreach (var g in Context.RawEnum.SelectMany(x => x.Value).GroupBy(x => x.Table))
+            foreach (var g in Context.Source.Enum.SelectMany(x => x.Value).GroupBy(x => x.Table))
             {
                 var table = g.Key;
                 var merge = new Dictionary<string, List<object>>();
@@ -102,14 +102,14 @@ namespace ExcelTableConverter.Worker.Validator
                 _merge.Add(table, merge);
             }
 
-            foreach (var raws in Context.RawEnum.Values)
+            foreach (var sources in Context.Source.Enum.Values)
             {
-                foreach(var raw in raws)
-                    yield return raw;
+                foreach (var source in sources)
+                    yield return source;
             }
         }
 
-        protected override IEnumerable<bool> OnWork(RawEnum value)
+        protected override IEnumerable<bool> OnWork(SourceEnum value)
         {
             foreach (var (k, v) in value.Values)
             {
@@ -119,7 +119,7 @@ namespace ExcelTableConverter.Worker.Validator
             yield return true;
         }
 
-        protected override void OnWorked(RawEnum input, bool output, int percent)
+        protected override void OnWorked(SourceEnum input, bool output, int percent)
         {
             Logger.Write("열거형 구문을 검사중입니다.");
             base.OnWorked(input, output, percent);

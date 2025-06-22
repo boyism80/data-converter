@@ -15,7 +15,7 @@ namespace ExcelTableConverter.Worker.Generator.Node
 
         protected override IEnumerable<string> OnReady()
         {
-            foreach (var enumName in Context.Result.Enum.Keys)
+            foreach (var enumName in Context.Completed.Enum.Keys)
             {
                 yield return enumName;
             }
@@ -23,7 +23,7 @@ namespace ExcelTableConverter.Worker.Generator.Node
 
         protected override IEnumerable<(string Name, List<KeyValuePair<string, List<object>>> Props)> OnWork(string value)
         {
-            yield return (value, Context.Result.Enum[value].OrderBy(x => x, new Util.Enum.Comparer()).ToList());
+            yield return (value, Context.Completed.Enum[value].OrderBy(x => x, new Util.Enum.Comparer()).ToList());
         }
 
         protected override void OnWorked(string input, (string Name, List<KeyValuePair<string, List<object>>> Props) output, int percent)

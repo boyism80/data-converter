@@ -7,11 +7,11 @@ using System.Text.RegularExpressions;
 
 namespace ExcelTableConverter.Worker.Loader
 {
-    public class RawDataLoader : ParallelSheetLoader<RawSheetData>
+    public class SourceDataLoader : ParallelSheetLoader<SourceSheetData>
     {
         private static List<string> KEYWORDS = new List<string> { "based", "json" };
 
-        public RawDataLoader(Context ctx, IReadOnlyList<Sheet> sheets) : base(ctx, sheets)
+        public SourceDataLoader(Context ctx, IReadOnlyList<Sheet> sheets) : base(ctx, sheets)
         {
         }
 
@@ -67,7 +67,7 @@ namespace ExcelTableConverter.Worker.Loader
 
         private string ReadKeyword(Sheet sheet, string keyword)
         {
-            var e = sheet.Raw.GetEnumerator();
+            var e = sheet.Source.GetEnumerator();
             while (e.MoveNext())
             {
                 var sheetRow = e.Current as XSSFRow;
@@ -86,20 +86,20 @@ namespace ExcelTableConverter.Worker.Loader
             return null;
         }
 
-        protected override IEnumerable<RawSheetData> OnWork(Sheet sheet)
+        protected override IEnumerable<SourceSheetData> OnWork(Sheet sheet)
         {
             var based = ReadKeyword(sheet, "based");
             var json = ReadKeyword(sheet, "json");
 
-            var enumerator = sheet.Raw.GetRowEnumerator();
+            var enumerator = sheet.Source.GetRowEnumerator();
             var names = ReadLineUntilValid(enumerator, out _);
             var types = ReadLineUntilValid(enumerator, out _);
             var scopes = ReadLineUntilValid(enumerator, out _);
-            var columns = new Dictionary<int, RawDataColumns>();
+            var columns = new Dictionary<int, SourceDataColumns>();
 
             foreach (var col in names.Keys)
             {
-                columns.Add(col, new RawDataColumns
+                columns.Add(col, new SourceDataColumns
                 {
                     Name = names[col].StringCellValue,
                     Type = types[col].StringCellValue,
@@ -110,7 +110,7 @@ namespace ExcelTableConverter.Worker.Loader
                         "common" => Scope.Common,
                         _ => throw new LogicException("invalid scope type")
                     },
-                    Bold = names[col].CellStyle.GetFont(sheet.Parent.Raw).IsBold,
+                    Bold = names[col].CellStyle.GetFont(sheet.Parent.Source).IsBold,
                 });
             }
 
@@ -133,7 +133,7 @@ namespace ExcelTableConverter.Worker.Loader
                 }
             }
 
-            yield return new RawSheetData
+            yield return new SourceSheetData
             {
                 Parent = sheet,
                 Columns = columns.Values.ToList(),
@@ -142,18 +142,18 @@ namespace ExcelTableConverter.Worker.Loader
             };
         }
 
-        protected override void OnWorked(Sheet input, RawSheetData output, int percent)
+        protected override void OnWorked(Sheet input, SourceSheetData output, int percent)
         {
-            if (Context.RawData.TryGetValue(input.Parent.FileName, out var datas) == false)
+            if (Context.Source.Data.TryGetValue(input.Parent.FileName, out var datas) == false)
             {
-                datas = new List<RawSheetData>();
-                Context.RawData.Add(input.Parent.FileName, datas);
+                datas = new List<SourceSheetData>();
+                Context.Source.Data.Add(input.Parent.FileName, datas);
             }
             datas.Add(output);
             Logger.Write($"데이터 테이블을 읽었습니다. - {input.SheetName}".AsSpan());
         }
 
-        protected override IReadOnlyList<RawSheetData> OnFinish(IReadOnlyList<RawSheetData> output)
+        protected override IReadOnlyList<SourceSheetData> OnFinish(IReadOnlyList<SourceSheetData> output)
         {
             Logger.Complete("데이터 테이블을 읽었습니다.");
             return base.OnFinish(output);

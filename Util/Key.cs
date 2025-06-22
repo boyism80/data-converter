@@ -3,7 +3,7 @@
 namespace ExcelTableConverter.Util
 {
     public enum KeyType
-    { 
+    {
         None,
         Primary,
         Group

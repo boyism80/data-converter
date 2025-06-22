@@ -24,10 +24,9 @@ namespace ExcelTableConverter.Services
         /// Executes the validation pipeline
         /// </summary>
         /// <param name="context">The context to validate</param>
-        /// <param name="processFiles">The list of files that need processing</param>
-        /// <param name="dslFileChanged">Whether the DSL file was changed</param>
+        /// <param name="fileResult">The result of file processing containing categorized files</param>
         /// <returns>True if validation passes, false otherwise</returns>
-        Task<bool> ExecuteValidationPipelineAsync(Context context, IReadOnlyList<string> processFiles, bool dslFileChanged);
+        bool ExecuteValidationPipeline(Context context, FileProcessingResult fileResult);
 
         /// <summary>
         /// Executes the code generation pipeline

@@ -4,7 +4,7 @@ namespace ExcelTableConverter.Util
 {
     public static class Extension
     {
-        public static List<Dictionary<string, object>> ToModels(this IEnumerable<RawDataColumns> rdcs)
+        public static List<Dictionary<string, object>> ToModels(this IEnumerable<SourceDataColumns> rdcs)
         {
             var result = new List<Dictionary<string, object>>();
             var rows = rdcs.SelectMany(x => x.RowValuePairs.Keys).Distinct().OrderBy(x => x);
@@ -24,7 +24,7 @@ namespace ExcelTableConverter.Util
             return result;
         }
 
-        public static (IReadOnlyList<RawDataColumns> BoldColumns, IReadOnlyList<RawDataColumns> NormalColumns) Split(this IEnumerable<RawDataColumns> columns)
+        public static (IReadOnlyList<SourceDataColumns> BoldColumns, IReadOnlyList<SourceDataColumns> NormalColumns) Split(this IEnumerable<SourceDataColumns> columns)
         {
             var group = columns.GroupBy(x => x.Bold).ToDictionary(x => x.Key);
             var boldColumns = group.GetValueOrDefault(true)?.ToList();

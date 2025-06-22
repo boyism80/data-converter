@@ -43,10 +43,10 @@ namespace ExcelTableConverter.Worker.Validator
                 if (Util.Type.IsRelation(type, out var rel))
                 {
                     rel = Util.Type.Nake(rel);
-                    if (Context.AllTableNames.Contains(rel) == false)
+                    if (Context.Completed.Schema.GetAllTableNames().Contains(rel) == false)
                         throw new LogicException($"'{format}'에 정의된 {i + 1}번째 인자 '{name}'의 타입 '{rel}'은 존재하지 않는 테이블입니다.".AsSpan());
 
-                    if (Context.KeyTableNames.Contains(rel) == false)
+                    if (Context.Completed.Schema.GetKeyTableNames().Contains(rel) == false)
                         throw new LogicException($"'{format}'에 정의된 {i + 1}번째 인자 '{name}'의 타입 '{rel}'은 키가 정의되지 않는 테이블입니다.".AsSpan());
                 }
             }

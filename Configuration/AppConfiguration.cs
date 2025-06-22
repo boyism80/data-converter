@@ -1,5 +1,5 @@
-using System.ComponentModel.DataAnnotations;
 using NDesk.Options;
+using System.ComponentModel.DataAnnotations;
 
 namespace ExcelTableConverter.Configuration
 {
@@ -53,7 +53,7 @@ namespace ExcelTableConverter.Configuration
         {
             var config = new AppConfiguration();
             OptionSet options = null!;
-            
+
             options = new OptionSet
             {
                 { "d|dir=", "input directory", v => config.InputDirectory = v },
@@ -103,7 +103,7 @@ namespace ExcelTableConverter.Configuration
             {
                 var supportedLanguages = new HashSet<string> { "c++", "c#", "node", "go" };
                 var invalidLanguages = TargetLanguages.Where(lang => !supportedLanguages.Contains(lang)).ToList();
-                
+
                 if (invalidLanguages.Any())
                 {
                     errors.Add($"Unsupported languages: {string.Join(", ", invalidLanguages)}");
@@ -160,8 +160,8 @@ namespace ExcelTableConverter.Configuration
             Console.WriteLine("Examples:");
             Console.WriteLine("  ExcelTableConverter -d ./tables -l \"c++|c#\" -dsl config.json");
             Console.WriteLine("  ExcelTableConverter --dir ./data --lang c++ --env production");
-            
+
             System.Environment.Exit(0);
         }
     }
-} 
+}

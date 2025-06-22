@@ -1,11 +1,8 @@
-﻿using ExcelTableConverter.Worker;
-using Newtonsoft.Json;
-using NPOI.SS.Formula.Functions;
-using System.Data.Common;
+﻿using Newtonsoft.Json;
 
 namespace ExcelTableConverter.Model
 {
-    public class RawValue : IExcelFileTrackable
+    public class SourceValue : IExcelFileTrackable
     {
         private string _root, _sheetName, _tableName, _fileName;
 
@@ -36,7 +33,7 @@ namespace ExcelTableConverter.Model
         [JsonIgnore] public Sheet Parent { get; set; }
     }
 
-    public class RawSchemaData
+    public class SourceSchemaData
     {
         public string Name { get; set; }
         public Scope Scope { get; set; }
@@ -45,7 +42,7 @@ namespace ExcelTableConverter.Model
 
         public override bool Equals(object obj)
         {
-            if (obj is not RawSchemaData rsd)
+            if (obj is not SourceSchemaData rsd)
                 return base.Equals(obj);
 
             if (Name != rsd.Name)
@@ -64,17 +61,17 @@ namespace ExcelTableConverter.Model
         }
     }
 
-    public class RawDataColumns : RawSchemaData
+    public class SourceDataColumns : SourceSchemaData
     {
         public Dictionary<int, object> RowValuePairs { get; set; } = new Dictionary<int, object>();
     }
 
-    public class RawSheetData : IExcelFileTrackable
+    public class SourceSheetData : IExcelFileTrackable
     {
         private string _root, _sheetName, _tableName, _fileName;
         public string Based { get; set; }
         public string Json { get; set; }
-        public List<RawDataColumns> Columns { get; set; } = new List<RawDataColumns>();
+        public List<SourceDataColumns> Columns { get; set; } = new List<SourceDataColumns>();
 
         public string Root
         {
@@ -97,11 +94,11 @@ namespace ExcelTableConverter.Model
             set => _fileName = value;
         }
         [JsonIgnore] public Sheet Parent { get; set; }
-        [JsonIgnore] public List<RawSchemaData> Schema => Columns.Cast<RawSchemaData>().OrderBy(x => x.Name).ToList();
+        [JsonIgnore] public List<SourceSchemaData> Schema => Columns.Cast<SourceSchemaData>().OrderBy(x => x.Name).ToList();
 
-        public IEnumerable<RawDataColumns> GetRowValues(int row)
+        public IEnumerable<SourceDataColumns> GetRowValues(int row)
         {
-            return Columns.Select(column => new RawDataColumns
+            return Columns.Select(column => new SourceDataColumns
             {
                 Name = column.Name,
                 Bold = column.Bold,
@@ -111,9 +108,9 @@ namespace ExcelTableConverter.Model
             });
         }
 
-        public IEnumerable<RawDataColumns> GetRowValues(int minRow, int maxRow)
+        public IEnumerable<SourceDataColumns> GetRowValues(int minRow, int maxRow)
         {
-            return Columns.Select(column => new RawDataColumns
+            return Columns.Select(column => new SourceDataColumns
             {
                 Name = column.Name,
                 Bold = column.Bold,
@@ -123,11 +120,11 @@ namespace ExcelTableConverter.Model
             });
         }
 
-        private IEnumerable<List<RawDataColumns>> StaticChunk(int size)
+        private IEnumerable<List<SourceDataColumns>> StaticChunk(int size)
         {
             var buffer = Columns.Select(column =>
             {
-                return column.RowValuePairs.GroupBy(x => x.Key / size).ToDictionary(chunk => chunk.Key, chunk => new RawDataColumns
+                return column.RowValuePairs.GroupBy(x => x.Key / size).ToDictionary(chunk => chunk.Key, chunk => new SourceDataColumns
                 {
                     Name = column.Name,
                     Bold = column.Bold,
@@ -142,7 +139,7 @@ namespace ExcelTableConverter.Model
             {
                 yield return buffer.Select((chunkedColumns, col) =>
                 {
-                    return chunkedColumns.GetValueOrDefault(row) ?? new RawDataColumns
+                    return chunkedColumns.GetValueOrDefault(row) ?? new SourceDataColumns
                     {
                         Name = Columns[col].Name,
                         Bold = Columns[col].Bold,
@@ -154,7 +151,7 @@ namespace ExcelTableConverter.Model
             }
         }
 
-        public IEnumerable<List<RawDataColumns>> Chunk(int size)
+        public IEnumerable<List<SourceDataColumns>> Chunk(int size)
         {
             if (Columns.Exists(x => x.Bold))
             {

@@ -3,15 +3,15 @@ using NPOI.XSSF.UserModel;
 
 namespace ExcelTableConverter.Worker.Loader
 {
-    public class RawConstLoader : ParallelSheetLoader<RawConst>
+    public class SourceConstLoader : ParallelSheetLoader<SourceConst>
     {
-        public RawConstLoader(Context ctx, IReadOnlyList<Sheet> sheets) : base(ctx, sheets)
+        public SourceConstLoader(Context ctx, IReadOnlyList<Sheet> sheets) : base(ctx, sheets)
         {
         }
 
-        protected override IEnumerable<RawConst> OnWork(Sheet sheet)
+        protected override IEnumerable<SourceConst> OnWork(Sheet sheet)
         {
-            foreach (XSSFRow row in sheet.Raw)
+            foreach (XSSFRow row in sheet.Source)
             {
                 var line = ReadLine(row);
                 if (line.Count == 0)
@@ -28,7 +28,7 @@ namespace ExcelTableConverter.Worker.Loader
                 var type = line[2].StringCellValue;
                 var value = GetValue(line[3], type);
 
-                yield return new RawConst
+                yield return new SourceConst
                 {
                     Parent = sheet,
                     Name = name,
@@ -39,19 +39,19 @@ namespace ExcelTableConverter.Worker.Loader
             }
         }
 
-        protected override void OnWorked(Sheet input, RawConst output, int percent)
+        protected override void OnWorked(Sheet input, SourceConst output, int percent)
         {
-            if (Context.RawConst.TryGetValue(input.Parent.FileName, out var rawConsts) == false)
+            if (Context.Source.Const.TryGetValue(input.Parent.FileName, out var sourceConsts) == false)
             {
-                rawConsts = new List<RawConst>();
-                Context.RawConst.Add(input.Parent.FileName, rawConsts);
+                sourceConsts = new List<SourceConst>();
+                Context.Source.Const.Add(input.Parent.FileName, sourceConsts);
             }
-            rawConsts.Add(output);
+            sourceConsts.Add(output);
 
             Logger.Write($"상수 데이터를 읽었습니다 - {input.SheetName}".AsSpan());
         }
 
-        protected override IReadOnlyList<RawConst> OnFinish(IReadOnlyList<RawConst> output)
+        protected override IReadOnlyList<SourceConst> OnFinish(IReadOnlyList<SourceConst> output)
         {
             Logger.Complete("상수 테이블을 읽었습니다.");
             return base.OnFinish(output);

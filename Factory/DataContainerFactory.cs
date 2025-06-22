@@ -23,7 +23,7 @@ namespace ExcelTableConverter.Factory
                 return null;
 
             var basedName = hasAField[0].Key;
-            if (ctx.Result.Schema.ContainsKey(basedName) == false)
+            if (ctx.Completed.Schema.ContainsKey(basedName) == false)
                 return null;
 
             var basedRow = hasAField[0].Value as Dictionary<string, object>;
@@ -32,7 +32,7 @@ namespace ExcelTableConverter.Factory
 
         private object InternalBuild(Context ctx, string table, List<Dictionary<string, object>> rows, bool chainParent)
         {
-            var schema = ctx.Result.Schema[table];
+            var schema = ctx.Completed.Schema[table];
             var gk = chainParent ? schema.Values.FirstOrDefault(x => x.Scope.HasFlag(_scope) && Util.Type.IsGroupKey(x.Type, out _)) : null;
             if (gk != null)
             {

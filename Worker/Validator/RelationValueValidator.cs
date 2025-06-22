@@ -39,16 +39,16 @@ namespace ExcelTableConverter.Worker.Validator
                 try
                 {
                     var refer = Util.Type.Nake(value.Type);
-                    if (Context.SplitReferenceType(refer, out var tableName, out var columnName) == false)
+                    if (Util.Type.SplitReferenceType(refer, out var tableName, out var columnName) == false)
                         throw new LogicException("알 수 없는 에러");
 
                     if (columnName == null)
-                        columnName = Context.GetKey(tableName)?.Name ?? throw new LogicException($"{tableName}은 키가 정의되지 않은 테이블입니다.", value.Tracker);
+                        columnName = Context.Completed.Schema.GetKey(tableName)?.Name ?? throw new LogicException($"{tableName}은 키가 정의되지 않은 테이블입니다.", value.Tracker); // TODO: cache
 
-                    if (Context.ContainsColumn(tableName, columnName) == false)
+                    if (Context.Completed.Schema.ContainsColumn(tableName, columnName) == false)
                         throw new LogicException($"{columnName}은 {tableName}의 멤버가 아닙니다.", value.Tracker);
 
-                    var hash = _refs.GetOrAdd((tableName, columnName), _ => Context.GetValuesFromJson(tableName, columnName).Select(x => $"{x}").ToHashSet());
+                    var hash = _refs.GetOrAdd((tableName, columnName), _ => Context.Completed.Data.GetValuesFromJson(tableName, columnName).Select(x => $"{x}").ToHashSet());
 
                     if (hash.Contains($"{value.Value}") == false)
                         throw new LogicException($"{value.Name}의 값 '{value.Value}'는 {refer} 테이블에 존재하지 않습니다.", value.Tracker);

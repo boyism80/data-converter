@@ -22,37 +22,37 @@ namespace ExcelTableConverter.Worker.Validator
 
         protected override IEnumerable<(IExcelFileTrackable, string)> OnReady()
         {
-            foreach (var rawEnums in Context.RawEnum.Values)
+            foreach (var sourceEnums in Context.Source.Enum.Values)
             {
-                foreach (var rawEnum in rawEnums)
+                foreach (var sourceEnum in sourceEnums)
                 {
-                    if (_files.Contains(rawEnum.FileName) == false)
+                    if (_files.Contains(sourceEnum.FileName) == false)
                         continue;
 
-                    foreach (var name in rawEnum.Values.Keys)
-                        yield return (rawEnum, name);
+                    foreach (var name in sourceEnum.Values.Keys)
+                        yield return (sourceEnum, name);
                 }
             }
 
-            foreach (var rawConsts in Context.RawConst.Values)
+            foreach (var sourceConsts in Context.Source.Const.Values)
             {
-                foreach (var rawConst in rawConsts)
+                foreach (var sourceConst in sourceConsts)
                 {
-                    if (_files.Contains(rawConst.FileName) == false)
+                    if (_files.Contains(sourceConst.FileName) == false)
                         continue;
 
-                    yield return (rawConst, rawConst.Name);
+                    yield return (sourceConst, sourceConst.Name);
                 }
             }
 
-            foreach (var rawSheetData in Context.RawData.SelectMany(x => x.Value))
+            foreach (var sourceSheetData in Context.Source.Data.SelectMany(x => x.Value))
             {
-                if (_files.Contains(rawSheetData.FileName) == false)
+                if (_files.Contains(sourceSheetData.FileName) == false)
                     continue;
 
-                foreach (var column in rawSheetData.Columns)
+                foreach (var column in sourceSheetData.Columns)
                 {
-                    yield return (rawSheetData, column.Name);
+                    yield return (sourceSheetData, column.Name);
                 }
             }
         }

@@ -25,7 +25,7 @@ namespace ExcelTableConverter.Worker.Generator.Node
         protected override IEnumerable<KeyValuePair<Scope, string>> OnWork(Scope scope)
         {
             var buffer = new List<object>();
-            foreach (var (tableName, schemaSet) in Context.Result.Schema.OrderBy(x => x.Key))
+            foreach (var (tableName, schemaSet) in Context.Completed.Schema.OrderBy(x => x.Key))
             {
                 var ftdSchemaSet = schemaSet.Values.Where(x => x.Scope.HasFlag(scope)).ToList();
                 if (ftdSchemaSet.Count == 0)
@@ -56,7 +56,7 @@ namespace ExcelTableConverter.Worker.Generator.Node
                 {
                     Name = tableName,
                     Type = containerType,
-                    Json = Context.Result.Schema[tableName].Json,
+                    Json = Context.Completed.Schema[tableName].Json,
                 });
             }
 

@@ -1,20 +1,20 @@
 ﻿using ExcelTableConverter.Model;
+using ExcelTableConverter.Util;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
-using ExcelTableConverter.Util;
 
 namespace ExcelTableConverter.Worker.Loader
 {
-    public class RawEnumLoader : ParallelSheetLoader<RawEnum>
+    public class SourceEnumLoader : ParallelSheetLoader<SourceEnum>
     {
-        public RawEnumLoader(Context ctx, IReadOnlyList<Sheet> sheets) : base(ctx, sheets)
+        public SourceEnumLoader(Context ctx, IReadOnlyList<Sheet> sheets) : base(ctx, sheets)
         {
         }
 
-        protected override IEnumerable<RawEnum> OnWork(Sheet sheet)
+        protected override IEnumerable<SourceEnum> OnWork(Sheet sheet)
         {
             var values = new Dictionary<string, List<object>>();
-            foreach (XSSFRow row in sheet.Raw)
+            foreach (XSSFRow row in sheet.Source)
             {
                 var line = ReadLine(row);
                 if (line.Count == 0)
@@ -38,7 +38,7 @@ namespace ExcelTableConverter.Worker.Loader
                 values.Add(name, parsed);
             }
 
-            yield return new RawEnum
+            yield return new SourceEnum
             {
                 Table = sheet.Name,
                 Values = values,
@@ -46,19 +46,19 @@ namespace ExcelTableConverter.Worker.Loader
             };
         }
 
-        protected override void OnWorked(Sheet input, RawEnum output, int percent)
+        protected override void OnWorked(Sheet input, SourceEnum output, int percent)
         {
-            if (Context.RawEnum.TryGetValue(input.Parent.FileName, out var rawEnums) == false)
+            if (Context.Source.Enum.TryGetValue(input.Parent.FileName, out var sourceEnums) == false)
             {
-                rawEnums = new List<RawEnum>();
-                Context.RawEnum.Add(input.Parent.FileName, rawEnums);
+                sourceEnums = new List<SourceEnum>();
+                Context.Source.Enum.Add(input.Parent.FileName, sourceEnums);
             }
-            rawEnums.Add(output);
+            sourceEnums.Add(output);
 
             Logger.Write($"열거형 데이터를 읽었습니다. - {input.SheetName}".AsSpan());
         }
 
-        protected override IReadOnlyList<RawEnum> OnFinish(IReadOnlyList<RawEnum> output)
+        protected override IReadOnlyList<SourceEnum> OnFinish(IReadOnlyList<SourceEnum> output)
         {
             Logger.Complete("열거형 테이블을 읽었습니다.");
             return base.OnFinish(output);

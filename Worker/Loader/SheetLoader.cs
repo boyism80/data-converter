@@ -23,12 +23,12 @@ namespace ExcelTableConverter.Worker.Loader
 
         protected override IEnumerable<Sheet> OnWork(Workbook value)
         {
-            for (int i = 0; i < value.Raw.NumberOfSheets; i++)
+            for (int i = 0; i < value.Source.NumberOfSheets; i++)
             {
-                if (value.Raw[i].SheetName.StartsWith("#"))
+                if (value.Source[i].SheetName.StartsWith("#"))
                     yield return null;
                 else
-                    yield return new Sheet(value.Raw[i], value);
+                    yield return new Sheet(value.Source[i], value);
             }
         }
 
@@ -53,7 +53,7 @@ namespace ExcelTableConverter.Worker.Loader
 
         protected override int TotalCount(IReadOnlyList<Workbook> inputs)
         {
-            return inputs.Select(x => x.Raw.NumberOfSheets).DefaultIfEmpty(0).Sum();
+            return inputs.Select(x => x.Source.NumberOfSheets).DefaultIfEmpty(0).Sum();
         }
 
         protected override IReadOnlyList<Sheet> OnFinish(IReadOnlyList<Sheet> output)

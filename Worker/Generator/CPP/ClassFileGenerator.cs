@@ -87,7 +87,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 
         protected override IEnumerable<string> OnReady()
         {
-            foreach (var tableName in Context.Result.Schema.Keys)
+            foreach (var tableName in Context.Completed.Schema.Keys)
             {
                 yield return tableName;
             }
@@ -95,7 +95,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 
         protected override IEnumerable<ClassFileGeneratorResult> OnWork(string tableName)
         {
-            var schemaSet = Context.Result.Schema[tableName];
+            var schemaSet = Context.Completed.Schema[tableName];
             var result = new[] { Scope.Server, Scope.Client }.ToDictionary(x => x, x => new List<object>());
             var properties = schemaSet.Values.ToList();
             for (int i = 0; i < properties.Count; i++)
@@ -155,11 +155,11 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             var modelTemplate = Template.Parse(File.ReadAllText("Template/C++/model.txt"));
             var g = output.GroupBy(x => x.Scope).ToDictionary(x => x.Key, x =>
             {
-                return x.OrderBy(x => Context.GetInheritanceLevel(x.Name)).ThenBy(x => x.Name).Select(x => new
+                return x.OrderBy(x => Context.Completed.Schema.GetInheritanceLevel(x.Name)).ThenBy(x => x.Name).Select(x => new
                 {
                     x.Name,
                     x.Props,
-                    Context.Result.Schema[x.Name].Based
+                    Context.Completed.Schema[x.Name].Based
                 } as object).ToList();
             });
 

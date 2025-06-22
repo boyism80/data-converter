@@ -1,10 +1,9 @@
 ﻿using ExcelTableConverter.Model;
 using ExcelTableConverter.Util;
-using System.Linq;
 
 namespace ExcelTableConverter.Worker.Validator
 {
-    public class KeyValidator : ParallelWorker<RawSheetData, bool>
+    public class KeyValidator : ParallelWorker<SourceSheetData, bool>
     {
         private readonly Mutex _mutex = new Mutex();
         private readonly Dictionary<string, List<(IExcelFileTrackable Tracker, object Key)>> _buffer = new Dictionary<string, List<(IExcelFileTrackable Tracker, object Key)>>();
@@ -14,15 +13,15 @@ namespace ExcelTableConverter.Worker.Validator
 
         }
 
-        protected override IEnumerable<RawSheetData> OnReady()
+        protected override IEnumerable<SourceSheetData> OnReady()
         {
-            foreach (var rsd in Context.RawData.SelectMany(x => x.Value))
+            foreach (var rsd in Context.Source.Data.SelectMany(x => x.Value))
             {
                 yield return rsd;
             }
         }
 
-        protected override IEnumerable<bool> OnWork(RawSheetData sheet)
+        protected override IEnumerable<bool> OnWork(SourceSheetData sheet)
         {
             var (boldColumns, normalColumns) = sheet.Columns.Split();
             foreach (var columns in new[] { boldColumns, normalColumns })
@@ -57,7 +56,7 @@ namespace ExcelTableConverter.Worker.Validator
             if (boldKeyColumn != null)
             {
                 var values = boldKeyColumn.RowValuePairs.Values;
-                if (Context.Result.Enum.ContainsKey(Util.Type.Nake(boldKeyColumn.Type)))
+                if (Context.Completed.Enum.ContainsKey(Util.Type.Nake(boldKeyColumn.Type)))
                 {
                     var combinedEnumKeys = values.Where(x => Util.Enum.Combined(x as string)).Select(x => x as string).ToList();
                     if (combinedEnumKeys.Count > 0)
@@ -99,7 +98,7 @@ namespace ExcelTableConverter.Worker.Validator
                 else
                 {
                     var values = normalKeyColumn.RowValuePairs.Values;
-                    if (Context.Result.Enum.ContainsKey(Util.Type.Nake(normalKeyColumn.Type)))
+                    if (Context.Completed.Enum.ContainsKey(Util.Type.Nake(normalKeyColumn.Type)))
                     {
                         var combinedEnumKeys = values.Where(x => Util.Enum.Combined(x as string)).Select(x => x as string).ToList();
                         if (combinedEnumKeys.Count > 0)
@@ -124,7 +123,7 @@ namespace ExcelTableConverter.Worker.Validator
             yield return true;
         }
 
-        protected override void OnWorked(RawSheetData input, bool output, int percent)
+        protected override void OnWorked(SourceSheetData input, bool output, int percent)
         {
             Logger.Write("키 중복 정의 여부를 검사중입니다.");
             base.OnWorked(input, output, percent);
@@ -159,7 +158,7 @@ namespace ExcelTableConverter.Worker.Validator
             return base.OnFinish(output);
         }
 
-        protected override void OnError(RawSheetData input, Exception e, IExcelFileTrackable tracker = null)
+        protected override void OnError(SourceSheetData input, Exception e, IExcelFileTrackable tracker = null)
         {
             base.OnError(input, e, input);
         }

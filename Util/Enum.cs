@@ -8,7 +8,7 @@ namespace ExcelTableConverter.Util
 
         public static Match Parse(string value, bool allowHex = true)
         {
-            var regex = allowHex ? 
+            var regex = allowHex ?
                 new Regex(@"^(?<value>[a-zA-Z_]+[a-zA-Z0-9_]*|0x[A-F0-9]+|\d+)|(?<op>[&\|])|(?<inv>~)") :
                 new Regex(@"^(?<value>[a-zA-Z_]+[a-zA-Z0-9_]*)|(?<op>[&\|])|(?<inv>~)");
             var matched = regex.Match(value);

@@ -1,20 +1,20 @@
 ﻿namespace ExcelTableConverter.Model
 {
     public enum Scope
-    { 
-        Server = 0x00000001, 
+    {
+        Server = 0x00000001,
         Client = 0x00000002,
         Common = Server | Client
     }
 
     public enum ScopeFilterType
-    { 
+    {
         Contains,
         Match
     }
 
     public class SchemaData
-    { 
+    {
         public string Name { get; set; }
         public string Type { get; set; }
         public Scope Scope { get; set; }

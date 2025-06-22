@@ -35,7 +35,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 
         protected override IEnumerable<string> OnReady()
         {
-            foreach (var enumName in Context.Result.Enum.Keys)
+            foreach (var enumName in Context.Completed.Enum.Keys)
             {
                 yield return enumName;
             }
@@ -43,7 +43,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 
         protected override IEnumerable<EnumCodeGeneratorResult> OnWork(string enumName)
         {
-            var props = Context.Result.Enum[enumName].OrderBy(x => x, new Util.Enum.Comparer()).Select(x => new
+            var props = Context.Completed.Enum[enumName].OrderBy(x => x, new Util.Enum.Comparer()).Select(x => new
             {
                 Name = x.Key,
                 Value = x.Value

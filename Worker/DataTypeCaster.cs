@@ -7,7 +7,7 @@ namespace ExcelTableConverter.Worker
     public class CastTypeChunkData
     {
         public IExcelFileTrackable Tracker { get; set; }
-        public List<RawDataColumns> Columns { get; set; }
+        public List<SourceDataColumns> Columns { get; set; }
         public string Json { get; set; }
     }
 
@@ -45,7 +45,7 @@ namespace ExcelTableConverter.Worker
 
         protected override IEnumerable<CastTypeChunkData> OnReady()
         {
-            foreach (var sheetData in Context.RawData.SelectMany(x => x.Value))
+            foreach (var sheetData in Context.Source.Data.SelectMany(x => x.Value))
             {
                 var chunks = sheetData.Chunk(CHUNK_SIZE).ToList();
                 if (chunks.Count == 0)
@@ -53,7 +53,7 @@ namespace ExcelTableConverter.Worker
                     yield return new CastTypeChunkData
                     {
                         Tracker = sheetData,
-                        Columns = new List<RawDataColumns>(),
+                        Columns = new List<SourceDataColumns>(),
                         Json = sheetData.Json
                     };
                 }

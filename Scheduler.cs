@@ -12,7 +12,7 @@ namespace ExcelTableConverter
         /// Gets or sets the action to execute
         /// </summary>
         public Action Func { get; set; } = null!;
-        
+
         /// <summary>
         /// Gets or sets a value indicating whether to stop execution on error
         /// </summary>
@@ -28,14 +28,14 @@ namespace ExcelTableConverter
     public static class Scheduler
     {
         private static readonly Queue<Plan> _actions = new Queue<Plan>();
-        
+
         /// <summary>
         /// Gets the number of completed tasks
         /// </summary>
         public static int CompletedCount { get; private set; }
-        
+
         private static readonly Stopwatch _timer = new Stopwatch();
-        
+
         /// <summary>
         /// Gets the total number of scheduled jobs
         /// </summary>
@@ -95,6 +95,7 @@ namespace ExcelTableConverter
                                 break;
 
                             case LogicException:
+                            case NotImplementedException:
                                 Logger.Error(error.Message);
                                 break;
 

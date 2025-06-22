@@ -22,21 +22,21 @@ namespace ExcelTableConverter.Worker.Validator
 
         protected override IEnumerable<StrongTypeValidationData> OnReady()
         {
-            foreach (var tableName in Context.RawAllTableNames)
+            foreach (var tableName in Context.Source.Data.GetAllTableNames())
             {
-                foreach (var column in Context.GetRawColumns(tableName))
+                foreach (var column in Context.Source.Data.GetSourceColumns(tableName)) // TODO: cache
                 {
                     var naked = Util.Type.Nake(column.Type, NakeFlag.All & ~(NakeFlag.Relation | NakeFlag.Strong));
                     if (Util.Type.IsStrong(naked, out var strong) == false)
                         continue;
 
-                    var tracker = Context.FindRawSheetData(column);
+                    var tracker = Context.Source.Data.FindSourceSheetData(column);
                     if (_files.Contains(tracker.FileName) == false)
                         continue;
 
                     yield return new StrongTypeValidationData
                     {
-                        Tracker = Context.FindRawSheetData(column),
+                        Tracker = Context.Source.Data.FindSourceSheetData(column),
                         Type = strong,
                         Name = column.Name,
                         Values = column.RowValuePairs.Values.ToList()
@@ -51,20 +51,20 @@ namespace ExcelTableConverter.Worker.Validator
         {
             if (Util.Type.IsRelation(value.Type, out var rel))
             {
-                if (Context.SplitReferenceType(rel, out var tableName, out var columnName) == false)
+                if (Util.Type.SplitReferenceType(rel, out var tableName, out var columnName) == false)
                     throw new LogicException($"{rel}은 올바른 테이블 형식이 아닙니다.", value.Tracker);
 
-                if (Context.Result.Schema.ContainsKey(tableName) == false)
+                if (Context.Completed.Schema.ContainsKey(tableName) == false)
                     throw new LogicException($"{rel}은 정의되지 않은 테이블입니다.", value.Tracker);
 
-                var keyName = Context.GetKey(tableName)?.Name;
+                var keyName = Context.Completed.Schema.GetKey(tableName)?.Name; // TODO: cache
                 if (keyName == null)
                     throw new LogicException($"강연결 타입은 키가 정의된 테이블이어야 합니다. {tableName} 테이블은 키가 정의되지 않은 테이블입니다.", value.Tracker);
 
                 if (columnName != null && keyName != columnName)
                     throw new LogicException($"강연결 타입은 반드시 테이블의 키와 연결되어야 합니다.", value.Tracker);
 
-                var keys = Context.GetValues(tableName, keyName).Select(x => $"{x}");
+                var keys = Context.Completed.Data.GetValues(tableName, keyName).Select(x => $"{x}"); // TODO: caching
                 var values = value.Values.ConvertAll(x => $"{x}");
                 var diff = keys.Except(values).ToList();
                 if (diff.Count > 0)
@@ -72,7 +72,7 @@ namespace ExcelTableConverter.Worker.Validator
 
                 yield return true;
             }
-            else if (Context.Result.Enum.TryGetValue(value.Type, out var enums))
+            else if (Context.Completed.Enum.TryGetValue(value.Type, out var enums))
             {
                 var diff = enums.Keys.Except(value.Values.Select(x => $"{x}")).ToList();
                 if (diff.Count > 0)

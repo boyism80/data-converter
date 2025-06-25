@@ -1,240 +1,313 @@
+# data-converter
+It is a tool that converts Excel data to json files and codes to be used in the game.
+It supports C++, C#, NodeJS, and Golang.
 # Excel Table Converter
 
-A powerful tool for converting Excel files to various programming language formats including C++, C#, Node.js, and Go. This application processes Excel files containing game data tables and generates strongly-typed code representations with comprehensive validation and caching capabilities.
+A comprehensive tool that converts Excel files containing game data into strongly-typed code and JSON files for multiple programming languages. The converter supports C++, C#, Node.js, and Go, providing seamless integration between game data design and code implementation.
 
+# Usage
+```
+ExcelTableConverter --dir=<path-to-data> 
 ## Features
 
-- **Multi-Language Support**: Generate code for C++, C#, Node.js, and Go
-- **Intelligent Caching**: CRC32-based change detection to process only modified files
-- **Comprehensive Validation**: Multiple validation stages ensure data integrity
-- **Service-Based Architecture**: Clean separation of concerns with dependency injection
-- **Error Recovery**: Robust error handling with detailed logging and recovery mechanisms
-- **Performance Monitoring**: Built-in elapsed time measurement and reporting
+- **Multi-language Support**: Generate code for C++, C#, Node.js, and Go
+- **Intelligent Caching**: Only processes changed files for optimal performance
+- **Data Validation**: Comprehensive validation including schema, keys, enums, and relationships
+- **Inheritance Support**: Table inheritance with polymorphic data loading
+- **Type Safety**: Strong typing with nullable type support
+- **Scope Management**: Separate data for server and client builds
+- **Real-time Processing**: Incremental compilation with error tracking
 
-## Architecture Overview
+## Installation & Usage
 
-The application follows a service-based architecture with clear separation of concerns:
-
-### Core Services
-
-#### Configuration Management
-- **`AppConfiguration`**: Centralized configuration with validation and command-line parsing
-- Supports multiple target languages and environment-specific settings
-- Built-in help system and argument validation
-
-#### File Processing Service
-- **`IFileProcessingService`** / **`FileProcessingService`**: Handles Excel file operations
-- CRC32-based change detection for incremental processing
-- Cache management and cleanup operations
-- Error file tracking and recovery
-
-#### Processing Pipeline Service
-- **`IProcessingPipelineService`** / **`ProcessingPipelineService`**: Coordinates processing stages
-- Data loading and transformation pipeline
-- Validation pipeline with multiple validators
-- Code generation pipeline for target languages
-
-#### Service Container
-- **`ServiceContainer`**: Simple dependency injection container
-- Service registration and resolution
-- Singleton and factory pattern support
-
-### Processing Pipeline
-
-1. **File Discovery & Categorization**
-   - Scans input directory for Excel files
-   - Categorizes files by type (constants, enums, data)
-   - Performs CRC32 checksums for change detection
-
-2. **Data Loading**
-   - Loads Excel workbooks and sheets
-   - Processes constants, enums, and data tables
-   - Merges with cached context
-
-3. **Validation Pipeline**
-   - Name validation
-   - Schema validation
-   - Key validation
-   - Enum validation
-   - DSL validation
-   - Relation type validation
-   - Strong type validation
-
-4. **Code Generation**
-   - JSON file generation
-   - Language-specific code generation
-   - CRC file generation for integrity checking
-
-5. **Cache Management**
-   - Updates data cache for processed files
-   - Maintains performance metrics
-   - Tracks error files for recovery
-
-## Usage
-
-### Command Line Options
-
+### Basic Usage
 ```bash
-ExcelTableConverter [options]
-
-Options:
-  -d, --dir=VALUE        Input directory containing Excel files
-  -l, --lang=VALUE       Target programming languages (pipe-separated)
-  -e, --env=VALUE        Environment variable value
-  --dsl=VALUE           DSL configuration file path
-  -h, --help            Show help information
+ExcelTableConverter --dir=<path-to-excel-files> 
+                    --lang="c++|c#|node|go"
+                    --dsl=<path-to-dsl>
+                    --dsl=<path-to-dsl-config>
+                    --env=<environment>
 ```
 
 ### Examples
-
 ```bash
-# Generate C++ code from Excel files
-ExcelTableConverter -d ./tables -l c++
+# Generate C++ code only
+ExcelTableConverter --dir="../data" --lang="c++"
 
-# Generate multiple language outputs
-ExcelTableConverter -d ./data -l "c++|c#|node" --dsl config.json
+# Generate multiple languages
+ExcelTableConverter --dir="../data" --lang="c++|c#|go"
 
-# Production environment with specific settings
-ExcelTableConverter --dir ./production-data --lang "c#|go" --env production
+# Specify custom DSL configuration
+ExcelTableConverter --dir="../data" --lang="c++" --dsl="custom-dsl.json"
+
+# Set environment for conditional processing
+ExcelTableConverter --dir="../data" --lang="c++" --env="production"
 ```
 
-### Supported Languages
+## Rules of File name
+If the prefix is 'const', it is treated as a constant table; if it is 'enum', it is treated as an enum table; otherwise, it is treated as a normal data file.
+## File Organization & Naming Rules
 
-- **c++**: Generate C++ header and implementation files
-- **c#**: Generate C# class files with proper namespacing
-- **node**: Generate Node.js modules with TypeScript definitions
-- **go**: Generate Go structs and JSON marshaling
+### File Categories
+The converter categorizes Excel files based on filename prefixes:
 
-## Configuration
+- **Constant Files**: `const_*.xlsx` - Contains constant definitions
+- **Enum Files**: `enum_*.xlsx` - Contains enumeration definitions  
+- **Data Files**: `*.xlsx` (no prefix) - Contains game data tables
 
-### DSL Configuration
+### Important Note on File Names
+**File names are not significant for data generation.** The actual data structure is determined by **sheet names** within the Excel files. You can organize files however you prefer - the converter will merge data from multiple files based on sheet names during processing.
 
-The DSL (Domain Specific Language) configuration file defines how data should be processed and validated. It supports:
+## Rules of Data Files
+For example:
+- `items_weapons.xlsx` with sheet "Item"
+- `items_armor.xlsx` with sheet "Item" 
+- `items_consumables.xlsx` with sheet "Item"
 
-- Custom data type definitions
-- Validation rules and constraints
-- Output formatting options
-- Language-specific generation settings
+All three will be merged into a single "Item" data structure.
 
-### Environment Variables
+## Excel Sheet Structure
 
-Set the `env` environment variable to control environment-specific behavior:
+### Basic Data Sheet Layout
+![screenshot](image/1.png)
+If the schema to be defined inherits another table, you must define 'based' and 'json' in the first and second lines. 'based' is the name of the parent table and 'json' is the name of the json file to be stored. If you do not inherit, skip this.
 
-```bash
-# Set environment for configuration selection
-ExcelTableConverter --env production
+### Schema
+Three values are required for each column to define the default schema: the first is the name of the field, the second is the type, and the third is the scope for which the field will be used.
+The second field, Type, supports the following formats:
+- byte, uint8, uint8_t
+- sbyte, int8, int8_t
+- short, int16, int16_t
+- ushort, uint16, uint16_t
+- bool
+- int, int32, int32_t
+- uint, uint32, uint32_t
+- long, int64, int64_t
+- ulong, uint64, uint64_t
+- double
+- float
+- string
+- dsl
+- TimeSpan
+- DateTime
+- DateRange
+- point<T>
+- size<T>
+- range<T>
+- [T] (array)
+- {K:V} (map)
+
+If you add a '?' after the type, it becomes a nullable type.
+
+Each data sheet follows this structure:
+1. **Row 1**: Inheritance declaration (optional)
+2. **Row 2**: JSON output filename (optional)
+3. **Row 3**: Field names
+4. **Row 4**: Data types
+5. **Row 5**: Scope definitions
+6. **Row 6+**: Actual data
+
+### Inheritance Support
+For tables that inherit from other tables:
+```
+Row 1: based=ParentTableName
+Row 2: json=output_filename.json
+Row 3: field1    field2    field3    ...
+Row 4: int       string    float     ...
+Row 5: server    common    client    ...
 ```
 
-## File Structure
+If no inheritance is needed, skip rows 1-2 and start directly with field definitions.
 
+## Supported Data Types
+
+### Primitive Types
+- **Integers**: `byte`, `sbyte`, `short`, `ushort`, `int`, `uint`, `long`, `ulong`
+- **Floating Point**: `float`, `double`
+- **Boolean**: `bool`
+- **Text**: `string`
+- **Special**: `dsl` (Domain Specific Language references)
+
+### Date/Time Types
+- `DateTime` - Specific date and time
+- `TimeSpan` - Duration or time interval
+- `DateRange` - Range between two dates
+
+### Generic Types
+- `point<T>` - 2D coordinate (x, y)
+- `size<T>` - Dimensions (width, height)  
+- `range<T>` - Value range (min, max)
+
+### Collection Types
+- `[T]` - Array of type T
+- `{K:V}` - Dictionary/Map with key type K and value type V
+
+### Nullable Types
+Add `?` after any type to make it nullable:
+- `int?` - Nullable integer
+- `string?` - Nullable string
+- `[int]?` - Nullable array of integers
+
+## Scope Definitions
+
+Define data visibility for different build targets:
+
+- **`server`**: Data only available in server builds
+- **`client`**: Data only available in client builds  
+- **`common`**: Data available in common server and client builds
+
+## Data Processing Pipeline
+
+### 1. File Discovery & Categorization
+- Scans directory for `*.xlsx` files
+- Categorizes by filename prefix (const, enum, data)
+- Calculates CRC checksums for change detection
+
+### 2. Incremental Processing
+- Only processes files that have changed since last run
+- Maintains cache for unchanged files
+- Tracks error files for reprocessing
+
+### 3. Data Loading & Merging
+- Loads Excel workbooks and sheets
+- **Merges sheets with identical names across multiple files**
+- Processes constants, enums, and data tables separately
+
+### 4. Validation Pipeline
+- **Name Validation**: Ensures consistent naming conventions
+- **Schema Validation**: Verifies column definitions and types
+- **Key Validation**: Checks primary keys and uniqueness
+- **Enum Validation**: Validates enumeration references
+- **DSL Validation**: Verifies domain-specific language usage
+- **Relation Validation**: Checks foreign key relationships
+- **Type Validation**: Ensures data conforms to defined types
+
+### 5. Code Generation
+- Generates JSON data files for runtime loading
+- Creates strongly-typed classes for each target language
+- Produces CRC files for data integrity verification
+
+## Inheritance & Polymorphism
+
+### Defining Inheritance
+In your Excel sheet, specify inheritance in the first two rows:
 ```
-ExcelTableConverter/
-├── Configuration/
-│   └── AppConfiguration.cs          # Centralized configuration management
-├── Services/
-│   ├── IFileProcessingService.cs    # File processing interface
-│   ├── FileProcessingService.cs     # File processing implementation
-│   ├── IProcessingPipelineService.cs # Pipeline coordination interface
-│   ├── ProcessingPipelineService.cs  # Pipeline coordination implementation
-│   └── ServiceContainer.cs          # Dependency injection container
-├── Worker/
-│   ├── Cache/                       # Caching workers
-│   ├── Generator/                   # Code generation workers
-│   ├── Loader/                      # Data loading workers
-│   └── Validator/                   # Validation workers
-├── Model/                           # Data models and DTOs
-├── Util/                           # Utility classes
-├── Template/                       # Code generation templates
-└── Program.cs                      # Main application entry point
+Row 1: based=BaseItem
+Row 2: json=items.json
 ```
 
-## Caching System
+### Code Integration Example
+In your C++ application, handle polymorphic loading with hooks:
 
-The application uses an intelligent caching system to improve performance:
-
-- **CRC32 Checksums**: Detects file changes without full processing
-- **Incremental Processing**: Only processes modified files
-- **Error Recovery**: Tracks and retries files that previously failed
-- **Cache Invalidation**: Automatically clears cache when build version changes
-
-## Error Handling
-
-Comprehensive error handling includes:
-
-- **Validation Errors**: Detailed validation messages with file and location information
-- **Processing Errors**: Graceful handling of Excel file processing issues
-- **Recovery Mechanisms**: Automatic retry of previously failed files
-- **Error Tracking**: Persistent error file tracking across runs
-
-## Performance Monitoring
-
-Built-in performance monitoring provides:
-
-- **Elapsed Time Tracking**: Detailed timing for each processing stage
-- **Progress Reporting**: Real-time progress updates during processing
-- **Performance Metrics**: Comprehensive performance reports
-- **Bottleneck Identification**: Helps identify performance issues
-
-## Dependencies
-
-- **.NET 8.0**: Modern .NET runtime with performance improvements
-- **NPOI**: Excel file reading and processing
-- **Newtonsoft.Json**: JSON serialization and deserialization
-- **Scriban**: Template engine for code generation
-- **Crc32.NET**: CRC32 checksum calculation
-- **NDesk.Options**: Command-line argument parsing
-- **System.ComponentModel.Annotations**: Validation attributes
-
-## Development
-
-### Building
-
-```bash
-dotnet build
+```cpp
+// From main.cpp - Item inheritance example
+context->model.item.hook.build = [](const Json::Value& json) -> fb::model::item* {
+    auto type = fb::model::build<ITEM_TYPE>(json["type"]);
+    switch (type)
+    {
+    case ITEM_TYPE::WEAPON:
+        return fb::model::build<fb::model::weapon*>(json);
+    case ITEM_TYPE::ARMOR:
+        return fb::model::build<fb::model::armor*>(json);
+    case ITEM_TYPE::CONSUME:
+        return fb::model::build<fb::model::consume*>(json);
+    case ITEM_TYPE::HELMET:
+        return fb::model::build<fb::model::helmet*>(json);
+    case ITEM_TYPE::RING:
+        return fb::model::build<fb::model::ring*>(json);
+    case ITEM_TYPE::SHIELD:
+        return fb::model::build<fb::model::shield*>(json);
+    case ITEM_TYPE::BOW:
+        return fb::model::build<fb::model::bow*>(json);
+    default:
+        return fb::model::build<fb::model::item*>(json);
+    }
+};
 ```
 
-### Running Tests
+This hook allows the model loader to instantiate the correct derived class based on the item type field.
 
-```bash
-dotnet test
+## Configuration Files
+
+### DSL Configuration (`dsl.json`)
+Defines domain-specific language rules and custom type mappings.
+
+### Environment Configuration (`config.json`)
+Contains environment-specific settings and build options.
+
+## Output Structure
+
+### Generated Files
+```
+output/
+├── json/
+│   ├── server/
+│   │   ├── items.json
+│   │   ├── npcs.json
+│   │   └── Crc.txt
+│   └── client/
+│       ├── items.json
+│       ├── npcs.json
+│       └── Crc.txt
+├── cpp/
+│   ├── item.h
+│   ├── npc.h
+│   └── ...
+├── cs/
+│   ├── Item.cs
+│   ├── Npc.cs
+│   └── ...
+└── diff/
+    └── changes.txt
 ```
 
-### Code Standards
+### CRC Integrity Files
+Each scope generates a `Crc.txt` file containing checksums of all JSON files for data integrity verification at runtime.
 
-- Follow Microsoft C# coding conventions
-- Use XML documentation for all public APIs
-- Implement proper error handling and validation
-- Use nullable reference types for better null safety
-- Follow SOLID principles and clean architecture patterns
+## Error Handling & Debugging
 
-## Contributing
+### Error Tracking
+- Failed files are tracked and automatically reprocessed on next run
+- Detailed error messages with file and sheet context
+- Performance metrics saved to `ElapsedTime.txt`
 
-1. Fork the repository
-2. Create a feature branch
-3. Follow the coding standards
-4. Add comprehensive tests
-5. Update documentation
-6. Submit a pull request
+### Common Issues
+1. **Missing Parent Table**: Ensure base tables are defined before derived tables
+2. **Type Mismatch**: Verify data conforms to declared column types
+3. **Invalid References**: Check that enum and foreign key references exist
+4. **Scope Conflicts**: Ensure scope definitions are consistent across related tables
 
-## License
+## Best Practices
 
-This project is licensed under the MIT License. See the LICENSE file for details.
+### File Organization
+- Group related data logically (e.g., `items_weapons.xlsx`, `items_armor.xlsx`)
+- Use consistent naming conventions for sheets across files
+- Keep enum and constant definitions in separate files
 
-## Changelog
+### Schema Design
+- Define base classes for common properties
+- Use appropriate scopes to minimize client data size
+- Leverage nullable types for optional fields
+- Document complex relationships in sheet comments
 
-### Version 1.2.0
-- **NEW**: Service-based architecture with dependency injection
-- **NEW**: Centralized configuration management with validation
-- **NEW**: Improved error handling and recovery mechanisms
-- **NEW**: Enhanced logging and performance monitoring
-- **IMPROVED**: Code organization and maintainability
-- **IMPROVED**: Documentation and XML comments
-- **FIXED**: Nullable reference type warnings
-- **FIXED**: Memory leaks in file processing
+### Performance Optimization
+- The converter uses intelligent caching - only changed files are reprocessed
+- Large datasets are processed in parallel where possible
+- Use incremental builds during development
 
-### Version 1.1.0
-- Initial stable release
-- Multi-language code generation support
-- CRC32-based caching system
-- Comprehensive validation pipeline
+## Troubleshooting
+
+### Build Failures
+1. Check console output for specific validation errors
+2. Review `ElapsedTime.txt` for performance bottlenecks
+3. Verify Excel files are not locked by other applications
+4. Ensure all referenced parent tables and enums exist
+
+### Data Inconsistencies
+1. Verify CRC files match between builds
+2. Check that inheritance hierarchies are properly defined
+3. Ensure scope definitions are consistent across related data
+4. Validate that all required fields are populated
+
+This tool provides a robust foundation for managing game data with strong typing, validation, and multi-language support, enabling efficient development workflows and reliable data integrity.
 

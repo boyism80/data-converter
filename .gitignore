@@ -1,3 +1,9 @@
 ﻿.vs
 obj
 bin
+output
+cache/**/*
+test/json
+ElapsedTime.txt
+test/generated/model.go
+test/*.exe

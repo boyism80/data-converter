@@ -6,7 +6,6 @@ namespace ExcelTableConverter.Factory.Go
     {
         public TypeFactory(Context ctx) : base(ctx)
         {
-
         }
 
         private string WithNullable(string type, bool nullable)
@@ -19,87 +18,82 @@ namespace ExcelTableConverter.Factory.Go
 
         protected override string ArrayType(object value, string root, string e, DataFormatOption option)
         {
-            return $"[]{Build(e)}";
+            return $"[]{Build(e, null, option)}";
         }
 
         protected override string BooleanType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return root;
+            return "bool";
         }
 
         protected override string DateRangeType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return root;
+            return "DateRange";
         }
 
         protected override string DateTimeType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return root;
+            return "time.Duration";
         }
 
         protected override string DictionaryType(object value, string root, string k, string v, DataFormatOption option)
         {
-            return $"map[{Build(k)}]{Build(v)}";
-        }
-
-        protected override string DoubleType(object value, string root, bool nullable, DataFormatOption option)
-        {
-            return WithNullable("float64", nullable);
-        }
-
-        protected override string DslType(object value, string root, bool nullable, DataFormatOption option)
-        {
-            return WithNullable("Dsl", nullable);
-        }
-
-        protected override string EnumType(object value, string root, string e, bool nullable, DataFormatOption option)
-        {
-            return Util.Type.Nake(root);
+            return $"map[{Build(k, null, option)}]{Build(v, null, option)}";
         }
 
         protected override string FloatType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable("float32", nullable);
+            return "float64";
+        }
+
+        protected override string DslType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return "Dsl";
+        }
+
+        protected override string EnumType(object value, string root, string e, bool nullable, DataFormatOption option)
+        {
+            return root;
         }
 
         protected override string IntType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable("int32", nullable);
+            return "int";
         }
 
         protected override string LongType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable("int64", nullable);
+            return "int64";
         }
 
         protected override string ByteType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable("uint8", nullable);
+            return "byte";
         }
 
         protected override string SbyteType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable("int8", nullable);
+            return "int8";
         }
 
         protected override string ShortType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable("int16", nullable);
+            return "int16";
         }
 
         protected override string UshortType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable("uint16", nullable);
+            return "uint16";
         }
 
         protected override string UintType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable("uint32", nullable);
+            return "uint32";
         }
 
         protected override string UlongType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable("uint64", nullable);
+            return "uint64";
         }
 
         protected override string StringType(object value, string root, DataFormatOption option)
@@ -109,32 +103,42 @@ namespace ExcelTableConverter.Factory.Go
 
         protected override string TimeSpanType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return WithNullable("time.Time", nullable);
+            return "Duration";
         }
 
         protected override string PointType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            return WithNullable($"Point[{Build(e)}]", nullable);
+            return $"Point[{Build(e, null, option)}]";
         }
 
         protected override string SizeType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            return WithNullable($"Size[{Build(e)}]", nullable);
+            return $"Size[{Build(e, null, option)}]";
         }
 
         protected override string RangeType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            return WithNullable($"Range[{Build(e)}]", nullable);
+            return $"Range[{Build(e, null, option)}]";
         }
 
         protected override string AreaType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            return WithNullable($"Area[{Build(e)}]", nullable);
+            return "Area";
         }
 
-        public string Build(string type)
+        protected override string DoubleType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return Build(type, null);
+            return "float64";
+        }
+
+        public new string Build(string type)
+        {
+            return base.Build(type, null, new DataFormatOption());
+        }
+
+        public new string Build(string type, object value, DataFormatOption option)
+        {
+            return base.Build(type, value, option);
         }
     }
 }

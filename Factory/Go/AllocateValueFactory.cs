@@ -1,4 +1,5 @@
 ﻿using ExcelTableConverter.Model;
+using Newtonsoft.Json.Linq;
 
 namespace ExcelTableConverter.Factory.Go
 {
@@ -13,7 +14,7 @@ namespace ExcelTableConverter.Factory.Go
         {
             if (Util.Value.IsNull(value))
             {
-                result = "null";
+                result = "nil";
                 return false;
             }
 
@@ -23,37 +24,64 @@ namespace ExcelTableConverter.Factory.Go
 
         protected override string ArrayType(object value, string root, string e, DataFormatOption option)
         {
-            throw new LogicException($"golang에서는 지원하지 않는 상수 타입입니다. - {root}".AsSpan());
+            var list = value as List<object>;
+            var values = string.Join(", ", list.Select(x => Build(e, x, option)));
+            return $"[]{Build(e, null, option)}{{{values}}}";
         }
 
         protected override string BooleanType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return $"{value}";
+            return value.ToString().ToLower();
         }
 
         protected override string DateRangeType(object value, string root, bool nullable, DataFormatOption option)
         {
-            throw new LogicException($"golang에서는 지원하지 않는 상수 타입입니다. - {root}".AsSpan());
+            var range = value as DateRange;
+            return $"DateRange{{Start: {Build("DateTime", range.Start, option)}, End: {Build("DateTime", range.End, option)}}}";
         }
 
         protected override string DateTimeType(object value, string root, bool nullable, DataFormatOption option)
         {
-            throw new LogicException($"golang에서는 지원하지 않는 상수 타입입니다. - {root}".AsSpan());
+            if (value is DateTime dt)
+            {
+                return $"{dt.Ticks / TimeSpan.TicksPerMillisecond} * time.Millisecond";
+            }
+            else if (value is TimeSpan ts)
+            {
+                return $"{ts.TotalMilliseconds} * time.Millisecond";
+            }
+            throw new InvalidOperationException($"Unexpected type for DateTimeType: {value.GetType()}");
         }
 
         protected override string DictionaryType(object value, string root, string k, string v, DataFormatOption option)
         {
-            throw new LogicException($"golang에서는 지원하지 않는 상수 타입입니다. - {root}".AsSpan());
+            var dict = value as Dictionary<object, object>;
+            var pairs = dict.Select(x => $"{Build(k, x.Key, option)}: {Build(v, x.Value, option)}");
+            return $"map[{Build(k, null, option)}]{Build(v, null, option)}{{{string.Join(", ", pairs)}}}";
         }
 
-        protected override string DoubleType(object value, string root, bool nullable, DataFormatOption option)
+        protected override string FloatType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return $"{value}";
+            return value.ToString();
         }
 
         protected override string DslType(object value, string root, bool nullable, DataFormatOption option)
         {
-            throw new LogicException($"golang에서는 지원하지 않는 상수 타입입니다. - {root}".AsSpan());
+            var dsl = value as DSL;
+
+            if (Context.DSL.TryGetValue(dsl.Type, out var prototype) == false)
+                throw new LogicException($"{dsl.Type}는 정의되지 않은 DSL 형식입니다.".AsSpan());
+
+            var args = dsl.Parameters.Select((x, i) =>
+            {
+                var param = (prototype as JArray).ElementAt(i) as JObject;
+                var name = param["name"].Value<string>();
+                var type = param["type"].Value<string>();
+                return (Name: name, Value: Build(type, x, option));
+            }).ToList();
+
+            var typeName = char.ToUpper(dsl.Type[0]) + dsl.Type.Substring(1) + "Dsl";
+            return $"{typeName}{{ {string.Join(", ", args.Select(x => $"{char.ToUpper(x.Name[0]) + x.Name.Substring(1)}: {x.Value}"))} }}";
         }
 
         protected override string EnumType(object value, string root, string e, bool nullable, DataFormatOption option)
@@ -66,90 +94,100 @@ namespace ExcelTableConverter.Factory.Go
             throw new LogicException($"{value}는 {root} 열거형에 존재하지 않는 값입니다.".AsSpan());
         }
 
-        protected override string FloatType(object value, string root, bool nullable, DataFormatOption option)
-        {
-            return $"{value}";
-        }
-
         protected override string IntType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return $"{value}";
+            return value.ToString();
         }
 
         protected override string LongType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return $"{value}";
+            return value.ToString();
         }
 
         protected override string ByteType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return $"{value}";
+            return value.ToString();
         }
 
         protected override string SbyteType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return $"{value}";
+            return value.ToString();
         }
 
         protected override string ShortType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return $"{value}";
+            return value.ToString();
         }
 
         protected override string UshortType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return $"{value}";
+            return value.ToString();
         }
 
         protected override string UintType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return $"{value}";
+            return value.ToString();
         }
 
         protected override string UlongType(object value, string root, bool nullable, DataFormatOption option)
         {
-            return $"{value}";
+            return value.ToString();
         }
 
         protected override string StringType(object value, string root, DataFormatOption option)
         {
             var s = value as string;
             if (string.IsNullOrEmpty(s))
-                return "string.Empty";
+                return "\"\"";
             else if (s.Contains('\n'))
-                return $"@\"{s}\"";
+                return $"`{s}`";
             else
                 return $"\"{s}\"";
         }
 
         protected override string TimeSpanType(object value, string root, bool nullable, DataFormatOption option)
         {
-            throw new LogicException($"golang에서는 지원하지 않는 상수 타입입니다. - {root}".AsSpan());
-        }
-
-        public string Build(string type, object value)
-        {
-            return base.Build(type, value);
+            var timeSpan = (TimeSpan)value;
+            return $"{timeSpan.TotalMilliseconds} * time.Millisecond";
         }
 
         protected override string PointType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            throw new NotImplementedException();
+            var point = value as Point;
+            return $"Point[{Build(e, null, option)}]{{X: {point.X}, Y: {point.Y}}}";
         }
 
         protected override string SizeType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            throw new NotImplementedException();
+            var size = value as Size;
+            return $"Size[{Build(e, null, option)}]{{Width: {size.Width}, Height: {size.Height}}}";
         }
 
         protected override string RangeType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            throw new NotImplementedException();
+            var range = value as ExcelTableConverter.Model.Range;
+            return $"Range[{Build(e, null, option)}]{{Min: {range.Min}, Max: {range.Max}}}";
         }
 
         protected override string AreaType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            throw new NotImplementedException();
+            var area = value as Area;
+            return $"Area{{ Left: {area.Left}, Top: {area.Top}, Right: {area.Right}, Bottom: {area.Bottom} }}";
+        }
+
+        protected override string DoubleType(object value, string root, bool nullable, DataFormatOption option)
+        {
+            return value.ToString();
+        }
+
+        public string Build(string type, object value)
+        {
+            return base.Build(type, value, new DataFormatOption());
+        }
+
+        public string Build(string type, object value, DataFormatOption option)
+        {
+            return base.Build(type, value, option);
         }
     }
 }

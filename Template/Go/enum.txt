@@ -35,15 +35,107 @@ func enum(v)
 
     ret $result
 end
+
+func extract_enum_name(full_name, prefix)
+    if full_name | string.starts_with prefix
+        ret full_name | string.replace_first prefix ''
+    else
+        ret full_name
+    end
+end
 ~}}
 {{~ for item in items ~}}
 type {{ item.name }} uint32
+
 const (
 {{~ for prop in item.props ~}}
-    {{ prop.name }} = {{ enum(prop.value)}}
+    {{ prop.name }} {{ item.name }} = {{ enum(prop.value) }}
 {{~ end ~}}
 )
-{{~ if !for.last ~}}
 
+// JSON marshaling for {{ item.name }}
+var {{ item.name | string.downcase }}_name_to_value = map[string]{{ item.name }}{
+{{~ for prop in item.props ~}}
+    "{{ extract_enum_name(prop.name, item.name + '_') }}": {{ prop.name }},
 {{~ end ~}}
+}
+
+var {{ item.name | string.downcase }}_value_to_name = map[{{ item.name }}]string{
+{{~ 
+    $seen_values = []
+    for prop in item.props
+        $value = enum(prop.value)
+        if !($seen_values | array.contains $value)
+            $seen_values = $seen_values | array.add $value
+~}}
+    {{ prop.name }}: "{{ extract_enum_name(prop.name, item.name + '_') }}",
+{{~
+        end
+    end
+~}}
+}
+
+func (e {{ item.name }}) MarshalJSON() ([]byte, error) {
+    if name, ok := {{ item.name | string.downcase }}_value_to_name[e]; ok {
+        return json.Marshal(name)
+    }
+    return json.Marshal(uint32(e))
+}
+
+func (e *{{ item.name }}) UnmarshalJSON(data []byte) error {
+    // Try to parse as integer first (for pure numeric values and enum flags)
+    var i uint32
+    if err := json.Unmarshal(data, &i); err == nil {
+        *e = {{ item.name }}(i)
+        return nil
+    }
+    
+    // If integer parsing fails, try as string
+    var s string
+    if err := json.Unmarshal(data, &s); err == nil {
+        // First, try to parse string as integer (for numeric strings like "0", "1")
+        if i, err := strconv.ParseUint(s, 10, 32); err == nil {
+            *e = {{ item.name }}(i)
+            return nil
+        }
+        
+        // If not numeric, try to match by enum name (case-insensitive)
+        upperS := strings.ToUpper(s)
+        if val, ok := {{ item.name | string.downcase }}_name_to_value[upperS]; ok {
+            *e = val
+            return nil
+        }
+        
+        return fmt.Errorf("unknown {{ item.name }} value: %s", s)
+    }
+    
+    return fmt.Errorf("{{ item.name }} must be a string or number")
+}
+
+func (e {{ item.name }}) MarshalText() ([]byte, error) {
+    if name, ok := {{ item.name | string.downcase }}_value_to_name[e]; ok {
+        return []byte(name), nil
+    }
+    return []byte(fmt.Sprintf("%d", uint32(e))), nil
+}
+
+func (e *{{ item.name }}) UnmarshalText(text []byte) error {
+    s := string(text)
+    
+    // Try to parse as integer first
+    if i, err := strconv.ParseUint(s, 10, 32); err == nil {
+        *e = {{ item.name }}(i)
+        return nil
+    }
+    
+    // Try to match by name (case-insensitive)
+    upperS := strings.ToUpper(s)
+    if val, ok := {{ item.name | string.downcase }}_name_to_value[upperS]; ok {
+        *e = val
+        return nil
+    }
+    
+    return fmt.Errorf("unknown {{ item.name }} value: %s", s)
+}
+
 {{~ end ~}}

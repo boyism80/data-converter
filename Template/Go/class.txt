@@ -5,6 +5,70 @@ type {{ item.name | @upper_camel }} struct {
     {{ prop.name | @upper_camel }} {{ prop.type }} `json:"{{ prop.name }}"`
 {{~ end ~}}
 }
+
+{{ if item.based }}
+// UnmarshalJSON implements custom JSON unmarshaling for {{ item.name | @upper_camel }}
+// to handle flat JSON structure while maintaining embedded struct
+func (obj *{{ item.name | @upper_camel }}) UnmarshalJSON(data []byte) error {
+    // First, unmarshal into a map to get all fields
+    var flatData map[string]interface{}
+    if err := json.Unmarshal(data, &flatData); err != nil {
+        return err
+    }
+    
+    // Create a separate map for base type fields
+    baseData := make(map[string]interface{})
+    selfData := make(map[string]interface{})
+    
+    // We need to determine which fields belong to the base type
+    // For now, we'll use reflection to get the base type's fields
+    baseType := reflect.TypeOf(obj.{{ item.based | @upper_camel }})
+    for i := 0; i < baseType.NumField(); i++ {
+        field := baseType.Field(i)
+        jsonTag := field.Tag.Get("json")
+        if jsonTag != "" && jsonTag != "-" {
+            // Remove omitempty and other options
+            fieldName := strings.Split(jsonTag, ",")[0]
+            if val, exists := flatData[fieldName]; exists {
+                baseData[fieldName] = val
+                delete(flatData, fieldName)
+            }
+        }
+    }
+    
+    // Remaining fields belong to this struct
+    selfData = flatData
+    
+    // Unmarshal base type
+    if len(baseData) > 0 {
+        baseBytes, err := json.Marshal(baseData)
+        if err != nil {
+            return err
+        }
+        if err := json.Unmarshal(baseBytes, &obj.{{ item.based | @upper_camel }}); err != nil {
+            return err
+        }
+    }
+    
+    // Unmarshal self fields using a temporary struct to avoid recursion
+    type Alias {{ item.name | @upper_camel }}
+    aux := &struct {
+        *Alias
+    }{
+        Alias: (*Alias)(obj),
+    }
+    
+    if len(selfData) > 0 {
+        selfBytes, err := json.Marshal(selfData)
+        if err != nil {
+            return err
+        }
+        return json.Unmarshal(selfBytes, aux)
+    }
+    
+    return nil
+}
+{{ end }}
 {{~ if !for.last }}
 {{ end ~}}
 {{~ end ~}}

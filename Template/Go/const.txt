@@ -3,16 +3,24 @@ func const_keyword(t)
     compile_const_type = ['bool', 'byte', 'sbyte', 'char', 'decimal', 'double', 'float', 'int', 'uint', 'nint', 'nuint', 'long', 'ulong', 'short', 'ushort', 'string']
 
     if compile_const_type | array.contains t
-        ret 'const ' + t
+        ret 'var ' + t
     else
-        ret 'static readonly ' + t
+        ret 'var ' + t
+    end
+end
+
+func format_const_value(type, value)
+    if type == 'Duration'
+        ret 'Duration(' + value + ')'
+    else
+        ret value
     end
 end
 ~}}
-const (
+var (
 {{~ for item in items ~}}
 {{~ for prop in item.value ~}}
-    {{ item.key + '_' + prop.name | string.upcase }} {{prop.type}} = {{ prop.value }};
+    CONST_{{ item.key + '_' + prop.name | string.upcase }} {{prop.type}} = {{format_const_value(prop.type, prop.value)}}
 {{~ end ~}}
 {{~ if !for.last ~}}
 {{~ end ~}}

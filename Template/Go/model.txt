@@ -19,10 +19,117 @@ package model
 
 import (
     "encoding/json"
+    "fmt"
     "io"
     "log"
     "os"
+    "reflect"
+    "strconv"
+    "strings"
+    "time"
 )
+
+// Custom Duration type with JSON marshaling support
+type Duration time.Duration
+
+func (d Duration) MarshalJSON() ([]byte, error) {
+    return json.Marshal(time.Duration(d).String())
+}
+
+func (d *Duration) UnmarshalJSON(data []byte) error {
+    var s string
+    if err := json.Unmarshal(data, &s); err == nil {
+        // Try to parse as duration string (e.g., "1s", "500ms")
+        if duration, err := time.ParseDuration(s); err == nil {
+            *d = Duration(duration)
+            return nil
+        }
+        
+        // Try to parse as .NET TimeSpan format: [d.]HH:MM:SS[.ffffff]
+        var days int
+        timeStr := s
+        
+        // Check if it has day part (e.g., "3.12:00:30.000000")
+        if dotIndex := strings.Index(s, "."); dotIndex != -1 {
+            // Check if the part before first dot is a number (days)
+            possibleDays := s[:dotIndex]
+            if dayVal, err := strconv.Atoi(possibleDays); err == nil {
+                // This looks like days, check if the rest looks like time
+                remainder := s[dotIndex+1:]
+                if len(remainder) >= 8 && strings.Count(remainder, ":") >= 2 {
+                    days = dayVal
+                    timeStr = remainder
+                }
+            }
+        }
+        
+        // Parse the time part: HH:MM:SS[.ffffff]
+        parts := strings.Split(timeStr, ":")
+        if len(parts) == 3 {
+            hours, err1 := strconv.Atoi(parts[0])
+            minutes, err2 := strconv.Atoi(parts[1])
+            
+            if err1 == nil && err2 == nil {
+                // Handle seconds with possible fractional part
+                secondsPart := parts[2]
+                var seconds int
+                var nanoseconds int64
+                
+                if dotIndex := strings.Index(secondsPart, "."); dotIndex != -1 {
+                    // Has fractional seconds
+                    var err3 error
+                    seconds, err3 = strconv.Atoi(secondsPart[:dotIndex])
+                    if err3 != nil {
+                        return fmt.Errorf("invalid seconds part: %s", secondsPart[:dotIndex])
+                    }
+                    
+                    // Parse fractional part (can be up to 7 digits for .NET TimeSpan)
+                    fracStr := secondsPart[dotIndex+1:]
+                    // Pad or truncate to 9 digits for nanoseconds
+                    if len(fracStr) > 9 {
+                        fracStr = fracStr[:9]
+                    } else {
+                        for len(fracStr) < 9 {
+                            fracStr += "0"
+                        }
+                    }
+                    
+                    frac, err4 := strconv.ParseInt(fracStr, 10, 64)
+                    if err4 != nil {
+                        return fmt.Errorf("invalid fractional seconds: %s", fracStr)
+                    }
+                    
+                    nanoseconds = frac
+                } else {
+                    // No fractional seconds
+                    var err3 error
+                    seconds, err3 = strconv.Atoi(secondsPart)
+                    if err3 != nil {
+                        return fmt.Errorf("invalid seconds: %s", secondsPart)
+                    }
+                }
+                
+                totalDuration := time.Duration(days)*24*time.Hour + 
+                               time.Duration(hours)*time.Hour + 
+                               time.Duration(minutes)*time.Minute + 
+                               time.Duration(seconds)*time.Second + 
+                               time.Duration(nanoseconds)*time.Nanosecond
+                
+                *d = Duration(totalDuration)
+                return nil
+            }
+        }
+    }
+    
+    // Try to parse as integer (milliseconds)
+    var i int64
+    if err := json.Unmarshal(data, &i); err == nil {
+        *d = Duration(time.Duration(i) * time.Millisecond)
+        return nil
+    }
+    
+    return fmt.Errorf("cannot unmarshal %s into Duration", string(data))
+}
 
 type Point[T any] struct {
     X T
@@ -37,6 +144,18 @@ type Size[T any] struct {
 type Range[T any] struct {
     Min T
     Max T
+}
+
+type Area[T any] struct {
+    Left T
+    Top T
+    Right T
+    Bottom T
+}
+
+type DateRange struct {
+    Begin time.Time
+    End   time.Time
 }
 
 {{ enum }}

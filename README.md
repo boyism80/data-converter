@@ -1,6 +1,3 @@
-# data-converter
-It is a tool that converts Excel data to json files and codes to be used in the game.
-It supports C++, C#, NodeJS, and Golang.
 # Excel Table Converter
 
 A comprehensive tool that converts Excel files containing game data into strongly-typed code and JSON files for multiple programming languages. The converter supports C++, C#, Node.js, and Go, providing seamless integration between game data design and code implementation.

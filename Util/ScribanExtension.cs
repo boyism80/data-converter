@@ -26,6 +26,14 @@ namespace ExcelTableConverter.Util
             return char.ToLowerInvariant(value[0]) + value.Substring(1, value.Length - 1);
         }
 
+        public static string UpperSnake(string value)
+        {
+            if (value == null)
+                return null;
+
+            return value.ToUpper().Replace("-", "_");
+        }
+
         public static string NamespaceAccess(IEnumerable<string> namespaces, LanguageType languageType)
         {
             switch (languageType)

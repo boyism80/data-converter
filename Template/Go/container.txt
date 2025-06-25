@@ -6,7 +6,11 @@ end
 
 type Container struct {
 {{~ for table in tables | array.filter @containable ~}}
+{{~ if base_tables | array.contains table.name ~}}
+    {{ table.name | @upper_camel }} map[uint32]{{ table.name | @upper_camel }}Interface
+{{~ else ~}}
     {{ table.name | @upper_camel }} {{ table.type }}{{ table.generic }}
+{{~ end ~}}
 {{~ end ~}}
 }
 
@@ -31,10 +35,27 @@ func load[T any](path string) T {
     return result
 }
 
+{{~ for base_table in base_tables ~}}
+func build{{ base_table | @upper_camel }}(path string) map[uint32]{{ base_table | @upper_camel }}Interface {
+    concrete := load[map[uint32]{{ base_table | @upper_camel }}](path)
+    result := make(map[uint32]{{ base_table | @upper_camel }}Interface)
+    for key, value := range concrete {
+        // Create a copy of the value to avoid pointer aliasing issues
+        valueCopy := value
+        result[key] = &valueCopy
+    }
+    return result
+}
+{{~ end ~}}
+
 func Load() Container {
     return Container{
 {{~ for table in tables | array.filter @containable ~}}
-        load[{{ table.type }}{{ table.generic }}]("json/{{ table.name }}.json"),
+{{~ if base_tables | array.contains table.name ~}}
+        {{ table.name | @upper_camel }}: build{{ table.name | @upper_camel }}("json/{{ table.name }}.json"),
+{{~ else ~}}
+        {{ table.name | @upper_camel }}: load[{{ table.type }}{{ table.generic }}]("json/{{ table.name }}.json"),
+{{~ end ~}}
 {{~ end ~}}
     }
 }

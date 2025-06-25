@@ -73,6 +73,7 @@ namespace ExcelTableConverter.Worker.Generator.Go
                 ["scope"] = scope,
                 ["tables"] = buffer,
                 ["config"] = Context.Configuration,
+                ["base_tables"] = Context.Completed.Schema.FindBaseTables(),
             };
 
             var ctx = new TemplateContext();

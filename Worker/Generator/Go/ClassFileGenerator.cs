@@ -28,13 +28,14 @@ namespace ExcelTableConverter.Worker.Generator.Go
             }
         }
 
-        private string GenerateClassCode(Scope scope, List<object> items)
+        private string GenerateClassCode(Scope scope, List<object> items, HashSet<string> baseTables)
         {
             var obj = new ScribanEx
             {
                 ["scope"] = scope,
                 ["items"] = items,
                 ["config"] = Context.Configuration,
+                ["base_tables"] = baseTables,
             };
 
             var ctx = new TemplateContext();
@@ -106,6 +107,9 @@ namespace ExcelTableConverter.Worker.Generator.Go
             var bindCodeGenerator = new BindCodeGenerator(Context);
             bindCodeGenerator.Run();
 
+            // Find base tables that need interfaces
+            var baseTables = Context.Completed.Schema.FindBaseTables();
+
             var g = output.GroupBy(x => x.Scope).ToDictionary(x => x.Key, x =>
             {
                 return x.OrderBy(x => Context.Completed.Schema.GetInheritanceLevel(x.Table)).ThenBy(x => x.Table).Select(x => new
@@ -129,7 +133,7 @@ namespace ExcelTableConverter.Worker.Generator.Go
                 {
                     ["scope"] = scope,
                     ["config"] = Context.Configuration,
-                    ["class"] = GenerateClassCode(scope, items),
+                    ["class"] = GenerateClassCode(scope, items, baseTables),
                     ["enum"] = enumCodeGenerator.Result,
                     ["const"] = constCodeGenerator.Result[scope],
                     ["container"] = bindCodeGenerator.Result[scope],

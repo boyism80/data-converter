@@ -6,6 +6,7 @@ cd ..
 echo Cleaning cache...
 rmdir /s /q cache 2>nul
 echo Running data-converter...
+dotnet build
 dotnet run
 if %ERRORLEVEL% neq 0 (
     echo Error: data-converter execution failed

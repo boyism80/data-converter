@@ -11,7 +11,7 @@ import (
 	"model"
 )
 
-var jsonPath = flag.String("jsondir", "", "Path to JSON files directory")
+var jsonPath = flag.String("jsondir", "..\\output\\json\\server", "Path to JSON files directory")
 
 func TestTimeConversion(t *testing.T) {
 	// Test MobSpawn time.Duration conversion
@@ -135,7 +135,7 @@ func TestLoadContainer(t *testing.T) {
 	if len(container.Item) > 0 {
 		// Show first item as example
 		for id, item := range container.Item {
-			log.Printf("Item[%d]: %s (Price: %d)", id, item.Name, item.Price)
+			log.Printf("Item[%d]: %s (Price: %d)", id, item.GetName(), item.GetPrice())
 			break
 		}
 	}
@@ -184,17 +184,17 @@ func TestLoadContainer(t *testing.T) {
 
 	// Specific validation for item 38 (양첨목봉) to verify correct data loading
 	if item38, exists := container.Item[38]; exists {
-		if item38.Name != "양첨목봉" {
-			t.Errorf("Item 38 name mismatch: expected '양첨목봉', got '%s'", item38.Name)
+		if item38.GetName() != "양첨목봉" {
+			t.Errorf("Item 38 name mismatch: expected '양첨목봉', got '%s'", item38.GetName())
 		}
-		if item38.Look != 50064 {
-			t.Errorf("Item 38 look mismatch: expected 50064, got %d", item38.Look)
+		if item38.GetLook() != 50064 {
+			t.Errorf("Item 38 look mismatch: expected 50064, got %d", item38.GetLook())
 		}
-		if item38.Price != 10 {
-			t.Errorf("Item 38 price mismatch: expected 10, got %d", item38.Price)
+		if item38.GetPrice() != 10 {
+			t.Errorf("Item 38 price mismatch: expected 10, got %d", item38.GetPrice())
 		}
 		log.Printf("✅ Item 38 validation passed: Name='%s', Look=%d, Price=%d",
-			item38.Name, item38.Look, item38.Price)
+			item38.GetName(), item38.GetLook(), item38.GetPrice())
 	} else {
 		t.Error("Item 38 not found in container")
 	}
@@ -282,11 +282,11 @@ func TestContainerDataIntegrity(t *testing.T) {
 	// Test 2: Check if Items have valid Object data
 	emptyNameCount := 0
 	for id, item := range container.Item {
-		if item.Name == "" {
+		if item.GetName() == "" {
 			emptyNameCount++
 		}
-		if item.Price < 0 {
-			t.Errorf("Item %d has negative price: %d", id, item.Price)
+		if item.GetPrice() < 0 {
+			t.Errorf("Item %d has negative price: %d", id, item.GetPrice())
 		}
 	}
 	log.Printf("Items with empty names: %d out of %d total items", emptyNameCount, len(container.Item))
@@ -298,17 +298,17 @@ func TestContainerDataIntegrity(t *testing.T) {
 
 	// Specific validation for item 38 (양첨목봉) to verify correct data loading
 	if item38, exists := container.Item[38]; exists {
-		if item38.Name != "양첨목봉" {
-			t.Errorf("Item 38 name mismatch: expected '양첨목봉', got '%s'", item38.Name)
+		if item38.GetName() != "양첨목봉" {
+			t.Errorf("Item 38 name mismatch: expected '양첨목봉', got '%s'", item38.GetName())
 		}
-		if item38.Look != 50064 {
-			t.Errorf("Item 38 look mismatch: expected 50064, got %d", item38.Look)
+		if item38.GetLook() != 50064 {
+			t.Errorf("Item 38 look mismatch: expected 50064, got %d", item38.GetLook())
 		}
-		if item38.Price != 10 {
-			t.Errorf("Item 38 price mismatch: expected 10, got %d", item38.Price)
+		if item38.GetPrice() != 10 {
+			t.Errorf("Item 38 price mismatch: expected 10, got %d", item38.GetPrice())
 		}
 		log.Printf("✅ Item 38 validation passed: Name='%s', Look=%d, Price=%d",
-			item38.Name, item38.Look, item38.Price)
+			item38.GetName(), item38.GetLook(), item38.GetPrice())
 	} else {
 		t.Error("Item 38 not found in container")
 	}

@@ -268,6 +268,21 @@ namespace ExcelTableConverter.Controller
             });
         }
 
+        public HashSet<string> FindBaseTables()
+        {
+            var baseTables = new HashSet<string>();
+
+            foreach (var (tableName, schemaSet) in Container)
+            {
+                if (!string.IsNullOrEmpty(schemaSet.Based))
+                {
+                    baseTables.Add(schemaSet.Based);
+                }
+            }
+
+            return baseTables;
+        }
+
         /// <summary>
         /// Gets table names from a specific JSON name
         /// </summary>

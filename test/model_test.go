@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -105,7 +107,77 @@ func TestLoadContainer(t *testing.T) {
 		}
 	}()
 
-	container := model.Load()
+	container := model.Container{}
+	container.ItemHook = func(item *model.Item, data json.RawMessage) (model.ItemInterface, error) {
+		switch item.Type {
+		case model.ITEM_TYPE_STUFF:
+			return item, nil
+
+		case model.ITEM_TYPE_CASH:
+			return item, nil
+
+		case model.ITEM_TYPE_CONSUME:
+			consume, err := model.NewConsumeBuilder(nil).Build(data)
+			if err != nil {
+				return item, err
+			}
+			return &consume, nil
+		case model.ITEM_TYPE_WEAPON:
+			weapon, err := model.NewWeaponBuilder(nil).Build(data)
+			if err != nil {
+				return item, err
+			}
+			return &weapon, nil
+		case model.ITEM_TYPE_ARMOR:
+			armor, err := model.NewArmorBuilder(nil).Build(data)
+			if err != nil {
+				return item, err
+			}
+			return &armor, nil
+		case model.ITEM_TYPE_HELMET:
+			helmet, err := model.NewHelmetBuilder(nil).Build(data)
+			if err != nil {
+				return item, err
+			}
+			return &helmet, nil
+		case model.ITEM_TYPE_RING:
+			ring, err := model.NewRingBuilder(nil).Build(data)
+			if err != nil {
+				return item, err
+			}
+			return &ring, nil
+		case model.ITEM_TYPE_SHIELD:
+			shield, err := model.NewShieldBuilder(nil).Build(data)
+			if err != nil {
+				return item, err
+			}
+			return &shield, nil
+		case model.ITEM_TYPE_AUXILIARY:
+			auxiliary, err := model.NewAuxiliaryBuilder(nil).Build(data)
+			if err != nil {
+				return item, err
+			}
+			return &auxiliary, nil
+		case model.ITEM_TYPE_BOW:
+			bow, err := model.NewBowBuilder(nil).Build(data)
+			if err != nil {
+				return item, err
+			}
+			return &bow, nil
+		case model.ITEM_TYPE_PACKAGE:
+			pkg, err := model.NewPackBuilder(nil).Build(data)
+			if err != nil {
+				return item, err
+			}
+			return &pkg, nil
+		default:
+			return item, fmt.Errorf("unknown item type: %d", item.Type)
+		}
+	}
+
+	container.Load(func(percentage float64) {
+		log.Printf("Loading container: %.2f%%", percentage*100)
+	})
 
 	// Verify that data was actually loaded
 	log.Printf("=== Container Load Results ===")
@@ -184,17 +256,23 @@ func TestLoadContainer(t *testing.T) {
 
 	// Specific validation for item 38 (양첨목봉) to verify correct data loading
 	if item38, exists := container.Item[38]; exists {
-		if item38.GetName() != "양첨목봉" {
-			t.Errorf("Item 38 name mismatch: expected '양첨목봉', got '%s'", item38.GetName())
+		weapon, ok := item38.(*model.Weapon)
+		if !ok {
+			t.Errorf("Item 38 is not a Weapon type: got %T", item38)
+			return
 		}
-		if item38.GetLook() != 50064 {
-			t.Errorf("Item 38 look mismatch: expected 50064, got %d", item38.GetLook())
+
+		if weapon.Name != "양첨목봉" {
+			t.Errorf("Item 38 name mismatch: expected '양첨목봉', got '%s'", weapon.Name)
 		}
-		if item38.GetPrice() != 10 {
-			t.Errorf("Item 38 price mismatch: expected 10, got %d", item38.GetPrice())
+		if weapon.Look != 50064 {
+			t.Errorf("Item 38 look mismatch: expected 50064, got %d", weapon.Look)
+		}
+		if weapon.Price != 10 {
+			t.Errorf("Item 38 price mismatch: expected 10, got %d", weapon.Price)
 		}
 		log.Printf("✅ Item 38 validation passed: Name='%s', Look=%d, Price=%d",
-			item38.GetName(), item38.GetLook(), item38.GetPrice())
+			weapon.Name, weapon.Look, weapon.Price)
 	} else {
 		t.Error("Item 38 not found in container")
 	}
@@ -261,7 +339,10 @@ func TestContainerDataIntegrity(t *testing.T) {
 	}
 
 	// Load container
-	container := model.Load()
+	container := model.Container{}
+	container.Load(func(percentage float64) {
+		log.Printf("Loading container: %.2f%%", percentage*100)
+	})
 
 	// Test data integrity and relationships
 
@@ -291,24 +372,29 @@ func TestContainerDataIntegrity(t *testing.T) {
 	}
 	log.Printf("Items with empty names: %d out of %d total items", emptyNameCount, len(container.Item))
 
-	// Allow some items to have empty names, but not all
+	// Allow some items to
 	if emptyNameCount == len(container.Item) && len(container.Item) > 0 {
 		t.Errorf("All items have empty names - this indicates a data loading issue")
 	}
 
 	// Specific validation for item 38 (양첨목봉) to verify correct data loading
 	if item38, exists := container.Item[38]; exists {
-		if item38.GetName() != "양첨목봉" {
-			t.Errorf("Item 38 name mismatch: expected '양첨목봉', got '%s'", item38.GetName())
+		weapon, ok := item38.(*model.Weapon)
+		if !ok {
+			t.Errorf("Item 38 is not a Weapon type: got %T", item38)
+			return
 		}
-		if item38.GetLook() != 50064 {
-			t.Errorf("Item 38 look mismatch: expected 50064, got %d", item38.GetLook())
+		if weapon.Name != "양첨목봉" {
+			t.Errorf("Item 38 name mismatch: expected '양첨목봉', got '%s'", weapon.Name)
 		}
-		if item38.GetPrice() != 10 {
-			t.Errorf("Item 38 price mismatch: expected 10, got %d", item38.GetPrice())
+		if weapon.Look != 50064 {
+			t.Errorf("Item 38 look mismatch: expected 50064, got %d", weapon.Look)
+		}
+		if weapon.Price != 10 {
+			t.Errorf("Item 38 price mismatch: expected 10, got %d", weapon.Price)
 		}
 		log.Printf("✅ Item 38 validation passed: Name='%s', Look=%d, Price=%d",
-			item38.GetName(), item38.GetLook(), item38.GetPrice())
+			weapon.Name, weapon.Look, weapon.Price)
 	} else {
 		t.Error("Item 38 not found in container")
 	}

@@ -141,9 +141,11 @@ namespace ExcelTableConverter.Factory
                     return UlongType(value, root, nullable, option);
 
                 case "double":
+                case "float64":
                     return DoubleType(value, root, nullable, option);
 
                 case "float":
+                case "float32":
                     return FloatType(value, root, nullable, option);
 
                 case "string":

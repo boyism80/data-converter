@@ -18,117 +18,459 @@
 package model
 
 import (
-    "encoding/json"
-    "fmt"
-    "io"
-    "log"
-    "os"
-    "reflect"
-    "strconv"
-    "strings"
-    "time"
+	"encoding/json"
+	"fmt"
+	"io"
+	"os"
+	"regexp"
+	"strconv"
+	"strings"
+	"sync"
+	"sync/atomic"
+	"time"
 )
 
 // Custom Duration type with JSON marshaling support
 type Duration time.Duration
 
-func (d Duration) MarshalJSON() ([]byte, error) {
-    return json.Marshal(time.Duration(d).String())
+// DefaultBuilder - passes through values as-is
+type DefaultBuilder[T any] struct {
+	Hook func(*T) T
 }
 
-func (d *Duration) UnmarshalJSON(data []byte) error {
-    var s string
-    if err := json.Unmarshal(data, &s); err == nil {
-        // Try to parse as duration string (e.g., "1s", "500ms")
-        if duration, err := time.ParseDuration(s); err == nil {
-            *d = Duration(duration)
-            return nil
-        }
-        
-        // Try to parse as .NET TimeSpan format: [d.]HH:MM:SS[.ffffff]
-        var days int
-        timeStr := s
-        
-        // Check if it has day part (e.g., "3.12:00:30.000000")
-        if dotIndex := strings.Index(s, "."); dotIndex != -1 {
-            // Check if the part before first dot is a number (days)
-            possibleDays := s[:dotIndex]
-            if dayVal, err := strconv.Atoi(possibleDays); err == nil {
-                // This looks like days, check if the rest looks like time
-                remainder := s[dotIndex+1:]
-                if len(remainder) >= 8 && strings.Count(remainder, ":") >= 2 {
-                    days = dayVal
-                    timeStr = remainder
-                }
-            }
-        }
-        
-        // Parse the time part: HH:MM:SS[.ffffff]
-        parts := strings.Split(timeStr, ":")
-        if len(parts) == 3 {
-            hours, err1 := strconv.Atoi(parts[0])
-            minutes, err2 := strconv.Atoi(parts[1])
-            
-            if err1 == nil && err2 == nil {
-                // Handle seconds with possible fractional part
-                secondsPart := parts[2]
-                var seconds int
-                var nanoseconds int64
-                
-                if dotIndex := strings.Index(secondsPart, "."); dotIndex != -1 {
-                    // Has fractional seconds
-                    var err3 error
-                    seconds, err3 = strconv.Atoi(secondsPart[:dotIndex])
-                    if err3 != nil {
-                        return fmt.Errorf("invalid seconds part: %s", secondsPart[:dotIndex])
-                    }
-                    
-                    // Parse fractional part (can be up to 7 digits for .NET TimeSpan)
-                    fracStr := secondsPart[dotIndex+1:]
-                    // Pad or truncate to 9 digits for nanoseconds
-                    if len(fracStr) > 9 {
-                        fracStr = fracStr[:9]
-                    } else {
-                        for len(fracStr) < 9 {
-                            fracStr += "0"
-                        }
-                    }
-                    
-                    frac, err4 := strconv.ParseInt(fracStr, 10, 64)
-                    if err4 != nil {
-                        return fmt.Errorf("invalid fractional seconds: %s", fracStr)
-                    }
-                    
-                    nanoseconds = frac
-                } else {
-                    // No fractional seconds
-                    var err3 error
-                    seconds, err3 = strconv.Atoi(secondsPart)
-                    if err3 != nil {
-                        return fmt.Errorf("invalid seconds: %s", secondsPart)
-                    }
-                }
-                
-                totalDuration := time.Duration(days)*24*time.Hour + 
-                               time.Duration(hours)*time.Hour + 
-                               time.Duration(minutes)*time.Minute + 
-                               time.Duration(seconds)*time.Second + 
-                               time.Duration(nanoseconds)*time.Nanosecond
-                
-                *d = Duration(totalDuration)
-                return nil
-            }
-        }
-    }
-    
-    // Try to parse as integer (milliseconds)
-    var i int64
-    if err := json.Unmarshal(data, &i); err == nil {
-        *d = Duration(time.Duration(i) * time.Millisecond)
-        return nil
-    }
-    
-    return fmt.Errorf("cannot unmarshal %s into Duration", string(data))
+func NewDefaultBuilder[T any]() *DefaultBuilder[T] {
+	return &DefaultBuilder[T]{
+		Hook: nil,
+	}
+}
+
+func (b *DefaultBuilder[T]) Build(data json.RawMessage) (T, error) {
+	var result T
+
+	// First try direct unmarshaling (handles numeric values)
+	if err := json.Unmarshal(data, &result); err != nil {
+		// If direct unmarshaling fails, try parsing as string and convert
+		var strValue string
+		if strErr := json.Unmarshal(data, &strValue); strErr != nil {
+			return result, err // Return original error if both attempts fail
+		}
+
+		// Convert string to target type using type assertion
+		if converted, ok := parseStringToType[T](strValue); ok {
+			result = converted
+		} else {
+			return result, err
+		}
+	}
+
+	if b.Hook != nil {
+		return b.Hook(&result), nil
+	}
+	return result, nil
+}
+
+// Generic string parser function
+func parseStringToType[T any](str string) (T, bool) {
+	var zero T
+	switch any(zero).(type) {
+	case uint32:
+		if val, err := strconv.ParseUint(str, 10, 32); err == nil {
+			return any(uint32(val)).(T), true
+		}
+	case uint16:
+		if val, err := strconv.ParseUint(str, 10, 16); err == nil {
+			return any(uint16(val)).(T), true
+		}
+	case uint8:
+		if val, err := strconv.ParseUint(str, 10, 8); err == nil {
+			return any(uint8(val)).(T), true
+		}
+	case int:
+		if val, err := strconv.Atoi(str); err == nil {
+			return any(val).(T), true
+		}
+	case int32:
+		if val, err := strconv.ParseInt(str, 10, 32); err == nil {
+			return any(int32(val)).(T), true
+		}
+	case int64:
+		if val, err := strconv.ParseInt(str, 10, 64); err == nil {
+			return any(val).(T), true
+		}
+	}
+	return zero, false
+}
+
+// ArrayBuilder - builds arrays/slices
+type ArrayBuilder[T any] struct {
+	elementBuilder func(json.RawMessage) (T, error)
+	Hook           func(*[]T) []T
+}
+
+func NewArrayBuilder[T any](elementBuilder func(json.RawMessage) (T, error)) *ArrayBuilder[T] {
+	return &ArrayBuilder[T]{elementBuilder: elementBuilder, Hook: nil}
+}
+
+func (b *ArrayBuilder[T]) Build(data json.RawMessage) ([]T, error) {
+	var rawArray []json.RawMessage
+	if err := json.Unmarshal(data, &rawArray); err != nil {
+		return nil, err
+	}
+
+	result := make([]T, len(rawArray))
+	for i, rawElement := range rawArray {
+		element, err := b.elementBuilder(rawElement)
+		if err != nil {
+			return nil, err
+		}
+		result[i] = element
+	}
+
+	if b.Hook != nil {
+		return b.Hook(&result), nil
+	}
+	return result, nil
+}
+
+// DictionaryBuilder - builds maps
+type DictionaryBuilder[K comparable, V any] struct {
+	keyBuilder   func(json.RawMessage) (K, error)
+	valueBuilder func(json.RawMessage) (V, error)
+	Hook         func(*map[K]V) map[K]V
+}
+
+func NewDictionaryBuilder[K comparable, V any](keyBuilder func(json.RawMessage) (K, error), valueBuilder func(json.RawMessage) (V, error)) *DictionaryBuilder[K, V] {
+	return &DictionaryBuilder[K, V]{
+		keyBuilder:   keyBuilder,
+		valueBuilder: valueBuilder,
+		Hook:         nil,
+	}
+}
+
+func (b *DictionaryBuilder[K, V]) Build(data json.RawMessage) (map[K]V, error) {
+	var rawMap map[string]json.RawMessage
+	if err := json.Unmarshal(data, &rawMap); err != nil {
+		return nil, err
+	}
+
+	result := make(map[K]V)
+	for rawKey, rawValue := range rawMap {
+		// Convert string key to target type K
+		keyData, _ := json.Marshal(rawKey)
+		key, err := b.keyBuilder(keyData)
+		if err != nil {
+			return nil, err
+		}
+
+		value, err := b.valueBuilder(rawValue)
+		if err != nil {
+			return nil, err
+		}
+
+		result[key] = value
+	}
+
+	if b.Hook != nil {
+		return b.Hook(&result), nil
+	}
+	return result, nil
+}
+
+// EnumBuilder - converts string enum values to their numeric equivalents
+type EnumBuilder[T any] struct {
+	nameToValue map[string]T
+	Hook        func(*T) T
+}
+
+func NewEnumBuilder[T any](nameToValue map[string]T) *EnumBuilder[T] {
+	return &EnumBuilder[T]{
+		nameToValue: nameToValue,
+		Hook:        nil,
+	}
+}
+
+func (b *EnumBuilder[T]) Build(data json.RawMessage) (T, error) {
+	var result T
+
+	// Try to unmarshal as string first (enum name)
+	var enumName string
+	if err := json.Unmarshal(data, &enumName); err == nil {
+		if value, exists := b.nameToValue[enumName]; exists {
+			result = value
+		} else {
+			// If enum name not found, try to parse as number
+			if err := json.Unmarshal(data, &result); err != nil {
+				return result, fmt.Errorf("unknown enum value: %s", enumName)
+			}
+		}
+	} else {
+		// Try to unmarshal as number
+		if err := json.Unmarshal(data, &result); err != nil {
+			return result, err
+		}
+	}
+
+	if b.Hook != nil {
+		return b.Hook(&result), nil
+	}
+	return result, nil
+}
+
+// PointBuilder - builds Point structures
+type PointBuilder[T any] struct {
+	Hook func(*Point[T]) Point[T]
+}
+
+func NewPointBuilder[T any]() *PointBuilder[T] {
+	return &PointBuilder[T]{Hook: nil}
+}
+
+func (b *PointBuilder[T]) Build(data json.RawMessage) (Point[T], error) {
+	var result Point[T]
+	if err := json.Unmarshal(data, &result); err != nil {
+		return result, err
+	}
+
+	if b.Hook != nil {
+		return b.Hook(&result), nil
+	}
+	return result, nil
+}
+
+// SizeBuilder - builds Size structures
+type SizeBuilder[T any] struct {
+	Hook func(*Size[T]) Size[T]
+}
+
+func NewSizeBuilder[T any]() *SizeBuilder[T] {
+	return &SizeBuilder[T]{Hook: nil}
+}
+
+func (b *SizeBuilder[T]) Build(data json.RawMessage) (Size[T], error) {
+	var result Size[T]
+	if err := json.Unmarshal(data, &result); err != nil {
+		return result, err
+	}
+
+	if b.Hook != nil {
+		return b.Hook(&result), nil
+	}
+	return result, nil
+}
+
+// RangeBuilder - builds Range structures
+type RangeBuilder[T any] struct {
+	Hook func(*Range[T]) Range[T]
+}
+
+func NewRangeBuilder[T any]() *RangeBuilder[T] {
+	return &RangeBuilder[T]{Hook: nil}
+}
+
+func (b *RangeBuilder[T]) Build(data json.RawMessage) (Range[T], error) {
+	var result Range[T]
+	if err := json.Unmarshal(data, &result); err != nil {
+		return result, err
+	}
+
+	if b.Hook != nil {
+		return b.Hook(&result), nil
+	}
+	return result, nil
+}
+
+// AreaBuilder - builds Area structures
+type AreaBuilder[T any] struct {
+	Hook func(*Area[T]) Area[T]
+}
+
+func NewAreaBuilder[T any]() *AreaBuilder[T] {
+	return &AreaBuilder[T]{Hook: nil}
+}
+
+func (b *AreaBuilder[T]) Build(data json.RawMessage) (Area[T], error) {
+	var result Area[T]
+	if err := json.Unmarshal(data, &result); err != nil {
+		return result, err
+	}
+
+	if b.Hook != nil {
+		return b.Hook(&result), nil
+	}
+	return result, nil
+}
+
+// TimeSpanBuilder - builds Duration from time span strings
+type TimeSpanBuilder struct {
+	Hook func(*Duration) Duration
+}
+
+func NewTimeSpanBuilder() *TimeSpanBuilder {
+	return &TimeSpanBuilder{Hook: nil}
+}
+
+func (b *TimeSpanBuilder) Build(data json.RawMessage) (Duration, error) {
+	var raw string
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return 0, err
+	}
+
+	if raw == "" {
+		return 0, nil
+	}
+
+	// Parse time span format: [days.]hours:minutes:seconds
+	re := regexp.MustCompile(`(?:(?P<day>\d+)[\s\.])?(?P<hour>\d+):(?P<min>\d+):(?P<sec>\d+)`)
+	matches := re.FindStringSubmatch(raw)
+	if matches == nil {
+		return 0, fmt.Errorf("invalid time format: %s", raw)
+	}
+
+	var days, hours, minutes, seconds int
+	var err error
+
+	for i, name := range re.SubexpNames() {
+		if i == 0 {
+			continue
+		}
+		value := matches[i]
+		if value == "" {
+			continue
+		}
+
+		switch name {
+		case "day":
+			days, err = strconv.Atoi(value)
+		case "hour":
+			hours, err = strconv.Atoi(value)
+		case "min":
+			minutes, err = strconv.Atoi(value)
+		case "sec":
+			seconds, err = strconv.Atoi(value)
+		}
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	totalSeconds := seconds + minutes*60 + hours*3600 + days*86400
+	result := Duration(time.Duration(totalSeconds) * time.Second)
+
+	if b.Hook != nil {
+		return b.Hook(&result), nil
+	}
+	return result, nil
+}
+
+// DateTimeBuilder - builds time.Time from datetime strings
+type DateTimeBuilder struct {
+	Hook func(*time.Time) time.Time
+}
+
+func NewDateTimeBuilder() *DateTimeBuilder {
+	return &DateTimeBuilder{Hook: nil}
+}
+
+func (b *DateTimeBuilder) Build(data json.RawMessage) (time.Time, error) {
+	var raw string
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return time.Time{}, err
+	}
+
+	if raw == "" {
+		return time.Time{}, nil
+	}
+
+	result, err := time.Parse("2006-01-02 15:04:05", raw)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	if b.Hook != nil {
+		return b.Hook(&result), nil
+	}
+	return result, nil
+}
+
+// DateRangeBuilder - builds DateRange structures
+type DateRangeBuilder struct {
+	Hook func(*DateRange) DateRange
+}
+
+func NewDateRangeBuilder() *DateRangeBuilder {
+	return &DateRangeBuilder{Hook: nil}
+}
+
+func (b *DateRangeBuilder) Build(data json.RawMessage) (DateRange, error) {
+	var raw struct {
+		Start json.RawMessage `json:"Start"`
+		End   json.RawMessage `json:"End"`
+	}
+
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return DateRange{}, err
+	}
+
+	result := DateRange{}
+	begin, err := NewDateTimeBuilder().Build(raw.Start)
+	if err != nil {
+		return DateRange{}, err
+	}
+	result.Begin = begin
+
+	end, err := NewDateTimeBuilder().Build(raw.End)
+	if err != nil {
+		return DateRange{}, err
+	}
+	result.End = end
+
+	if b.Hook != nil {
+		return b.Hook(&result), nil
+	}
+	return result, nil
+}
+
+// DslBuilder - builds DSL structures
+type DslBuilder struct {
+	Hook func(*Dsl) Dsl
+}
+
+func NewDslBuilder() *DslBuilder {
+	return &DslBuilder{Hook: nil}
+}
+
+func (b *DslBuilder) Build(data json.RawMessage) (Dsl, error) {
+	var rawDsl struct {
+		Type       string            `json:"Type"`
+		Parameters []json.RawMessage `json:"Parameters"`
+	}
+
+	if err := json.Unmarshal(data, &rawDsl); err != nil {
+		return Dsl{}, err
+	}
+
+	// Convert string type to DSL enum
+	dslType := DSL_ITEM // default
+	if typeValue, exists := dsl_name_to_value[strings.ToLower(rawDsl.Type)]; exists {
+		dslType = typeValue
+	}
+
+	// Convert parameters from RawMessage to []any
+	params := make([]any, len(rawDsl.Parameters))
+	for i, param := range rawDsl.Parameters {
+		var value any
+		if err := json.Unmarshal(param, &value); err != nil {
+			return Dsl{}, err
+		}
+		params[i] = value
+	}
+
+	result := Dsl{Type: dslType, Params: params}
+
+	if b.Hook != nil {
+		return b.Hook(&result), nil
+	}
+	return result, nil
 }
 
 type Point[T any] struct {

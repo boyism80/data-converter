@@ -7,3 +7,4 @@ test/json
 ElapsedTime.txt
 test/generated/model.go
 test/*.exe
+test/generated/json

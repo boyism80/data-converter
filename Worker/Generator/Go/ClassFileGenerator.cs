@@ -11,15 +11,18 @@ namespace ExcelTableConverter.Worker.Generator.Go
         public string Name { get; set; }
         public string Table { get; set; }
         public List<object> Props { get; set; }
+        public bool IsAbstract { get; set; }
     };
 
     public class ClassFileGenerator : ParallelWorker<string, ClassFileGeneratorResult>
     {
         private readonly string _dir;
+        private readonly HashSet<string> _baseTables = new HashSet<string>();
 
         public ClassFileGenerator(Context ctx) : base(ctx)
         {
             _dir = Path.Join(Context.Output, "Go");
+            _baseTables = ctx.Completed.Schema.FindBaseTables();
             foreach (var scope in new[] { Scope.Server, Scope.Client })
             {
                 var path = Path.Join(_dir, $"{scope}".ToLower());
@@ -69,7 +72,8 @@ namespace ExcelTableConverter.Worker.Generator.Go
                     Index = i,
                     Key = Util.Type.IsKey(property.Type, out _),
                     Type = new TypeFactory(Context).Build(property.Type),
-                    Name = property.Name
+                    Name = property.Name,
+                    Initializer = new InitValueFactory(Context).Build(property.Type, property.Name)
                 });
             }
 
@@ -83,7 +87,8 @@ namespace ExcelTableConverter.Worker.Generator.Go
                     Scope = scope,
                     Name = tableName,
                     Table = tableName,
-                    Props = props
+                    Props = props,
+                    IsAbstract = _baseTables.Contains(tableName)
                 };
             }
         }
@@ -116,7 +121,8 @@ namespace ExcelTableConverter.Worker.Generator.Go
                 {
                     x.Name,
                     x.Props,
-                    Based = Context.Completed.Schema[x.Table].Based
+                    Based = Context.Completed.Schema[x.Table].Based,
+                    x.IsAbstract
                 } as object).ToList();
             });
 

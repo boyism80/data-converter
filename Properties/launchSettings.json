@@ -2,7 +2,11 @@
   "profiles": {
     "ExcelTableConverter": {
       "commandName": "Project",
-      "commandLineArgs": "--dir=D:\\fb\\resources\\table --lang=go --dsl=D:\\fb\\resources\\table\\dsl.json"
+      "commandLineArgs": "--dir=D:\\git\\fb\\resources\\table --lang=go|node --dsl=D:\\git\\fb\\resources\\table\\dsl.json"
+    },
+    "Profile 1": {
+      "commandName": "Project",
+      "commandLineArgs": "--dir=D:\\fb\\resources\\table --lang=go|node --dsl=D:\\fb\\resources\\table\\dsl.json"
     }
   }
 }

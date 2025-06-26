@@ -1,85 +1,6 @@
 {{~ for item in items ~}}
-type {{ item.name | @upper_camel }} struct {
-    {{ if item.based }}*{{ item.based | @upper_camel }} `json:"{{ item.based }}"`{{ end }}
-{{~ for prop in item.props ~}}
-    {{ prop.name | @upper_camel }} {{ prop.type }} `json:"{{ prop.name }}"`
-{{~ end ~}}
-}
-
-{{ if item.based }}
-// UnmarshalJSON implements custom JSON unmarshaling for {{ item.name | @upper_camel }}
-// to handle flat JSON structure while maintaining embedded struct pointer
-func (obj *{{ item.name | @upper_camel }}) UnmarshalJSON(data []byte) error {
-    // First, unmarshal into a map to get all fields
-    var flatData map[string]interface{}
-    if err := json.Unmarshal(data, &flatData); err != nil {
-        return err
-    }
-    
-    // Initialize base type pointer
-    obj.{{ item.based | @upper_camel }} = &{{ item.based | @upper_camel }}{}
-    
-    // Create a separate map for base type fields
-    baseData := make(map[string]interface{})
-    selfData := make(map[string]interface{})
-    
-    // We need to determine which fields belong to the base type
-    // For now, we'll use reflection to get the base type's fields
-    baseType := reflect.TypeOf(*obj.{{ item.based | @upper_camel }})
-    for i := 0; i < baseType.NumField(); i++ {
-        field := baseType.Field(i)
-        jsonTag := field.Tag.Get("json")
-        if jsonTag != "" && jsonTag != "-" {
-            // Remove omitempty and other options
-            fieldName := strings.Split(jsonTag, ",")[0]
-            if val, exists := flatData[fieldName]; exists {
-                baseData[fieldName] = val
-                delete(flatData, fieldName)
-            }
-        }
-    }
-    
-    // Remaining fields belong to this struct
-    selfData = flatData
-    
-    // Unmarshal base type
-    if len(baseData) > 0 {
-        baseBytes, err := json.Marshal(baseData)
-        if err != nil {
-            return err
-        }
-        if err := json.Unmarshal(baseBytes, obj.{{ item.based | @upper_camel }}); err != nil {
-            return err
-        }
-    }
-    
-    // Unmarshal self fields using a temporary struct to avoid recursion
-    type Alias {{ item.name | @upper_camel }}
-    aux := &struct {
-        *Alias
-    }{
-        Alias: (*Alias)(obj),
-    }
-    
-    if len(selfData) > 0 {
-        selfBytes, err := json.Marshal(selfData)
-        if err != nil {
-            return err
-        }
-        return json.Unmarshal(selfBytes, aux)
-    }
-    
-    return nil
-}
-{{ end }}
-{{~ if !for.last }}
-{{ end ~}}
-{{~ end ~}}
-
-{{~ # Generate interfaces only for base tables ~}}
-{{~ for item in items ~}}
-{{~ if base_tables | array.contains item.name ~}}
-// {{ item.name | @upper_camel }}Interface defines common interface for {{ item.name }} and its derived types
+{{~ table_name = upper_camel(item.name) ~}}
+{{~ if item.is_abstract ~}}
 type {{ item.name | @upper_camel }}Interface interface {
 {{~ # Only include own properties for now to avoid infinite loops ~}}
 {{~ for prop in item.props ~}}
@@ -91,12 +12,65 @@ type {{ item.name | @upper_camel }}Interface interface {
 {{~ end ~}}
 }
 
-// Implement {{ item.name | @upper_camel }}Interface for {{ item.name | @upper_camel }}
 {{~ for prop in item.props ~}}
 func (obj *{{ item.name | @upper_camel }}) Get{{ prop.name | @upper_camel }}() {{ prop.type }} {
     return obj.{{ prop.name | @upper_camel }}
 }
 {{~ end ~}}
+{{~ end ~}}
+
+type {{ table_name }} struct {
+    {{ if item.based }}*{{ item.based | @upper_camel }} `json:"{{ item.based }}"`{{ end }}
+{{~ for prop in item.props ~}}
+    {{ prop.name | @upper_camel }} {{ prop.type }} `json:"{{ prop.name }}"`
+{{~ end ~}}
+}
+
+type {{ table_name }}Builder struct {
+    Hook func(*{{ table_name }}, json.RawMessage) ({{ table_name }}, error)
+}
+
+func New{{ table_name }}Builder(hook func(*{{ table_name }}, json.RawMessage) ({{ table_name }}, error)) *{{ table_name }}Builder {
+	return &{{ table_name }}Builder{Hook: hook}
+}
+
+func (b *{{ table_name }}Builder) Build(data json.RawMessage) ({{ table_name }}, error) {
+	var raw struct {
+{{~ for prop in item.props ~}}
+        {{ prop.name | @upper_camel }} json.RawMessage `json:"{{ prop.name }}"`
+{{~ end ~}}
+	}
+
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return {{ table_name }}{}, err
+	}
+
+    result := {{ table_name }}{}
+{{~ if item.based ~}}
+    __{{ item.based }}, err := New{{ item.based | @upper_camel }}Builder(nil).Build(data)
+    if err != nil {
+        return {{ table_name }}{}, err
+    }
+    result.{{ item.based | @upper_camel }} = &__{{ item.based }}
 
 {{~ end ~}}
+{{~ for prop in item.props ~}}
+    __{{ prop.name }}, err := {{ prop.initializer }}
+    if err != nil {
+        return {{ table_name }}{}, err
+    }
+    result.{{ prop.name | @upper_camel}} = __{{ prop.name }}
+{{~ if !for.last }}
+
+{{ end ~}}
+{{~ end ~}}
+
+	if b.Hook != nil {
+		return b.Hook(&result, data)
+	}
+	return result, nil
+}
+
+{{~ if !for.last }}
+{{ end ~}}
 {{~ end ~}}

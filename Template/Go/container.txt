@@ -2,60 +2,90 @@
 func containable(table)
     ret table.name == table.json
 end
+
+func is_abstract(table)
+    ret table.is_abstract
+end
 ~}}
 
+{{~ for table in tables | array.filter @containable ~}}
+type {{ table.name | @upper_camel }}ContainerBuilder struct {
+    Hook func (*{{ table.name | @upper_camel }}, json.RawMessage) ({{ table.element_type }}, error)
+}
+
+{{ table.build_func }}
+
+{{~ end ~}}
+
+func readJsonFile(path string) (json.RawMessage, error) {
+	jsonFile, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer jsonFile.Close()
+
+	byteValue, _ := io.ReadAll(jsonFile)
+	return json.RawMessage(byteValue), nil
+}
+
+{{~
+func containable(table)
+    ret table.name == table.json
+end
+~}}
 type Container struct {
 {{~ for table in tables | array.filter @containable ~}}
-{{~ if base_tables | array.contains table.name ~}}
-    {{ table.name | @upper_camel }} map[uint32]{{ table.name | @upper_camel }}Interface
-{{~ else ~}}
-    {{ table.name | @upper_camel }} {{ table.type }}{{ table.generic }}
-{{~ end ~}}
+	{{ table.name | @upper_camel }} {{ table.return_type }}
+	{{ table.name | @upper_camel }}Hook func (*{{ table.name | @upper_camel }}, json.RawMessage) ({{ table.element_type }}, error)
 {{~ end ~}}
 }
 
-func load[T any](path string) T {
-    file, err := os.Open(path)
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer file.Close()
+func (container *Container) Load(callback func(float64)) {
+	type LoadTask struct {
+		Path string
+		Func func(json.RawMessage) error
+	}
 
-    bytes, err := io.ReadAll(file)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    var result T
-    err = json.Unmarshal(bytes, &result)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    return result
-}
-
-{{~ for base_table in base_tables ~}}
-func build{{ base_table | @upper_camel }}(path string) map[uint32]{{ base_table | @upper_camel }}Interface {
-    concrete := load[map[uint32]{{ base_table | @upper_camel }}](path)
-    result := make(map[uint32]{{ base_table | @upper_camel }}Interface)
-    for key, value := range concrete {
-        // Create a copy of the value to avoid pointer aliasing issues
-        valueCopy := value
-        result[key] = &valueCopy
-    }
-    return result
-}
-{{~ end ~}}
-
-func Load() Container {
-    return Container{
+	tasks := []LoadTask{
 {{~ for table in tables | array.filter @containable ~}}
-{{~ if base_tables | array.contains table.name ~}}
-        {{ table.name | @upper_camel }}: build{{ table.name | @upper_camel }}("json/{{ table.name }}.json"),
-{{~ else ~}}
-        {{ table.name | @upper_camel }}: load[{{ table.type }}{{ table.generic }}]("json/{{ table.name }}.json"),
+		{
+			Path: "json/{{ table.name }}.json",
+			Func: func(data json.RawMessage) error {
+				builder := {{ table.name | @upper_camel }}ContainerBuilder{
+					Hook: container.{{ table.name | @upper_camel }}Hook,
+				}
+				result, err := builder.Build(data)
+				if err != nil {
+					return err
+				}
+				container.{{ table.name | @upper_camel }} = result
+				return nil
+			},
+		},
 {{~ end ~}}
-{{~ end ~}}
-    }
+	}
+
+	count := len(tasks)
+	completed := int32(0)
+	wg := sync.WaitGroup{}
+	wg.Add(count)
+
+	for _, task := range tasks {
+		task := task // Create a new task variable in a new scope to avoid closure issues
+		go func() {
+			defer wg.Done()
+			jsonData, err := readJsonFile(task.Path)
+			if err != nil {
+				fmt.Printf("Error reading file %s: %v\n", task.Path, err)
+				return
+			}
+			if err := task.Func(jsonData); err != nil {
+				fmt.Printf("Error processing file %s: %v\n", task.Path, err)
+				return
+			}
+			newCompleted := atomic.AddInt32(&completed, 1)
+			callback(float64(newCompleted) / float64(count))
+		}()
+	}
+	wg.Wait()
 }

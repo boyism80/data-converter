@@ -8,11 +8,13 @@ namespace ExcelTableConverter.Worker.Generator.Go
     public class BindCodeGenerator : ParallelWorker<Scope, KeyValuePair<Scope, string>>
     {
         private static readonly Template _template = Template.Parse(File.ReadAllText($"Template/Go/container.txt"));
+        private readonly HashSet<string> _baseTableNames;
 
         public Dictionary<Scope, string> Result { get; private set; } = new Dictionary<Scope, string>();
 
         public BindCodeGenerator(Context ctx) : base(ctx)
         {
+            _baseTableNames = ctx.Completed.Schema.FindBaseTables();
         }
 
         protected override IEnumerable<Scope> OnReady()
@@ -25,6 +27,10 @@ namespace ExcelTableConverter.Worker.Generator.Go
 
         protected override IEnumerable<KeyValuePair<Scope, string>> OnWork(Scope scope)
         {
+            var opt = new Factory.DataFormatOption();
+            opt.Add("hook", "container.Hook");
+
+            var elementType = string.Empty;
             var buffer = new List<object>();
             foreach (var (tableName, schemaSet) in Context.Completed.Schema.OrderBy(x => x.Key))
             {
@@ -32,39 +38,183 @@ namespace ExcelTableConverter.Worker.Generator.Go
                 if (ftdSchemaSet.Count == 0)
                     continue;
 
-                var camelTableName = ScribanEx.UpperCamel(tableName);
+                var upperCamelTableName = ScribanEx.UpperCamel(tableName);
+                var interfaceTableName = upperCamelTableName + "Interface";
 
-                var containerType = string.Empty;
-                var genericType = string.Empty;
                 var pk = ftdSchemaSet.FirstOrDefault(x => Util.Type.IsPrimaryKey(x.Type, out _));
                 var gk = ftdSchemaSet.FirstOrDefault(x => Util.Type.IsGroupKey(x.Type, out _));
+                var isAbstract = _baseTableNames.Contains(tableName);
+                var buildFuncBody = string.Empty;
+                var returnType = string.Empty;
+
                 if (gk != null && pk != null)
                 {
-                    containerType = "map";
-                    genericType = $"[{new TypeFactory(Context).Build(gk.Type)}]map[{new TypeFactory(Context).Build(pk.Type)}]{camelTableName}";
+                    var kt1 = new TypeFactory(Context).Build(gk.Type);
+                    var kt2 = new TypeFactory(Context).Build(pk.Type);
+                    var vt = upperCamelTableName;
+                    elementType = isAbstract ? $"{vt}Interface" : vt;
+                    var valueBuilderBody = string.Empty;
+                    if (isAbstract)
+                    {
+                        valueBuilderBody = $@"            based, err := New{vt}Builder(nil).Build(data)
+            if err != nil {{
+               return nil, err
+            }}
+
+            if container.Hook != nil {{
+               return container.Hook(&based, data)
+            }}
+
+            return &based, nil";
+                    }
+                    else
+                    {
+                        valueBuilderBody = $@"            return New{vt}Builder(container.Hook).Build(data)";
+                    }
+
+                    buildFuncBody = $@"   innerMapBuilder := func(data json.RawMessage) (map[{kt2}]{vt}, error) {{
+      innerDictBuilder := NewDictionaryBuilder(
+         func(data json.RawMessage) ({kt2}, error) {{
+            return New{new TypeBuilderFactory(Context).Build(kt2)}.Build(data)
+         }},
+         func(data json.RawMessage) ({elementType}, error) {{
+{valueBuilderBody}
+         }},
+      )
+      return innerDictBuilder.Build(data)
+   }}
+
+   outerDictBuilder := NewDictionaryBuilder(
+      func(data json.RawMessage) ({kt1}, error) {{
+         return New{new TypeBuilderFactory(Context).Build(kt1)}.Build(data)
+      }},
+      innerMapBuilder,
+   )
+
+   return outerDictBuilder.Build(data)";
+
+
+                    returnType = $"map[{kt1}]map[{kt2}]{elementType}";
                 }
                 else if (pk != null)
                 {
-                    containerType = "map";
-                    genericType = $"[{new TypeFactory(Context).Build(pk.Type)}]{camelTableName}";
+                    var kt = new TypeFactory(Context).Build(Context.Completed.Schema.GetRootTableType(pk.Type));
+                    var vt = upperCamelTableName;
+                    var valueBuilderBody = string.Empty;
+                    elementType = isAbstract ? $"{vt}Interface" : vt;
+                    if (isAbstract)
+                    {
+                        valueBuilderBody = $@"         based, err := New{vt}Builder(nil).Build(data)
+         if err != nil {{
+            return nil, err
+         }}
+
+         if container.Hook != nil {{
+            return container.Hook(&based, data)
+         }}
+
+         return &based, nil";
+                    }
+                    else
+                    {
+                        valueBuilderBody = $@"         return New{vt}Builder(container.Hook).Build(data)";
+                    }
+
+                    buildFuncBody = $@"   dictBuilder := NewDictionaryBuilder(
+      func(data json.RawMessage) ({kt}, error) {{
+         return New{new TypeBuilderFactory(Context).Build(kt)}.Build(data)
+      }},
+      func(data json.RawMessage) ({elementType}, error) {{
+{valueBuilderBody}
+      }},
+   )
+   return dictBuilder.Build(data)";
+
+                    returnType = $"map[{kt}]{elementType}";
                 }
                 else if (gk != null)
                 {
-                    containerType = "map";
-                    genericType = $"[{new TypeFactory(Context).Build(gk.Type)}][]{camelTableName}";
+                    var kt = new TypeFactory(Context).Build(gk.Type);
+                    var vt = upperCamelTableName;
+                    var valueBuilderBody = string.Empty;
+                    elementType = isAbstract ? $"{vt}Interface" : vt;
+                    if (isAbstract)
+                    {
+                        valueBuilderBody = $@"      based, err := New{vt}Builder(nil).Build(data)
+      if err != nil {{
+         return nil, err
+      }}
+
+      if container.Hook != nil {{
+         return container.Hook(&based, data)
+      }}
+
+      return &based, nil";
+                    }
+                    else
+                    {
+                        valueBuilderBody = $@"      return New{vt}Builder(container.Hook).Build(data)";
+                    }
+
+                    buildFuncBody = $@"   arrayBuilder := NewArrayBuilder(func(data json.RawMessage) ({elementType}, error) {{
+{valueBuilderBody}
+   }})
+   dictBuilder := NewDictionaryBuilder(
+      func(data json.RawMessage) ({kt}, error) {{
+         return New{new TypeBuilderFactory(Context).Build(kt)}.Build(data)
+      }},
+      func(data json.RawMessage) ([]{elementType}, error) {{
+         return arrayBuilder.Build(data)
+      }},
+   )
+   return dictBuilder.Build(data)";
+
+                    returnType = $"map[{kt}][]{elementType}";
                 }
                 else
                 {
-                    containerType = "[]";
-                    genericType = camelTableName;
+                    var vt = upperCamelTableName;
+                    var valueBuilderBody = string.Empty;
+                    elementType = isAbstract ? $"{vt}Interface" : vt;
+                    if (isAbstract)
+                    {
+                        valueBuilderBody = $@"      based, err := New{vt}Builder(nil).Build(data)
+      if err != nil {{
+         return nil, err
+      }}
+
+      if container.Hook != nil {{
+         return container.Hook(&based, data)
+      }}
+
+      return &based, nil";
+                    }
+                    else
+                    {
+                        valueBuilderBody = $@"      return New{vt}Builder(container.Hook).Build(data)";
+                    }
+
+                    buildFuncBody = $@"   arrayBuilder := NewArrayBuilder(func(data json.RawMessage) ({elementType}, error) {{
+{valueBuilderBody}
+   }})
+   return arrayBuilder.Build(data)";
+
+                    returnType = $"[]{elementType}";
                 }
+
+                var buildFunc = $@"func (container *{upperCamelTableName}ContainerBuilder) Build(data json.RawMessage) ({returnType}, error) {{
+{buildFuncBody}
+}}";
 
                 buffer.Add(new
                 {
                     Name = tableName,
-                    Type = containerType,
-                    Generic = genericType,
+                    Based = Context.Completed.Schema[tableName].Based,
                     Json = Context.Completed.Schema[tableName].Json,
+                    IsAbstract = isAbstract,
+                    BuildFunc = buildFunc,
+                    ReturnType = returnType,
+                    ElementType = elementType,
                 });
             }
 

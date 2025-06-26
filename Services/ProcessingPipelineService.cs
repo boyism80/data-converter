@@ -1,3 +1,4 @@
+#nullable enable
 using ExcelTableConverter.Model;
 using ExcelTableConverter.Worker;
 using ExcelTableConverter.Worker.Cache;

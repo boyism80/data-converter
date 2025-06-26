@@ -59,6 +59,11 @@ namespace ExcelTableConverter.Model
 
             return true;
         }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Name, Scope, Type, Bold);
+        }
     }
 
     public class SourceDataColumns : SourceSchemaData

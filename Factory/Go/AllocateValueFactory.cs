@@ -180,12 +180,12 @@ namespace ExcelTableConverter.Factory.Go
             return value.ToString();
         }
 
-        public string Build(string type, object value)
+        public new string Build(string type, object value)
         {
             return base.Build(type, value, new DataFormatOption());
         }
 
-        public string Build(string type, object value, DataFormatOption option)
+        public new string Build(string type, object value, DataFormatOption option)
         {
             return base.Build(type, value, option);
         }

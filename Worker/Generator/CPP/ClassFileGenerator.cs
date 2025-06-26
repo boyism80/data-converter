@@ -15,7 +15,6 @@ namespace ExcelTableConverter.Worker.Generator.CPP
     public class ClassFileGenerator : ParallelWorker<string, ClassFileGeneratorResult>
     {
         private readonly string _dir;
-        private readonly Context _context;
 
         public ClassFileGenerator(Context ctx) : base(ctx)
         {

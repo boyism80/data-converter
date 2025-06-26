@@ -14,7 +14,6 @@ namespace ExcelTableConverter.Worker.Generator.Go
     public class EnumCodeGenerator : ParallelWorker<string, EnumCodeGeneratorResult>
     {
         private static readonly Template _template = Template.Parse(File.ReadAllText($"Template/Go/enum.txt"));
-        private readonly string _dir;
 
         public string Result { get; private set; }
 

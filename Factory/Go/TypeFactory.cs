@@ -131,12 +131,12 @@ namespace ExcelTableConverter.Factory.Go
             return WithNullable("float64", nullable);
         }
 
-        public new string Build(string type)
+        public string Build(string type)
         {
             return base.Build(type, null, new DataFormatOption());
         }
 
-        public new string Build(string type, object value, DataFormatOption option)
+        public string Build(string type, object value, DataFormatOption option)
         {
             return base.Build(type, value, option);
         }

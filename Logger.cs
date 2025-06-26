@@ -1,4 +1,5 @@
-﻿using ExcelTableConverter.Model;
+﻿#nullable enable
+using ExcelTableConverter.Model;
 using System.Text;
 
 namespace ExcelTableConverter
@@ -21,7 +22,6 @@ namespace ExcelTableConverter
     public static class Logger
     {
         private static int _y = 1;
-        private static int _width, _height;
         private static int _commentLine;
 
         private static readonly HashSet<string> _history = new HashSet<string>();

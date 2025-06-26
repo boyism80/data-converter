@@ -1,5 +1,4 @@
 ﻿using ExcelTableConverter.Model;
-using ExcelTableConverter.Util;
 
 namespace ExcelTableConverter.Factory.Go
 {

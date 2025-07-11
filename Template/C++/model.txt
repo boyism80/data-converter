@@ -203,9 +203,21 @@ template <typename T> T build(const Json::Value& json)
     if constexpr (std::is_enum_v<T>)
     {
         if (json.isString())
-            return T(fb::model::enum_value::enum_parse<T>(build<std::string>(json)));
+        {
+            auto str = build<std::string>(json);
+            if (std::all_of(str.begin(), str.end(), ::isdigit))
+            {
+                return T(std::stoi(str));
+            }
+            else
+            {
+                return T(fb::model::enum_value::enum_parse<T>(str));
+            }
+        }
         else
+        {
             return T(json.asInt());
+        }
     }
     else if constexpr (std::is_pointer_v<T>)
     {

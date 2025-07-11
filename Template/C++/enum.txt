@@ -70,7 +70,7 @@ inline {{ e.name }} enum_parse<{{ e.name }}>(const std::string k)
 
     auto i = enums.find(k);
     if (i == enums.end())
-        throw std::runtime_error("no enum value");
+        throw std::runtime_error(std::format("{} is not a valid type in {}", k, "{{ e.name }}"));
 
     return i->second;
 }
@@ -87,7 +87,7 @@ inline const char* enum_tostring<{{ e.name }}>({{ e.name }} k)
 
     auto i = enums.find(k);
     if (i == enums.end())
-        throw std::runtime_error("no enum value");
+        throw std::runtime_error(std::format("{} is not a valid value in {}", static_cast<uint32_t>(k), "{{ e.name }}"));
 
     return i->second;
 }

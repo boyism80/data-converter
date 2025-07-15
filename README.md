@@ -214,8 +214,6 @@ context->model.item.hook.build = [](const Json::Value& json) -> fb::model::item*
         return fb::model::build<fb::model::ring*>(json);
     case ITEM_TYPE::SHIELD:
         return fb::model::build<fb::model::shield*>(json);
-    case ITEM_TYPE::BOW:
-        return fb::model::build<fb::model::bow*>(json);
     default:
         return fb::model::build<fb::model::item*>(json);
     }

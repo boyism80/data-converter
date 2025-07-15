@@ -158,12 +158,6 @@ func TestLoadContainer(t *testing.T) {
 				return item, err
 			}
 			return &auxiliary, nil
-		case model.ITEM_TYPE_BOW:
-			bow, err := model.NewBowBuilder(nil).Build(data)
-			if err != nil {
-				return item, err
-			}
-			return &bow, nil
 		case model.ITEM_TYPE_PACKAGE:
 			pkg, err := model.NewPackBuilder(nil).Build(data)
 			if err != nil {

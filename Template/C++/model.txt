@@ -211,7 +211,7 @@ template <typename T> T build(const Json::Value& json)
             }
             else
             {
-                return T(fb::model::enum_value::enum_parse<T>(str));
+                return T({{ config.enum_namespace | @namespace_access_cpp }}enum_parse<T>(str));
             }
         }
         else

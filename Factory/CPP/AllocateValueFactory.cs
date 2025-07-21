@@ -94,7 +94,7 @@ namespace ExcelTableConverter.Factory.CPP
         {
             foreach (var (k, v) in Context.Completed.Enum[root])
             {
-                return $"{Util.CPP.Namespace.Access(Context.Configuration.Namespace)}{root}::{k}";
+                return $"{Util.CPP.Namespace.Access(Context.Configuration.Namespace)}{Util.CPP.Namespace.Access(Context.Configuration.EnumNamespace)}{root}::{k}";
             }
 
             throw new LogicException($"{value}는 {root} 열거형에 존재하지 않는 값입니다.".AsSpan());

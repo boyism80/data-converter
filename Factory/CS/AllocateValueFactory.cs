@@ -1,4 +1,5 @@
 ﻿using ExcelTableConverter.Model;
+using ExcelTableConverter.Util;
 using Newtonsoft.Json.Linq;
 
 namespace ExcelTableConverter.Factory.CS
@@ -94,7 +95,7 @@ namespace ExcelTableConverter.Factory.CS
         {
             foreach (var (k, v) in Context.Completed.Enum[root])
             {
-                return $"{root}.{k}";
+                return $"{ScribanEx.UpperCamel(root)}.{ScribanEx.UpperCamel(k)}";
             }
 
             throw new LogicException($"{value}는 {root} 열거형에 존재하지 않는 값입니다.".AsSpan());

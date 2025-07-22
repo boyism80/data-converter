@@ -93,12 +93,24 @@ namespace ExcelTableConverter.Factory.CS
 
         protected override string EnumType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            foreach (var (k, v) in Context.Completed.Enum[root])
+            switch (value)
             {
-                return $"{ScribanEx.UpperCamel(root)}.{ScribanEx.UpperCamel(k)}";
-            }
+                case string s:
+                    {
+                        if (Context.Completed.Enum[root].ContainsKey(s) == false)
+                            throw new LogicException($"{value}는 {root} 열거형에 존재하지 않는 값입니다.".AsSpan());
 
-            throw new LogicException($"{value}는 {root} 열거형에 존재하지 않는 값입니다.".AsSpan());
+                        return $"{ScribanEx.UpperCamel(root)}.{ScribanEx.UpperCamel(s)}";
+                    }
+
+                case int i:
+                    {
+                        return i.ToString();
+                    }
+
+                default:
+                    throw new LogicException($"{value}는 {root} 열거형에 존재하지 않는 값입니다.".AsSpan());
+            }
         }
 
         protected override string FloatType(object value, string root, bool nullable, DataFormatOption option)

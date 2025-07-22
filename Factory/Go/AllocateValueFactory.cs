@@ -86,12 +86,23 @@ namespace ExcelTableConverter.Factory.Go
 
         protected override string EnumType(object value, string root, string e, bool nullable, DataFormatOption option)
         {
-            foreach (var (k, v) in Context.Completed.Enum[root])
+            switch (value)
             {
-                return $"{root}.{k}";
-            }
+                case string s:
+                    {
+                        if (Context.Completed.Enum[root].ContainsKey(s) == false)
+                            throw new LogicException($"{value}는 {root} 열거형에 존재하지 않는 값입니다.".AsSpan());
+                        return $"{root}.{s}";
+                    }
 
-            throw new LogicException($"{value}는 {root} 열거형에 존재하지 않는 값입니다.".AsSpan());
+                case int i:
+                    {
+                        return i.ToString();
+                    }
+
+                default:
+                    throw new LogicException($"{value}는 {root} 열거형에 존재하지 않는 값입니다.".AsSpan());
+            }
         }
 
         protected override string IntType(object value, string root, bool nullable, DataFormatOption option)

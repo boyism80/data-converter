@@ -198,7 +198,7 @@ In your C++ application, handle polymorphic loading with hooks:
 
 ```cpp
 // From main.cpp - Item inheritance example
-context->model.item.hook.build = [](const Json::Value& json) -> fb::model::item* {
+server->model.item.hook.build = [](const Json::Value& json) -> fb::model::item* {
     auto type = fb::model::build<ITEM_TYPE>(json["type"]);
     switch (type)
     {

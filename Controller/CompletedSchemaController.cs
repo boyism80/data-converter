@@ -1,3 +1,4 @@
+using ExcelTableConverter.Configuration;
 using ExcelTableConverter.Model;
 using ExcelTableConverter.Services;
 using ExcelTableConverter.Util;
@@ -68,8 +69,8 @@ namespace ExcelTableConverter.Controller
         /// Builds and updates schema from source data
         /// </summary>
         /// <param name="sourceDataController">Source data controller</param>
-        /// <param name="configuration">Configuration service</param>
-        public void BuildFromSourceData(SourceDataController sourceDataController, IConfigurationService configuration)
+        /// <param name="configuration">Application configuration</param>
+        public void BuildFromSourceData(SourceDataController sourceDataController, AppConfiguration configuration)
         {
             if (sourceDataController == null || configuration == null)
                 throw new ArgumentNullException();

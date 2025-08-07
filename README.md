@@ -2,9 +2,6 @@
 
 A comprehensive tool that converts Excel files containing game data into strongly-typed code and JSON files for multiple programming languages. The converter supports C++, C#, Node.js, and Go, providing seamless integration between game data design and code implementation.
 
-# Usage
-```
-ExcelTableConverter --dir=<path-to-data> 
 ## Features
 
 - **Multi-language Support**: Generate code for C++, C#, Node.js, and Go
@@ -22,23 +19,49 @@ ExcelTableConverter --dir=<path-to-data>
 ExcelTableConverter --dir=<path-to-excel-files> 
                     --lang="c++|c#|node|go"
                     --dsl=<path-to-dsl>
-                    --dsl=<path-to-dsl-config>
-                    --env=<environment>
 ```
+
+### Command Line Options
+
+#### Required Options
+- `--dir=<path>` or `-d=<path>`: Input directory containing Excel files
+- `--lang=<languages>` or `-l=<languages>`: Target languages (pipe-separated)
+- `--dsl=<path>`: DSL configuration file path
+
+#### Optional Configuration Options
+- `--namespace=<value>` or `--ns=<value>`: Namespace (dot separated, default: unnamed)
+- `--const-namespace=<value>`: Const namespace (dot separated, default: const_value)
+- `--enum-namespace=<value>`: Enum namespace (dot separated, default: enum_value)
+- `--const-prefix=<value>`: Const file prefix (default: const)
+- `--enum-prefix=<value>`: Enum file prefix (default: enum)
+- `--json-path=<value>`: JSON file path (default: json)
+- `--diff-path=<value>`: Diff file path (default: diff)
+- `--parent-format=<value>`: Parent table format (default: {0}_attribute)
+- `--parent-prop=<value>`: Parent property name (default: parent)
+- `--dsl-enum=<value>`: DSL enum name (default: DSL)
+- `--additional-headers=<value>`: Additional header files (pipe separated, default: none)
+- `--help` or `-h`: Show help information
 
 ### Examples
 ```bash
 # Generate C++ code only
-ExcelTableConverter --dir="../data" --lang="c++"
+ExcelTableConverter --dir="../data" --lang="c++" --dsl="dsl.json"
 
 # Generate multiple languages
-ExcelTableConverter --dir="../data" --lang="c++|c#|go"
+ExcelTableConverter --dir="../data" --lang="c++|c#|go" --dsl="dsl.json"
 
-# Specify custom DSL configuration
-ExcelTableConverter --dir="../data" --lang="c++" --dsl="custom-dsl.json"
+# Specify custom namespace
+ExcelTableConverter --dir="../data" --lang="c++" --dsl="dsl.json" --ns="my.fb.model"
 
-# Set environment for conditional processing
-ExcelTableConverter --dir="../data" --lang="c++" --env="production"
+# Use short options
+ExcelTableConverter -d "../data" -l "c++" --dsl="dsl.json" --ns="fb.model"
+
+# Custom configuration
+ExcelTableConverter --dir="../data" --lang="c++" --dsl="dsl.json" \
+  --ns="fb.model" \
+  --const-namespace="const_value" \
+  --enum-namespace="enum_value" \
+  --additional-headers="my.header.h|another.header.h"
 ```
 
 ## Rules of File name
@@ -222,13 +245,13 @@ server->model.item.hook.build = [](const Json::Value& json) -> fb::model::item* 
 
 This hook allows the model loader to instantiate the correct derived class based on the item type field.
 
-## Configuration Files
+## Configuration
 
 ### DSL Configuration (`dsl.json`)
 Defines domain-specific language rules and custom type mappings.
 
-### Environment Configuration (`config.json`)
-Contains environment-specific settings and build options.
+### Command Line Configuration
+All configuration options are now available via command line arguments. The tool no longer uses a separate `config.json` file. All settings can be specified using the command line options listed above.
 
 ## Output Structure
 
@@ -305,4 +328,3 @@ Each scope generates a `Crc.txt` file containing checksums of all JSON files for
 4. Validate that all required fields are populated
 
 This tool provides a robust foundation for managing game data with strong typing, validation, and multi-language support, enabling efficient development workflows and reliable data integrity.
-

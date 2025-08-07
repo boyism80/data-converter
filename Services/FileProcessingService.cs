@@ -1,3 +1,4 @@
+using ExcelTableConverter.Configuration;
 using ExcelTableConverter.Controller;
 using ExcelTableConverter.Model;
 using Force.Crc32;
@@ -13,13 +14,13 @@ namespace ExcelTableConverter.Services
     /// </summary>
     public class FileProcessingService : IFileProcessingService
     {
-        private readonly IConfigurationService _configuration;
+        private readonly AppConfiguration _configuration;
 
         /// <summary>
         /// Initializes a new instance of the FileProcessingService
         /// </summary>
-        /// <param name="configuration">The configuration service</param>
-        public FileProcessingService(IConfigurationService configuration)
+        /// <param name="configuration">The application configuration</param>
+        public FileProcessingService(AppConfiguration configuration)
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }

@@ -1,4 +1,5 @@
 #nullable enable
+using ExcelTableConverter.Configuration;
 using ExcelTableConverter.Model;
 using ExcelTableConverter.Worker;
 using ExcelTableConverter.Worker.Cache;
@@ -18,13 +19,13 @@ namespace ExcelTableConverter.Services
     /// </summary>
     public class ProcessingPipelineService : IProcessingPipelineService
     {
-        private readonly IConfigurationService _configuration;
+        private readonly AppConfiguration _configuration;
 
         /// <summary>
         /// Initializes a new instance of the ProcessingPipelineService
         /// </summary>
-        /// <param name="configuration">The configuration service</param>
-        public ProcessingPipelineService(IConfigurationService configuration)
+        /// <param name="configuration">The application configuration</param>
+        public ProcessingPipelineService(AppConfiguration configuration)
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }

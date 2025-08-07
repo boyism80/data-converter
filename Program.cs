@@ -33,7 +33,6 @@ namespace ExcelTableConverter
             {
                 // Parse and validate configuration
                 var config = AppConfiguration.Parse(args);
-                config.ApplyToEnvironment();
 
                 // Setup services
                 ConfigureServices(config);
@@ -71,16 +70,15 @@ namespace ExcelTableConverter
         /// </summary>
         private static void ConfigureServices(AppConfiguration appConfig)
         {
-            // Register configuration service as singleton
-            var configService = new ConfigurationService(appConfig);
-            _serviceContainer.RegisterInstance<IConfigurationService>(configService);
+            // Register AppConfiguration as singleton
+            _serviceContainer.RegisterInstance<AppConfiguration>(appConfig);
 
             // Register services with factory methods to handle constructor dependencies
             _serviceContainer.RegisterFactory<IFileProcessingService>(() =>
-                new FileProcessingService(_serviceContainer.Resolve<IConfigurationService>()));
+                new FileProcessingService(_serviceContainer.Resolve<AppConfiguration>()));
 
             _serviceContainer.RegisterFactory<IProcessingPipelineService>(() =>
-                new ProcessingPipelineService(_serviceContainer.Resolve<IConfigurationService>()));
+                new ProcessingPipelineService(_serviceContainer.Resolve<AppConfiguration>()));
         }
 
         /// <summary>
@@ -92,7 +90,7 @@ namespace ExcelTableConverter
         {
             var fileService = _serviceContainer.Resolve<IFileProcessingService>();
             var pipelineService = _serviceContainer.Resolve<IProcessingPipelineService>();
-            var configService = _serviceContainer.Resolve<IConfigurationService>();
+            var configService = _serviceContainer.Resolve<AppConfiguration>();
 
             try
             {

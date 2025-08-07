@@ -1,7 +1,13 @@
-﻿using ExcelTableConverter.Controller;
+﻿using ExcelTableConverter.Configuration;
+using ExcelTableConverter.Controller;
 using ExcelTableConverter.Factory;
 using ExcelTableConverter.Services;
 using ExcelTableConverter.Worker;
+using ExcelTableConverter.Worker.Cache;
+using ExcelTableConverter.Worker.Generator;
+using ExcelTableConverter.Worker.Loader;
+using ExcelTableConverter.Worker.Validator;
+using Force.Crc32;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.IO.Compression;
@@ -10,6 +16,12 @@ using System.Text;
 
 namespace ExcelTableConverter.Model
 {
+    /// <summary>
+    /// Central context class for Excel table conversion process
+    /// 
+    /// Manages the complete state of the conversion process including source data,
+    /// completed data, DSL configuration, and caching mechanisms.
+    /// </summary>
     public class Context
     {
         public static string BUILD_VERSION = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
@@ -22,13 +34,13 @@ namespace ExcelTableConverter.Model
         private readonly CastValueFactory _castFactory;
 
         [JsonIgnore]
-        private IConfigurationService _configuration;
+        private AppConfiguration _configuration;
 
         /// <summary>
-        /// Gets the configuration service instance
+        /// Gets the application configuration instance
         /// </summary>
         [JsonIgnore]
-        public IConfigurationService Configuration => _configuration;
+        public AppConfiguration Configuration => _configuration;
 
         [JsonIgnore]
         public string Output = "output";
@@ -54,7 +66,7 @@ namespace ExcelTableConverter.Model
             _castFactory = new CastValueFactory(this);
         }
 
-        public Context(IConfigurationService configuration) : this()
+        public Context(AppConfiguration configuration) : this()
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             DSL = JObject.Parse(File.ReadAllText(_configuration.DslFilePath));
@@ -79,7 +91,7 @@ namespace ExcelTableConverter.Model
             return result;
         }
 
-        public void SetConfiguration(IConfigurationService configuration)
+        public void SetConfiguration(AppConfiguration configuration)
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }

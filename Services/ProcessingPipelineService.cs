@@ -17,7 +17,7 @@ namespace ExcelTableConverter.Services
     /// Coordinates the sequential execution of data loading, validation, and code generation
     /// stages with proper error handling and progress tracking.
     /// </summary>
-    public class ProcessingPipelineService : IProcessingPipelineService
+    public class ProcessingPipelineService
     {
         private readonly AppConfiguration _configuration;
 

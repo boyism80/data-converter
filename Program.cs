@@ -74,10 +74,10 @@ namespace ExcelTableConverter
             _serviceContainer.RegisterInstance<AppConfiguration>(appConfig);
 
             // Register services with factory methods to handle constructor dependencies
-            _serviceContainer.RegisterFactory<IFileProcessingService>(() =>
+            _serviceContainer.RegisterFactory<FileProcessingService>(() =>
                 new FileProcessingService(_serviceContainer.Resolve<AppConfiguration>()));
 
-            _serviceContainer.RegisterFactory<IProcessingPipelineService>(() =>
+            _serviceContainer.RegisterFactory<ProcessingPipelineService>(() =>
                 new ProcessingPipelineService(_serviceContainer.Resolve<AppConfiguration>()));
         }
 
@@ -88,8 +88,8 @@ namespace ExcelTableConverter
         /// <returns>True if the process succeeds, false otherwise</returns>
         private static async Task<bool> ExecuteConversionProcessAsync(AppConfiguration config)
         {
-            var fileService = _serviceContainer.Resolve<IFileProcessingService>();
-            var pipelineService = _serviceContainer.Resolve<IProcessingPipelineService>();
+            var fileService = _serviceContainer.Resolve<FileProcessingService>();
+            var pipelineService = _serviceContainer.Resolve<ProcessingPipelineService>();
             var configService = _serviceContainer.Resolve<AppConfiguration>();
 
             try
@@ -157,7 +157,7 @@ namespace ExcelTableConverter
         /// Saves error files and performance metrics
         /// </summary>
         /// <param name="fileService">The file processing service</param>
-        private static async Task SaveErrorFilesAsync(IFileProcessingService fileService)
+        private static async Task SaveErrorFilesAsync(FileProcessingService fileService)
         {
             await fileService.SaveErrorFilesAsync(Logger.ErrorFiles);
             await WritePerformanceMetricsAsync();

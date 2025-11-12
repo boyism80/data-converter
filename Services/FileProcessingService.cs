@@ -7,12 +7,60 @@ using Newtonsoft.Json;
 namespace ExcelTableConverter.Services
 {
     /// <summary>
+    /// Represents the result of file processing operations including deleted files management
+    /// </summary>
+    public class FileProcessingResult
+    {
+        /// <summary>
+        /// Gets or sets the list of constant files to process
+        /// </summary>
+        public IReadOnlyList<string> ConstFiles { get; set; } = new List<string>();
+
+        /// <summary>
+        /// Gets or sets the list of enum files to process
+        /// </summary>
+        public IReadOnlyList<string> EnumFiles { get; set; } = new List<string>();
+
+        /// <summary>
+        /// Gets or sets the list of data files to process
+        /// </summary>
+        public IReadOnlyList<string> DataFiles { get; set; } = new List<string>();
+
+        /// <summary>
+        /// Gets or sets the list of files that need to be processed (changed or error files)
+        /// </summary>
+        public IReadOnlyList<string> ProcessFiles { get; set; } = new List<string>();
+
+        /// <summary>
+        /// Gets or sets the list of files that were deleted
+        /// </summary>
+        public IReadOnlyList<string> DeletedFiles { get; set; } = new List<string>();
+
+        /// <summary>
+        /// Gets or sets the source controller containing data from deleted files.
+        /// This includes Data, Enum, Const, and CRC information from files that were removed,
+        /// preserved for dependency validation purposes.
+        /// </summary>
+        public SourceController DeletedFilesSource { get; set; }
+
+        /// <summary>
+        /// Gets or sets the loaded context with CRC information
+        /// </summary>
+        public Context LoadedContext { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether the DSL file was changed
+        /// </summary>
+        public bool DslFileChanged { get; set; }
+    }
+
+    /// <summary>
     /// Implementation of file processing service for Excel table conversion
     /// 
     /// Handles file categorization, CRC-based change detection, cache management,
     /// and coordination of file processing operations.
     /// </summary>
-    public class FileProcessingService : IFileProcessingService
+    public class FileProcessingService
     {
         private readonly AppConfiguration _configuration;
 

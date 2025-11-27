@@ -29,6 +29,7 @@ private:
     static std::vector<std::any> parse_params(const Json::Value& json);
 
 public:
+    Json::Value to_json() const;
     dsl({{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }} header, const std::vector<std::any>& params) : header(header), params(params)
     { }
     dsl(const Json::Value& json) : header(build<{{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }}>(json["Type"])), params(parse_params(json))
@@ -69,6 +70,18 @@ public:
     {
         return {{ config.namespace | @namespace_access_cpp }}dsl({{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }}::{{ item.name }}, { {{~ for prop in item.props ~}} {{ prop.name }}{{ if !for.last }}, {{ end }} {{~ end ~}} });
     }
+
+    Json::Value to_json() const
+    {
+        auto json = Json::Value{};
+        json["Type"] = {{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}enum_tostring<{{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }}>({{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }}::{{ item.name }});
+        auto params = Json::Value{Json::arrayValue};
+        {{~ for prop in item.props ~}}
+        params.append({{ prop.append_value }});
+        {{~ end ~}}
+        json["Parameters"] = params;
+        return json;
+    }
 };
 {{ if !for.last }}
 {{ end }}
@@ -89,4 +102,20 @@ inline std::vector<std::any> {{ config.namespace | @namespace_access_cpp }}dsl::
         throw std::runtime_error("invalid dsl header");
 
     return i->second(json["Parameters"]);
+}
+
+inline Json::Value {{ config.namespace | @namespace_access_cpp }}dsl::to_json() const
+{
+    static auto data = std::unordered_map<{{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }}, std::function<Json::Value(const std::vector<std::any>&)>>
+    {
+{{~ for dsl in dsls ~}}
+        { {{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }}::{{ dsl }}, [](const std::vector<std::any>& params) { return {{ config.namespace | @namespace_access_cpp }}dsl::{{ dsl }}(params).to_json(); }}{{ if !for.last }},{{ end }}
+{{~ end ~}}
+    };
+
+    auto i = data.find(this->header);
+    if(i == data.end())
+        throw std::runtime_error("invalid dsl header");
+
+    return i->second(this->params);
 }

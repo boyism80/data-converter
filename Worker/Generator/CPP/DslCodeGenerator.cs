@@ -38,6 +38,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 {
                     Name = prototype.Name,
                     Type = new TypeFactory(Context).Build(prototype.Type),
+                    AppendValue = new JsonAppendValueFactory(Context).Build(prototype.Type, prototype.Name),
                 } as object;
             }).ToList();
 

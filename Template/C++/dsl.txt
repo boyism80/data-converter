@@ -34,6 +34,10 @@ public:
     { }
     dsl(const Json::Value& json) : header(build<{{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }}>(json["Type"])), params(parse_params(json))
     { }
+    dsl(const dsl& other) : header(other.header), params(other.params)
+    { }
+    dsl(dsl&& other) noexcept : header(other.header), params(std::move(other.params))
+    { }
     ~dsl()
     { }
 };

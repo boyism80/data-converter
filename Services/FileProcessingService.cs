@@ -52,6 +52,16 @@ namespace ExcelTableConverter.Services
         /// Gets or sets whether the DSL file was changed
         /// </summary>
         public bool DslFileChanged { get; set; }
+
+        /// <summary>
+        /// Gets or sets the list of files that had errors in the previous run.
+        /// </summary>
+        public IReadOnlyList<string> ErrorFiles { get; set; } = new List<string>();
+
+        /// <summary>
+        /// Gets or sets whether this execution forces a full rebuild regardless of file changes.
+        /// </summary>
+        public bool IsFullRun { get; set; }
     }
 
     /// <summary>
@@ -82,7 +92,11 @@ namespace ExcelTableConverter.Services
         /// <returns>A FileProcessingResult containing categorized files, processing information, and deleted files data</returns>
         /// <exception cref="DirectoryNotFoundException">Thrown when the input directory does not exist</exception>
         /// <exception cref="IOException">Thrown when file access fails</exception>
-        public async Task<FileProcessingResult> ProcessFilesAsync(string inputDirectory, Context cachedContext, string dslFilePath)
+        public async Task<FileProcessingResult> ProcessFilesAsync(
+            string inputDirectory,
+            Context cachedContext,
+            string dslFilePath,
+            bool forceFullProcessing = false)
         {
             if (!Directory.Exists(inputDirectory))
             {
@@ -107,13 +121,15 @@ namespace ExcelTableConverter.Services
                     if (fileName.StartsWith("~$"))
                         continue;
 
-                    // Calculate CRC32 checksum for change detection
                     var bytes = await File.ReadAllBytesAsync(path);
                     var crc = $"{Crc32Algorithm.Compute(bytes)}.{bytes.Length}";
 
-                    // Skip processing if file hasn't changed (same CRC)
-                    if (cachedContext.Source.CRC.TryGetValue(fileName, out var oldCrc) && oldCrc == crc)
+                    if (!forceFullProcessing &&
+                        cachedContext.Source.CRC.TryGetValue(fileName, out var oldCrc) &&
+                        oldCrc == crc)
+                    {
                         continue;
+                    }
 
                     // Categorize files based on filename prefix
                     if (fileName.StartsWith(_configuration.ConstFilePrefix))
@@ -186,7 +202,10 @@ namespace ExcelTableConverter.Services
             await CleanupCacheFilesAsync(deletedFiles.Concat(updatedFiles).Concat(errorFiles));
 
             // Determine files that need processing
-            var processFiles = updatedFiles.Concat(errorFiles).ToList();
+            var processFiles = forceFullProcessing
+                ? updatedFiles
+                : updatedFiles.Concat(errorFiles).ToList();
+            processFiles = processFiles.Distinct().ToList();
 
             // Check if DSL file has changed
             var dslFileBytes = await File.ReadAllBytesAsync(dslFilePath);
@@ -207,7 +226,9 @@ namespace ExcelTableConverter.Services
             result.DeletedFiles = deletedFiles;
             result.DeletedFilesSource = deletedFilesSource;
             result.LoadedContext = loaded;
-            result.DslFileChanged = dslFileChanged;
+            result.ErrorFiles = forceFullProcessing ? new List<string>() : errorFiles;
+            result.IsFullRun = forceFullProcessing;
+            result.DslFileChanged = forceFullProcessing || dslFileChanged;
 
             return result;
         }

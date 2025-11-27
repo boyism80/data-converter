@@ -441,8 +441,8 @@ func NewDslBuilder() *DslBuilder {
 
 func (b *DslBuilder) Build(data json.RawMessage) (Dsl, error) {
 	var rawDsl struct {
-		Type       string            `json:"Type"`
-		Parameters []json.RawMessage `json:"Parameters"`
+		Header string            `json:"Header"`
+		Params []json.RawMessage `json:"Params"`
 	}
 
 	if err := json.Unmarshal(data, &rawDsl); err != nil {
@@ -451,13 +451,13 @@ func (b *DslBuilder) Build(data json.RawMessage) (Dsl, error) {
 
 	// Convert string type to DSL enum
 	dslType := DSL_ITEM // default
-	if typeValue, exists := dsl_name_to_value[strings.ToLower(rawDsl.Type)]; exists {
+	if typeValue, exists := dsl_name_to_value[strings.ToLower(rawDsl.Header)]; exists {
 		dslType = typeValue
 	}
 
 	// Convert parameters from RawMessage to []any
-	params := make([]any, len(rawDsl.Parameters))
-	for i, param := range rawDsl.Parameters {
+	params := make([]any, len(rawDsl.Params))
+	for i, param := range rawDsl.Params {
 		var value any
 		if err := json.Unmarshal(param, &value); err != nil {
 			return Dsl{}, err
@@ -465,7 +465,7 @@ func (b *DslBuilder) Build(data json.RawMessage) (Dsl, error) {
 		params[i] = value
 	}
 
-	result := Dsl{Type: dslType, Params: params}
+	result := Dsl{Header: dslType, Params: params}
 
 	if b.Hook != nil {
 		return b.Hook(&result), nil

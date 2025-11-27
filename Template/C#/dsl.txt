@@ -1,9 +1,6 @@
     public class Dsl
     {
-        [JsonProperty("Type")]
         public {{ config.namespace | array.concat config.enum_namespace | array.each @upper_camel | array.join '.' }}.{{ config.dsl_type_enum_name | @upper_camel }} Header { get; set; }
-        
-        [JsonProperty("Parameters")]
         public object[] Params { get; set; }
 
 {{~ for item in items ~}}

@@ -400,12 +400,12 @@ func TestContainerDataIntegrity(t *testing.T) {
 		}
 	}
 
-	// Test 4: Check DSL types in Map Cardinal directions
+	// Test 4: Check DSL headers in Map Cardinal directions
 	for mapId, mapData := range container.Map {
 		for direction, dsl := range mapData.Cardinal {
 			// Just verify DSL structure exists
-			if dsl.Type < 0 {
-				t.Errorf("Map %d cardinal direction %d has invalid DSL type: %d", mapId, direction, dsl.Type)
+			if dsl.Header > model.DSL_SCRIPT {
+				t.Errorf("Map %d cardinal direction %d has invalid DSL header: %d", mapId, direction, dsl.Header)
 			}
 		}
 	}

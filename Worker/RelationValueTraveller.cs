@@ -110,10 +110,10 @@ namespace ExcelTableConverter.Worker
                         throw new LogicException("알 수 없는 에러", rvd.Tracker);
                     }
 
-                    var definedParams = Context.DSL[dsl.Type] as JArray;
-                    for (int i = 0; i < dsl.Parameters.Count; i++)
+                    var definedParams = Context.DSL[dsl.Header] as JArray;
+                    for (int i = 0; i < dsl.Params.Count; i++)
                     {
-                        var argument = dsl.Parameters[i];
+                        var argument = dsl.Params[i];
                         queue.Enqueue(new RelationValueValidationData
                         {
                             Tracker = rvd.Tracker,

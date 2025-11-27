@@ -76,10 +76,10 @@ namespace ExcelTableConverter.Factory.Node
         {
             var dsl = value as DSL;
 
-            if (Context.DSL.TryGetValue(dsl.Type, out var prototype) == false)
-                throw new LogicException($"{dsl.Type}는 정의되지 않은 DSL 형식입니다.".AsSpan());
+            if (Context.DSL.TryGetValue(dsl.Header, out var prototype) == false)
+                throw new LogicException($"{dsl.Header}는 정의되지 않은 DSL 형식입니다.".AsSpan());
 
-            var args = dsl.Parameters.Select((x, i) =>
+            var args = dsl.Params.Select((x, i) =>
             {
                 var param = (prototype as JArray).ElementAt(i) as JObject;
                 var name = param["name"].Value<string>();
@@ -87,7 +87,7 @@ namespace ExcelTableConverter.Factory.Node
                 return (Name: name, Value: Build(type, x));
             }).ToList();
 
-            return $"new MasterData.Types.Dsl.Parameter.{dsl.Type} {{ {string.Join(", ", args.Select(x => $"{x.Name} = {x.Value}"))} }}.ToDsl()";
+            return $"new MasterData.Types.Dsl.Parameter.{dsl.Header} {{ {string.Join(", ", args.Select(x => $"{x.Name} = {x.Value}"))} }}.ToDsl()";
         }
 
         protected override string EnumType(object value, string root, string e, bool nullable, DataFormatOption option)

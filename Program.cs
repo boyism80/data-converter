@@ -96,15 +96,22 @@ namespace ExcelTableConverter
             {
                 // Load cached context
                 var cachedContext = new Context(configService);
-                cachedContext.Load();
+                var cacheLoaded = cachedContext.Load();
+                var forceFullProcessing = cacheLoaded && cachedContext.BuildVersion != Context.BUILD_VERSION;
 
                 // Process files and categorize them
-                var fileResult = await fileService.ProcessFilesAsync(config.InputDirectory, cachedContext, config.DslFilePath);
+                var fileResult = await fileService.ProcessFilesAsync(
+                    config.InputDirectory,
+                    cachedContext,
+                    config.DslFilePath,
+                    forceFullProcessing);
 
                 // Display processing information
-                var errorFiles = await fileService.LoadErrorFilesAsync();
-                var updatedFiles = fileResult.ProcessFiles.Except(errorFiles).ToList();
-                pipelineService.DisplayProcessingInfo(fileResult.ProcessFiles, updatedFiles, errorFiles);
+                var errorFiles = fileResult.ErrorFiles;
+                var updatedFiles = forceFullProcessing
+                    ? fileResult.ProcessFiles.ToList()
+                    : fileResult.ProcessFiles.Except(errorFiles).ToList();
+                pipelineService.DisplayProcessingInfo(fileResult, updatedFiles);
 
                 // Execute data processing pipeline
                 var processedContext = await pipelineService.ExecuteDataProcessingPipelineAsync(
@@ -136,7 +143,8 @@ namespace ExcelTableConverter
                 // Update data cache if values were processed
                 if (fileResult.ProcessFiles.Any())
                 {
-                    await pipelineService.UpdateDataCacheAsync(processedContext, updatedFiles);
+                    var cacheTargets = forceFullProcessing ? fileResult.ProcessFiles.ToList() : updatedFiles;
+                    await pipelineService.UpdateDataCacheAsync(processedContext, cacheTargets);
                 }
 
                 // Write performance metrics and clear error tracking

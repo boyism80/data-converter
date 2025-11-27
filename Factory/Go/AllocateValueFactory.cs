@@ -69,10 +69,10 @@ namespace ExcelTableConverter.Factory.Go
         {
             var dsl = value as DSL;
 
-            if (Context.DSL.TryGetValue(dsl.Type, out var prototype) == false)
-                throw new LogicException($"{dsl.Type}는 정의되지 않은 DSL 형식입니다.".AsSpan());
+            if (Context.DSL.TryGetValue(dsl.Header, out var prototype) == false)
+                throw new LogicException($"{dsl.Header}는 정의되지 않은 DSL 형식입니다.".AsSpan());
 
-            var args = dsl.Parameters.Select((x, i) =>
+            var args = dsl.Params.Select((x, i) =>
             {
                 var param = (prototype as JArray).ElementAt(i) as JObject;
                 var name = param["name"].Value<string>();
@@ -80,7 +80,7 @@ namespace ExcelTableConverter.Factory.Go
                 return (Name: name, Value: Build(type, x, option));
             }).ToList();
 
-            var typeName = char.ToUpper(dsl.Type[0]) + dsl.Type.Substring(1) + "Dsl";
+            var typeName = char.ToUpper(dsl.Header[0]) + dsl.Header.Substring(1) + "Dsl";
             return $"{typeName}{{ {string.Join(", ", args.Select(x => $"{char.ToUpper(x.Name[0]) + x.Name.Substring(1)}: {x.Value}"))} }}";
         }
 

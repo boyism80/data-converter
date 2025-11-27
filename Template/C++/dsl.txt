@@ -32,7 +32,7 @@ public:
     Json::Value to_json() const;
     dsl({{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }} header, const std::vector<std::any>& params) : header(header), params(params)
     { }
-    dsl(const Json::Value& json) : header(build<{{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }}>(json["Type"])), params(parse_params(json))
+    dsl(const Json::Value& json) : header(build<{{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }}>(json["Header"])), params(parse_params(json))
     { }
     dsl(const dsl& other) : header(other.header), params(other.params)
     { }
@@ -78,12 +78,12 @@ public:
     Json::Value to_json() const
     {
         auto json = Json::Value{};
-        json["Type"] = {{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}enum_tostring<{{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }}>({{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }}::{{ item.name }});
+        json["Header"] = {{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}enum_tostring<{{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }}>({{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }}::{{ item.name }});
         auto params = Json::Value{Json::arrayValue};
         {{~ for prop in item.props ~}}
         params.append({{ prop.append_value }});
         {{~ end ~}}
-        json["Parameters"] = params;
+        json["Params"] = params;
         return json;
     }
 };
@@ -100,12 +100,12 @@ inline std::vector<std::any> {{ config.namespace | @namespace_access_cpp }}dsl::
 {{~ end ~}}
     };
 
-    auto header = build<{{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }}>(json["Type"]);
+    auto header = build<{{ config.namespace | array.concat config.enum_namespace | @namespace_access_cpp }}{{ config.dsl_type_enum_name }}>(json["Header"]);
     auto i = data.find(header);
     if(i == data.end())
         throw std::runtime_error("invalid dsl header");
 
-    return i->second(json["Parameters"]);
+    return i->second(json["Params"]);
 }
 
 inline Json::Value {{ config.namespace | @namespace_access_cpp }}dsl::to_json() const

@@ -167,8 +167,8 @@ namespace ExcelTableConverter.Factory
 
             return DP(root, value, new DSL
             {
-                Type = header,
-                Parameters = castedParams
+                Header = header,
+                Params = castedParams
             });
         }
 

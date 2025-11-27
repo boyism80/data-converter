@@ -2,8 +2,8 @@
 {
     public class DSL
     {
-        public string Type { get; set; }
-        public List<object> Parameters { get; set; }
+        public string Header { get; set; }
+        public List<object> Params { get; set; }
     }
 
     public class DSLParameter

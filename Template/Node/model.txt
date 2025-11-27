@@ -163,14 +163,14 @@ module.exports = (function () {
 
     function DslBuilder() {
         
-        function ParseDsl(type, params) {
-            if (type == null)
+        function ParseDsl(header, params) {
+            if (header == null)
                 return null
 
             if (params == null)
                 return null
 
-            return $dsl_parser[type](params)
+            return $dsl_parser[header](params)
         }
 
         return {
@@ -179,9 +179,9 @@ module.exports = (function () {
                     return null
 
                 return {
-                    Type: v.Type,
-                    Parameters: v.Parameters,
-                    Parse: function () { return ParseDsl(this.Type, this.Parameters) }
+                    Header: v.Header,
+                    Params: v.Params,
+                    Parse: function () { return ParseDsl(this.Header, this.Params) }
                 }
             }
         }

@@ -1,6 +1,6 @@
 {{~ if items | array.size > 0 ~}}
 type Dsl struct {
-    Type   DSL
+    Header DSL
     Params []any
 }
 {{~ end ~}}
@@ -20,9 +20,9 @@ func New{{ item.header | @upper_camel }}Dsl(params []any) {{ item.header | @uppe
 }
 
 func (dsl *{{ item.header | @upper_camel }}Dsl) ToDSL() Dsl {
-    return Dsl {
-        DSL_{{ item.header | string.upcase }},
-        []any { {{~ for prop in item.props ~}}dsl.{{ prop.serialize }}{{ prop.name | @upper_camel }},{{~ end ~}} },
+    return Dsl{
+        Header: DSL_{{ item.header | string.upcase }},
+        Params: []any{ {{~ for prop in item.props ~}}dsl.{{ prop.serialize }}{{ prop.name | @upper_camel }},{{~ end ~}} },
     }
 }
 {{~ end ~}}

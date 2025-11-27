@@ -250,14 +250,19 @@ namespace ExcelTableConverter.Services
         /// <param name="processFiles">The list of files being processed</param>
         /// <param name="updatedFiles">The list of updated files</param>
         /// <param name="errorFiles">The list of files with errors</param>
-        public void DisplayProcessingInfo(IReadOnlyList<string> processFiles, IReadOnlyList<string> updatedFiles, IReadOnlyList<string> errorFiles)
+        public void DisplayProcessingInfo(FileProcessingResult fileResult, IReadOnlyList<string> updatedFiles)
         {
-            if (processFiles.Any())
+            if (fileResult.IsFullRun)
+            {
+                Logger.WriteLine(" 빌드 버전 변경으로 인해 전체 파일을 재처리합니다.",
+                    foreground: ConsoleColor.Blue, decorate: false);
+            }
+            else if (fileResult.ProcessFiles.Any())
             {
                 Logger.WriteLine(" 변경된 파일 또는 가장 마지막 에러 발생 파일에 대해서만 작업을 진행합니다.",
                     foreground: ConsoleColor.Blue, decorate: false);
 
-                foreach (var (files, suffix) in new[] { (updatedFiles, "변경된 파일"), (errorFiles, "에러 파일") })
+                foreach (var (files, suffix) in new[] { (updatedFiles, "변경된 파일"), (fileResult.ErrorFiles, "에러 파일") })
                 {
                     if (!files.Any())
                         continue;

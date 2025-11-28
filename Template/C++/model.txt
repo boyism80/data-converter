@@ -189,7 +189,7 @@ template <> {{ config.namespace | @namespace_access_cpp }}dsl build<{{ config.na
 {{ dsl }}
 #pragma endregion
 
-#pragma region class model
+#pragma region class table
 {{ class }}
 #pragma endregion
 

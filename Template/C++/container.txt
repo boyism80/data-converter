@@ -332,15 +332,15 @@ DECLARE_{{ table.name | string.upcase }}_CONTAINER_EXTENSION
 {{~ end ~}}
 
 
-class model
+class table
 {
 public:
 {{~ for table in tables | array.filter @containable ~}}
-    {{ config.namespace | @namespace_access_cpp }}__{{ table.name }} {{ table.name }};
+    inline static {{ config.namespace | @namespace_access_cpp }}__{{ table.name }} {{ table.name }};
 {{~ end ~}}
 
 private:
-    const std::vector<{{ config.namespace | @namespace_access_cpp }}container*> _containers = 
+    inline static const std::vector<{{ config.namespace | @namespace_access_cpp }}container*> _containers = 
     {
 {{~ for table in tables | array.filter @containable ~}}
         &{{ table.name }}{{ if !for.last }},{{ end }}
@@ -348,14 +348,17 @@ private:
     };
 
 public:
-    model() = default;
-    model(const model&) = delete;
-    ~model() = default;
+    table() = delete;
+    table(const table&) = delete;
+    table(table&&) = delete;
+    table& operator=(const table&) = delete;
+    table& operator=(table&&) = delete;
+    ~table() = delete;
 
 public:
-    void foreach(const std::function<void({{ config.namespace | @namespace_access_cpp }}container&)>& fn) const
+    static void foreach(const std::function<void({{ config.namespace | @namespace_access_cpp }}container&)>& fn)
     {
-        for (auto container : this->_containers)
+        for (auto container : table::_containers)
         {
             fn(*container);
         }

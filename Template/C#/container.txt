@@ -120,24 +120,23 @@ end
         }
     }
 
-    public class Model
+    public class Table
     {
 {{~ for table in tables | array.filter @containable ~}}
         [Table("{{ config.json_file_path }}/{{ table.name }}.json")]
         public partial class {{ table.name | @upper_camel }}Table : {{ table.type }}<{{ table.generic }}>
         { }
-        public {{ table.name | @upper_camel }}Table {{ table.name | @upper_camel }} { get; private set; } = new {{ table.name | @upper_camel }}Table();
+        public static {{ table.name | @upper_camel }}Table {{ table.name | @upper_camel }} { get; private set; } = new {{ table.name | @upper_camel }}Table();
 {{~ end ~}}
 
-        public Container[] Containers { get; private set; }
-
-        public Model()
+        public static Container[] Containers { get; private set; } = new Container[]
         {
-            Containers = new Container[]
-            {
 {{~ for table in tables | array.filter @containable ~}}
-                {{ table.name | @upper_camel }}{{ if !for.last }}, {{ end }}
+            {{ table.name | @upper_camel }}{{ if !for.last }}, {{ end }}
 {{~ end ~}}
-            };
+        };
+
+        private Table()
+        {
         }
     }

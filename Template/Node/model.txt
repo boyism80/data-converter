@@ -190,16 +190,12 @@ module.exports = (function () {
 {{ class }}
 
 {{ bind }}
-    return {
-        table: {
-            hook: { },
-            load: async function (root) {
-{{~ for table in tables | array.filter @containable ~}}
-                this.{{ table.name }} = {{ table.name }}ContainerBuilder(this.hook.{{ table.name }}).build(JSON.parse(await fs.readFile(path.join(root, '{{ table.name }}.json'))))
-{{~ end ~}}
-            }
-        },
 
+{{ container }}
+
+    return {
+        Table: Table,
+        Containers: Containers,
         enum: $enum,
         const: $const,
         ArrayBuilder: ArrayBuilder,
@@ -214,7 +210,7 @@ module.exports = (function () {
         {{ table.name }}Builder: {{ table.name }}Builder,
 {{~ end ~}}
         load: async function (root) {
-            await this.table.load(root)
+            await Table.load(root)
         }
     }
 })()

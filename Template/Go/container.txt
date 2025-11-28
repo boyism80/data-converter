@@ -33,54 +33,66 @@ func containable(table)
     ret table.name == table.json
 end
 ~}}
-type Container struct {
+
+// Container interface for all table containers
+type Container interface {
+	Load() error
+}
+
 {{~ for table in tables | array.filter @containable ~}}
-	{{ table.name | @upper_camel }} {{ table.return_type }}
-	{{ table.name | @upper_camel }}Hook func (*{{ table.name | @upper_camel }}, json.RawMessage) ({{ table.element_type }}, error)
+// Global {{ table.name | @upper_camel }} table instance
+var {{ table.name | @upper_camel }} {{ table.return_type }}
+
+// Global {{ table.name | @upper_camel }} hook function
+var {{ table.name | @upper_camel }}Hook func (*{{ table.name | @upper_camel }}, json.RawMessage) ({{ table.element_type }}, error)
+
+{{~ end ~}}
+
+// Table struct provides global access to all tables
+type Table struct{}
+
+{{~ for table in tables | array.filter @containable ~}}
+// {{ table.name | @upper_camel }}Container wraps the table data
+type {{ table.name | @upper_camel }}Container struct{}
+
+func (c *{{ table.name | @upper_camel }}Container) Load() error {
+	jsonData, err := readJsonFile("{{ config.json_file_path }}/{{ table.name }}.json")
+	if err != nil {
+		return err
+	}
+	builder := {{ table.name | @upper_camel }}ContainerBuilder{
+		Hook: {{ table.name | @upper_camel }}Hook,
+	}
+	result, err := builder.Build(jsonData)
+	if err != nil {
+		return err
+	}
+	{{ table.name | @upper_camel }} = result
+	return nil
+}
+
+{{~ end ~}}
+
+// Containers returns all table containers
+var Containers = []Container{
+{{~ for table in tables | array.filter @containable ~}}
+	&{{ table.name | @upper_camel }}Container{},
 {{~ end ~}}
 }
 
-func (container *Container) Load(callback func(float64)) {
-	type LoadTask struct {
-		Path string
-		Func func(json.RawMessage) error
-	}
-
-	tasks := []LoadTask{
-{{~ for table in tables | array.filter @containable ~}}
-		{
-			Path: "json/{{ table.name }}.json",
-			Func: func(data json.RawMessage) error {
-				builder := {{ table.name | @upper_camel }}ContainerBuilder{
-					Hook: container.{{ table.name | @upper_camel }}Hook,
-				}
-				result, err := builder.Build(data)
-				if err != nil {
-					return err
-				}
-				container.{{ table.name | @upper_camel }} = result
-				return nil
-			},
-		},
-{{~ end ~}}
-	}
-
-	count := len(tasks)
+// LoadAll loads all tables in parallel
+func LoadAll(callback func(float64)) {
+	count := len(Containers)
 	completed := int32(0)
 	wg := sync.WaitGroup{}
 	wg.Add(count)
 
-	for _, task := range tasks {
-		task := task // Create a new task variable in a new scope to avoid closure issues
+	for _, container := range Containers {
+		container := container // Create a new variable in a new scope to avoid closure issues
 		go func() {
 			defer wg.Done()
-			jsonData, err := readJsonFile(task.Path)
-			if err != nil {
-				fmt.Printf("Error reading file %s: %v\n", task.Path, err)
-				return
-			}
-			if err := task.Func(jsonData); err != nil {
-				fmt.Printf("Error processing file %s: %v\n", task.Path, err)
+			if err := container.Load(); err != nil {
+				fmt.Printf("Error loading container: %v\n", err)
 				return
 			}
 			newCompleted := atomic.AddInt32(&completed, 1)

@@ -13,3 +13,41 @@ end
     }{{ if !for.last }}
 {{ end }}
 {{~ end ~}}
+
+{{~
+func containable(table)
+    ret table.name == table.json
+end
+~}}
+
+// Global table instances
+{{~ for table in tables | array.filter @containable ~}}
+    let {{ table.name }} = null;
+    let {{ table.name }}Hook = null;
+{{~ end ~}}
+
+// Global containers array
+    const Containers = [
+{{~ for table in tables | array.filter @containable ~}}
+        { 
+            name: '{{ table.name }}', 
+            load: async function(root) {
+                const data = JSON.parse(await fs.readFile(path.join(root, '{{ config.json_file_path }}/{{ table.name }}.json')));
+                {{ table.name }} = {{ table.name }}ContainerBuilder({{ table.name }}Hook).build(data);
+            }
+        }{{ if !for.last }},{{ end }}
+{{~ end ~}}
+    ];
+
+// Table object for global access
+    const Table = {
+{{~ for table in tables | array.filter @containable ~}}
+        get {{ table.name }}() { return {{ table.name }}; },
+        set {{ table.name }}Hook(hook) { {{ table.name }}Hook = hook; },
+{{~ end ~}}
+        async load(root) {
+            for (const container of Containers) {
+                await container.load(root);
+            }
+        }
+    };

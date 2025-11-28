@@ -216,12 +216,17 @@ Row 1: based=BaseItem
 Row 2: json=items.json
 ```
 
-### Code Integration Example
+### Global Static Table Access
+All generated code uses a global static `Table` class that provides direct access to all data tables. This eliminates the need for dependency injection and allows tables to be accessed from anywhere in your codebase.
+
+### Code Integration Examples
+
+#### C++ Example
 In your C++ application, handle polymorphic loading with hooks:
 
 ```cpp
 // From main.cpp - Item inheritance example
-fb::model::table::item.hook.build = [](const Json::Value& json) -> fb::model::item* {
+table::item.hook.build = [](const Json::Value& json) -> fb::model::item* {
     auto type = fb::model::build<ITEM_TYPE>(json["type"]);
     switch (type)
     {
@@ -241,9 +246,102 @@ fb::model::table::item.hook.build = [](const Json::Value& json) -> fb::model::it
         return fb::model::build<fb::model::item*>(json);
     }
 };
+
+// Load all tables
+table::foreach([](fb::model::container& container) {
+    container.load();
+});
+
+// Access data
+auto item = table::item[123];
 ```
 
-This hook allows the model loader to instantiate the correct derived class based on the item type field.
+#### C# Example
+In your C# application, use the static `Table` class:
+
+```csharp
+// Set up Item inheritance hook
+Table.Item.Hook.Build = token => {
+    var type = token["type"].ToObject<ItemType>();
+    switch (type)
+    {
+        case ItemType.Weapon:
+            return token.ToObject<Weapon>();
+        case ItemType.Armor:
+            return token.ToObject<Armor>();
+        case ItemType.Consume:
+            return token.ToObject<Consume>();
+        // ... other types
+        default:
+            return token.ToObject<Item>();
+    }
+};
+
+// Load all tables
+foreach (var container in Table.Containers)
+{
+    container.Load();
+}
+
+// Access data
+var item = Table.Item[123];
+```
+
+#### Go Example
+In your Go application, use global table variables:
+
+```go
+// Set up Item inheritance hook
+model.ItemHook = func(item *model.Item, data json.RawMessage) (model.ItemInterface, error) {
+    switch item.Type {
+    case model.ITEM_TYPE_WEAPON:
+        weapon, err := model.NewWeaponBuilder(nil).Build(data)
+        return &weapon, err
+    case model.ITEM_TYPE_ARMOR:
+        armor, err := model.NewArmorBuilder(nil).Build(data)
+        return &armor, err
+    // ... other types
+    default:
+        return item, nil
+    }
+}
+
+// Load all tables
+model.LoadAll(func(percentage float64) {
+    log.Printf("Loading: %.2f%%", percentage*100)
+})
+
+// Access data
+item := model.Item[123]
+```
+
+#### Node.js Example
+In your Node.js application, use the global `Table` object:
+
+```javascript
+const model = require('./model');
+
+// Set up Item inheritance hook
+model.Table.itemHook = (item, data) => {
+    switch (item.type) {
+        case model.enum.ITEM_TYPE.WEAPON:
+            return model.WeaponBuilder().build(data);
+        case model.enum.ITEM_TYPE.ARMOR:
+            return model.ArmorBuilder().build(data);
+        // ... other types
+        default:
+            return item;
+    }
+};
+
+// Load all tables
+await model.Table.load('./json');
+
+// Access data
+const item = model.Table.item[123];
+```
+
+These hooks allow the model loader to instantiate the correct derived class based on the item type field. All tables are accessible globally through the `Table` class/object without requiring dependency injection.
 
 ## Configuration
 

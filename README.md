@@ -225,6 +225,8 @@ All generated code uses a global static `Table` class that provides direct acces
 In your C++ application, handle polymorphic loading with hooks:
 
 ```cpp
+using table = fb::model::table;
+
 // From main.cpp - Item inheritance example
 table::item.hook.build = [](const Json::Value& json) -> fb::model::item* {
     auto type = fb::model::build<ITEM_TYPE>(json["type"]);
@@ -260,6 +262,8 @@ auto item = table::item[123];
 In your C# application, use the static `Table` class:
 
 ```csharp
+using Fb.Model;
+
 // Set up Item inheritance hook
 Table.Item.Hook.Build = token => {
     var type = token["type"].ToObject<ItemType>();

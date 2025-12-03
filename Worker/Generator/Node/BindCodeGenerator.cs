@@ -1,5 +1,6 @@
 ﻿using ExcelTableConverter.Factory.Node;
 using ExcelTableConverter.Model;
+using ExcelTableConverter.Util;
 using Scriban;
 
 namespace ExcelTableConverter.Worker.Generator.Node
@@ -60,7 +61,16 @@ namespace ExcelTableConverter.Worker.Generator.Node
                 });
             }
 
-            var code = _template.Render(new { Scope = scope, Tables = buffer });
+            var obj = new ScribanEx
+            {
+                ["scope"] = scope,
+                ["tables"] = buffer,
+                ["config"] = Context.Configuration,
+            };
+
+            var ctx = new TemplateContext();
+            ctx.PushGlobal(obj);
+            var code = _template.Render(ctx);
             yield return new KeyValuePair<Scope, string>(scope, code);
         }
 

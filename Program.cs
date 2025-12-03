@@ -1,6 +1,7 @@
 ﻿using ExcelTableConverter.Configuration;
 using ExcelTableConverter.Model;
 using ExcelTableConverter.Services;
+using Microsoft.Extensions.DependencyInjection;
 using System.ComponentModel.DataAnnotations;
 
 /// <summary>
@@ -17,7 +18,6 @@ namespace ExcelTableConverter
     /// </summary>
     public class Program
     {
-        private static ServiceContainer _serviceContainer = new();
 
         /// <summary>
         /// Main entry point for the application
@@ -35,7 +35,7 @@ namespace ExcelTableConverter
                 var config = AppConfiguration.Parse(args);
 
                 // Setup services
-                ConfigureServices(config);
+                using var serviceProvider = ConfigureServices(config);
 
                 // Clear console if running in TTY mode
                 if (Logger.TTY)
@@ -44,7 +44,8 @@ namespace ExcelTableConverter
                 }
 
                 // Execute the conversion process
-                var success = await ExecuteConversionProcessAsync(config);
+                var orchestrator = serviceProvider.GetRequiredService<ConversionOrchestratorService>();
+                var success = await orchestrator.ExecuteAsync();
 
                 return success ? 0 : 1;
             }
@@ -66,126 +67,25 @@ namespace ExcelTableConverter
         }
 
         /// <summary>
-        /// Configures the dependency injection container with services
+        /// Configures the dependency injection container with services using ASP.NET Core DI
         /// </summary>
-        private static void ConfigureServices(AppConfiguration appConfig)
+        /// <param name="appConfig">The application configuration</param>
+        /// <returns>Service provider with all services registered</returns>
+        private static ServiceProvider ConfigureServices(AppConfiguration appConfig)
         {
+            var services = new ServiceCollection();
+
             // Register AppConfiguration as singleton
-            _serviceContainer.RegisterInstance<AppConfiguration>(appConfig);
+            services.AddSingleton(appConfig);
 
-            // Register services with factory methods to handle constructor dependencies
-            _serviceContainer.RegisterFactory<FileProcessingService>(() =>
-                new FileProcessingService(_serviceContainer.Resolve<AppConfiguration>()));
+            // Register services as singletons
+            services.AddSingleton<FileProcessingService>();
+            services.AddSingleton<ProcessingPipelineService>();
+            services.AddSingleton<ConversionOrchestratorService>();
 
-            _serviceContainer.RegisterFactory<ProcessingPipelineService>(() =>
-                new ProcessingPipelineService(_serviceContainer.Resolve<AppConfiguration>()));
+            return services.BuildServiceProvider();
         }
 
-        /// <summary>
-        /// Executes the complete Excel table conversion process
-        /// </summary>
-        /// <param name="config">The application configuration</param>
-        /// <returns>True if the process succeeds, false otherwise</returns>
-        private static async Task<bool> ExecuteConversionProcessAsync(AppConfiguration config)
-        {
-            var fileService = _serviceContainer.Resolve<FileProcessingService>();
-            var pipelineService = _serviceContainer.Resolve<ProcessingPipelineService>();
-            var configService = _serviceContainer.Resolve<AppConfiguration>();
-
-            try
-            {
-                // Load cached context
-                var cachedContext = new Context(configService);
-                var cacheLoaded = cachedContext.Load();
-                var forceFullProcessing = cacheLoaded && cachedContext.BuildVersion != Context.BUILD_VERSION;
-
-                // Process files and categorize them
-                var fileResult = await fileService.ProcessFilesAsync(
-                    config.InputDirectory,
-                    cachedContext,
-                    config.DslFilePath,
-                    forceFullProcessing);
-
-                // Display processing information
-                var errorFiles = fileResult.ErrorFiles;
-                var updatedFiles = forceFullProcessing
-                    ? fileResult.ProcessFiles.ToList()
-                    : fileResult.ProcessFiles.Except(errorFiles).ToList();
-                pipelineService.DisplayProcessingInfo(fileResult, updatedFiles);
-
-                // Execute data processing pipeline
-                var processedContext = await pipelineService.ExecuteDataProcessingPipelineAsync(
-                    fileResult, cachedContext, config.DslFilePath);
-
-                // Save processed context to cache
-                processedContext.Save();
-
-                // Execute validation pipeline
-                var validationSuccess = pipelineService.ExecuteValidationPipeline(
-                    processedContext, fileResult);
-
-                if (!validationSuccess)
-                {
-                    await SaveErrorFilesAsync(fileService);
-                    return false;
-                }
-
-                // Execute code generation pipeline
-                var codeGenSuccess = await pipelineService.ExecuteCodeGenerationPipelineAsync(
-                    processedContext, config.TargetLanguages);
-
-                if (!codeGenSuccess)
-                {
-                    await SaveErrorFilesAsync(fileService);
-                    return false;
-                }
-
-                // Update data cache if values were processed
-                if (fileResult.ProcessFiles.Any())
-                {
-                    var cacheTargets = forceFullProcessing ? fileResult.ProcessFiles.ToList() : updatedFiles;
-                    await pipelineService.UpdateDataCacheAsync(processedContext, cacheTargets);
-                }
-
-                // Write performance metrics and clear error tracking
-                await WritePerformanceMetricsAsync();
-                await fileService.SaveErrorFilesAsync(new List<string>());
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Conversion process failed: {ex.Message}");
-                await SaveErrorFilesAsync(fileService);
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Saves error files and performance metrics
-        /// </summary>
-        /// <param name="fileService">The file processing service</param>
-        private static async Task SaveErrorFilesAsync(FileProcessingService fileService)
-        {
-            await fileService.SaveErrorFilesAsync(Logger.ErrorFiles);
-            await WritePerformanceMetricsAsync();
-        }
-
-        /// <summary>
-        /// Writes performance metrics to file
-        /// </summary>
-        private static async Task WritePerformanceMetricsAsync()
-        {
-            try
-            {
-                var elapsedTimeContent = ElapsedTimeMeasurer.Display();
-                await File.WriteAllTextAsync("ElapsedTime.txt", elapsedTimeContent);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to write performance metrics: {ex.Message}");
-            }
-        }
 
         /// <summary>
         /// Handles unexpected errors with detailed logging
@@ -221,7 +121,7 @@ namespace ExcelTableConverter
                 }
             }
 
-            await WritePerformanceMetricsAsync();
+            await ConversionOrchestratorService.WritePerformanceMetricsAsync();
         }
     }
 }

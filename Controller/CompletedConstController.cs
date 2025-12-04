@@ -78,13 +78,15 @@ namespace ExcelTableConverter.Controller
             var constContainer = sourceConstController.GetAllConsts().GroupBy(x => x.TableName)
                 .ToDictionary(x => x.Key, x =>
                 {
-                    return x.OrderBy(x => x.FileName).ToDictionary(x => x.Name, x => new ConstData
-                    {
-                        Name = x.Name,
-                        Type = x.Type,
-                        Scope = x.Scope,
-                        Value = castMethod(x.Type, x.Value)
-                    });
+                    return x.OrderBy(x => x.FileName)
+                            .ThenBy(x => x.SheetName)
+                            .ToDictionary(x => x.Name, x => new ConstData
+                            {
+                                Name = x.Name,
+                                Type = x.Type,
+                                Scope = x.Scope,
+                                Value = castMethod(x.Type, x.Value)
+                            });
                 });
 
             UpdateContainer(constContainer);

@@ -494,7 +494,18 @@ namespace ExcelTableConverter.Factory
                     return DP(root, value, (ulong)v);
 
                 case string v:
-                    return DP(root, value, Build(root, v.StartsWith("0x") ? Convert.ToUInt64(v, 16) : ulong.Parse(v)));
+                    try
+                    {
+                        return DP(root, value, Build(root, v.StartsWith("0x") ? Convert.ToUInt64(v, 16) : ulong.Parse(v)));
+                    }
+                    catch (FormatException)
+                    {
+                        throw new LogicException($"{v}는 {root} 타입의 형식이 올바르지 않습니다.".AsSpan());
+                    }
+                    catch (OverflowException)
+                    {
+                        throw new LogicException($"{v}는 {root} 타입의 범위를 초과합니다.".AsSpan());
+                    }
 
                 default:
                     if (ulong.TryParse($"{value}", out var result) == false)

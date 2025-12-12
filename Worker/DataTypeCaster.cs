@@ -146,6 +146,10 @@ namespace ExcelTableConverter.Worker
                         {
                             values.Add(k, Context.Cast(normalColumnSet[k].Type, v));
                         }
+                        catch (LogicException e)
+                        {
+                            errors.Add(new LogicException(e.Message, chunkData.Tracker));
+                        }
                         catch (Exception e)
                         {
                             errors.Add(e);
@@ -163,6 +167,10 @@ namespace ExcelTableConverter.Worker
                                 throw new LogicException($"부모 컬럼에 문제가 있습니다. {parentOffset} 라인을 확인하세요.", chunkData.Tracker);
                             var parent = parentRows.First().Value;
                             values.Add(Context.Configuration.ParentPropName, Context.Cast(boldKeyColumns.Type, parent));
+                        }
+                        catch (LogicException e)
+                        {
+                            errors.Add(new LogicException(e.Message, chunkData.Tracker));
                         }
                         catch (Exception e)
                         {

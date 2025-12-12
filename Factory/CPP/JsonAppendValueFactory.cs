@@ -152,6 +152,9 @@ namespace ExcelTableConverter.Factory.CPP
         protected override string StringType(object value, string root, DataFormatOption option)
         {
             var name = option.Get<string>("name");
+            var nullable = Util.Type.IsNullable(root);
+            if (nullable)
+                return $"{name}.has_value() ? Json::Value({name}.value()) : Json::nullValue";
             return name;
         }
 

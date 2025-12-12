@@ -102,7 +102,8 @@ namespace ExcelTableConverter.Factory.CPP
 
         protected override string StringType(object value, string root, DataFormatOption option)
         {
-            return WithNullable("std::string", false, option);
+            var nullable = Util.Type.IsNullable(root);
+            return WithNullable("std::string", nullable, option);
         }
 
         protected override string TimeSpanType(object value, string root, bool nullable, DataFormatOption option)

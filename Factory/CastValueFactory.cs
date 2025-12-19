@@ -1,4 +1,4 @@
-﻿using ExcelTableConverter.Model;
+using ExcelTableConverter.Model;
 using ExcelTableConverter.Util;
 using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
@@ -172,6 +172,17 @@ namespace ExcelTableConverter.Factory
             });
         }
 
+        private int GetOperatorPriority(string op)
+        {
+            return op switch
+            {
+                "*" or "/" => 3,
+                "+" or "-" => 2,
+                "&" or "|" => 1,
+                _ => 0
+            };
+        }
+
         private List<object> ToPostfix(string root, List<object> values)
         {
             var data = new Stack<object>();
@@ -190,18 +201,18 @@ namespace ExcelTableConverter.Factory
 
                     case string s:
                         {
-                            switch (s)
+                            if (s == "&" || s == "|" || s == "+" || s == "-" || s == "*" || s == "/")
                             {
-                                case "&":
-                                case "|":
-                                    if (op.Count > 0)
-                                        data.Push(op.Pop());
-                                    op.Push(value);
-                                    break;
-
-                                default:
-                                    data.Push(value);
-                                    break;
+                                var currentPriority = GetOperatorPriority(s);
+                                while (op.Count > 0 && op.Peek() is string topOp && GetOperatorPriority(topOp) >= currentPriority)
+                                {
+                                    data.Push(op.Pop());
+                                }
+                                op.Push(value);
+                            }
+                            else
+                            {
+                                data.Push(value);
                             }
                         }
                         break;
@@ -225,11 +236,45 @@ namespace ExcelTableConverter.Factory
             {
                 switch (x as string)
                 {
+                    case "+":
+                        {
+                            var x1 = Context.Completed.Enum.ConvertToInt(root, stack.Pop());
+                            var x2 = Context.Completed.Enum.ConvertToInt(root, stack.Pop());
+                            stack.Push(x2 + x1);
+                        }
+                        break;
+
+                    case "-":
+                        {
+                            var x1 = Context.Completed.Enum.ConvertToInt(root, stack.Pop());
+                            var x2 = Context.Completed.Enum.ConvertToInt(root, stack.Pop());
+                            stack.Push(x2 - x1);
+                        }
+                        break;
+
+                    case "*":
+                        {
+                            var x1 = Context.Completed.Enum.ConvertToInt(root, stack.Pop());
+                            var x2 = Context.Completed.Enum.ConvertToInt(root, stack.Pop());
+                            stack.Push(x2 * x1);
+                        }
+                        break;
+
+                    case "/":
+                        {
+                            var x1 = Context.Completed.Enum.ConvertToInt(root, stack.Pop());
+                            var x2 = Context.Completed.Enum.ConvertToInt(root, stack.Pop());
+                            if (x1 == 0)
+                                throw new LogicException($"{root}에서 0으로 나누기를 시도했습니다.".AsSpan());
+                            stack.Push(x2 / x1);
+                        }
+                        break;
+
                     case "&":
                         {
                             var x1 = Context.Completed.Enum.ConvertToInt(root, stack.Pop());
                             var x2 = Context.Completed.Enum.ConvertToInt(root, stack.Pop());
-                            stack.Push(x1 & x2);
+                            stack.Push(x2 & x1);
                         }
                         break;
 
@@ -237,7 +282,7 @@ namespace ExcelTableConverter.Factory
                         {
                             var x1 = Context.Completed.Enum.ConvertToInt(root, stack.Pop());
                             var x2 = Context.Completed.Enum.ConvertToInt(root, stack.Pop());
-                            stack.Push(x1 | x2);
+                            stack.Push(x2 | x1);
                         }
                         break;
 

@@ -1,16 +1,16 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 
 namespace ExcelTableConverter.Util
 {
     public static class Enum
     {
-        public static readonly List<string> _operators = new List<string> { "&", "|" };
+        public static readonly List<string> _operators = new List<string> { "+", "-", "*", "/", "&", "|" };
 
         public static Match Parse(string value, bool allowHex = true)
         {
             var regex = allowHex ?
-                new Regex(@"^(?<value>[a-zA-Z_]+[a-zA-Z0-9_]*|0x[A-F0-9]+|\d+)|(?<op>[&\|])|(?<inv>~)") :
-                new Regex(@"^(?<value>[a-zA-Z_]+[a-zA-Z0-9_]*)|(?<op>[&\|])|(?<inv>~)");
+                new Regex(@"^(?<value>[a-zA-Z_]+[a-zA-Z0-9_]*|0x[A-F0-9]+|\d+)|(?<op>[+\-*/&\|])|(?<inv>~)") :
+                new Regex(@"^(?<value>[a-zA-Z_]+[a-zA-Z0-9_]*)|(?<op>[+\-*/&\|])|(?<inv>~)");
             var matched = regex.Match(value);
             return matched;
         }

@@ -75,7 +75,7 @@ namespace ExcelTableConverter
         {
             if (OnDecorate != null && decorate)
             {
-                text = OnDecorate(text.ToString()).AsSpan(); // OnDecorate는 string 반환하므로 변환 필요
+                text = OnDecorate(text.ToString()); // OnDecorate는 string 반환하므로 변환 필요
             }
 
             // Calculate horizontal position based on alignment

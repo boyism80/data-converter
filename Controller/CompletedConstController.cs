@@ -67,7 +67,7 @@ namespace ExcelTableConverter.Controller
         /// </summary>
         /// <param name="sourceConstController">Source const controller</param>
         /// <param name="castMethod">Method to cast values to appropriate types</param>
-        public void BuildFromSourceData(SourceConstController sourceConstController, Func<string, object, object> castMethod)
+        public void BuildFromSourceData(SourceConstController sourceConstController, Func<string, object, IExcelFileTrackable, object> castMethod)
         {
             if (sourceConstController == null)
                 throw new ArgumentNullException(nameof(sourceConstController));
@@ -85,7 +85,7 @@ namespace ExcelTableConverter.Controller
                                 Name = x.Name,
                                 Type = x.Type,
                                 Scope = x.Scope,
-                                Value = castMethod(x.Type, x.Value)
+                                Value = castMethod(x.Type, x.Value, null)
                             });
                 });
 

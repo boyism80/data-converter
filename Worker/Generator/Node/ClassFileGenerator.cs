@@ -65,7 +65,7 @@ namespace ExcelTableConverter.Worker.Generator.Node
 
         protected override void OnWorked(string input, (Scope Scope, string Name, List<object> Props) output, int percent)
         {
-            Logger.Write($"클래스 코드 파일을 저장했습니다. - {input}".AsSpan());
+            Logger.Write($"클래스 코드 파일을 저장했습니다. - {input}");
         }
 
         protected override IReadOnlyList<(Scope Scope, string Name, List<object> Props)> OnFinish(IReadOnlyList<(Scope Scope, string Name, List<object> Props)> output)

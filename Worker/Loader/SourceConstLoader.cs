@@ -48,7 +48,7 @@ namespace ExcelTableConverter.Worker.Loader
             }
             sourceConsts.Add(output);
 
-            Logger.Write($"상수 데이터를 읽었습니다 - {input.SheetName}".AsSpan());
+            Logger.Write($"상수 데이터를 읽었습니다 - {input.SheetName}");
         }
 
         protected override IReadOnlyList<SourceConst> OnFinish(IReadOnlyList<SourceConst> output)

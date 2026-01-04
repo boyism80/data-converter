@@ -35,7 +35,7 @@ namespace ExcelTableConverter.Worker.Cache
 
         protected override void OnWorked((string FileName, CacheDataType Data) input, (string FileName, byte[] Bytes) output, int percent)
         {
-            Logger.Write($"캐시 파일을 저장했습니다. - {output.FileName}".AsSpan());
+            Logger.Write($"캐시 파일을 저장했습니다. - {output.FileName}");
         }
 
         protected override IReadOnlyList<(string FileName, byte[] Bytes)> OnFinish(IReadOnlyList<(string FileName, byte[] Bytes)> output)

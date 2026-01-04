@@ -55,7 +55,7 @@ namespace ExcelTableConverter.Worker.Generator
 
         protected override void OnWorked(SourceSheetData input, bool output, int percent)
         {
-            Logger.Write($"diff 파일을 저장했습니다. - {input.FileName}".AsSpan());
+            Logger.Write($"diff 파일을 저장했습니다. - {input.FileName}");
         }
 
         protected override IReadOnlyList<bool> OnFinish(IReadOnlyList<bool> output)

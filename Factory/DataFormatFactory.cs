@@ -29,37 +29,37 @@ namespace ExcelTableConverter.Factory
             Context = ctx;
         }
 
-        protected virtual bool OnStart(object value, string root, bool nullable, out T result, DataFormatOption option)
+        protected virtual bool OnStart(object value, string root, bool nullable, out T result, DataFormatOption option, IExcelFileTrackable tracker)
         {
             result = default(T);
             return true;
         }
 
-        protected abstract T ByteType(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T SbyteType(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T ShortType(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T UshortType(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T BooleanType(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T IntType(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T UintType(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T LongType(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T UlongType(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T DoubleType(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T FloatType(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T StringType(object value, string root, DataFormatOption option);
-        protected abstract T DictionaryType(object value, string root, string k, string v, DataFormatOption option);
-        protected abstract T ArrayType(object value, string root, string e, DataFormatOption option);
-        protected abstract T EnumType(object value, string root, string e, bool nullable, DataFormatOption option);
-        protected abstract T DslType(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T TimeSpanType(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T DateTimeType(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T DateRangeType(object value, string root, bool nullable, DataFormatOption option);
-        protected abstract T PointType(object value, string root, string e, bool nullable, DataFormatOption option);
-        protected abstract T SizeType(object value, string root, string e, bool nullable, DataFormatOption option);
-        protected abstract T RangeType(object value, string root, string e, bool nullable, DataFormatOption option);
-        protected abstract T AreaType(object value, string root, string e, bool nullable, DataFormatOption option);
+        protected abstract T ByteType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker = null);
+        protected abstract T SbyteType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker = null);
+        protected abstract T ShortType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker = null);
+        protected abstract T UshortType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker = null);
+        protected abstract T BooleanType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker = null);
+        protected abstract T IntType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker = null);
+        protected abstract T UintType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker = null);
+        protected abstract T LongType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker = null);
+        protected abstract T UlongType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker = null);
+        protected abstract T DoubleType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker = null);
+        protected abstract T FloatType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker = null);
+        protected abstract T StringType(object value, string root, DataFormatOption option, IExcelFileTrackable tracker = null);
+        protected abstract T DictionaryType(object value, string root, string k, string v, DataFormatOption option, IExcelFileTrackable tracker = null);
+        protected abstract T ArrayType(object value, string root, string e, DataFormatOption option, IExcelFileTrackable tracker = null);
+        protected abstract T EnumType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker = null);
+        protected abstract T DslType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker = null);
+        protected abstract T TimeSpanType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker = null);
+        protected abstract T DateTimeType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker = null);
+        protected abstract T DateRangeType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker = null);
+        protected abstract T PointType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker = null);
+        protected abstract T SizeType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker = null);
+        protected abstract T RangeType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker = null);
+        protected abstract T AreaType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker = null);
 
-        protected T Build(string type, object value, DataFormatOption option = null)
+        protected T Build(string type, object value, DataFormatOption option = null, IExcelFileTrackable tracker = null)
         {
             option ??= new DataFormatOption();
 
@@ -70,10 +70,10 @@ namespace ExcelTableConverter.Factory
                     .ToDictionary(x => x.Key, x => x.ToDictionary(x => x.Name));
 
                 if (sorted.TryGetValue(constTableName, out var constSet) == false)
-                    throw new LogicException($"{constTableName}은 상수 테이블에 정의되지 않았습니다.".AsSpan());
+                    throw new LogicException($"{constTableName}은 상수 테이블에 정의되지 않았습니다.", tracker);
 
                 if (constSet.TryGetValue(constValueName, out var constValue) == false)
-                    throw new LogicException($"{constValueName}은 {constTableName}에 정의되지 않았습니다.".AsSpan());
+                    throw new LogicException($"{constValueName}은 {constTableName}에 정의되지 않았습니다.", tracker);
 
                 return Build(constValue.Type, constValue.Value);
             }
@@ -85,12 +85,12 @@ namespace ExcelTableConverter.Factory
             if (Util.Type.IsSequence(type, out _))
             {
                 if (nullable)
-                    return Build("int?", value, option);
+                    return Build("int?", value, option, tracker);
                 else
-                    return Build("int", value, option);
+                    return Build("int", value, option, tracker);
             }
 
-            if (OnStart(value, root, nullable, out var result, option) == false)
+            if (OnStart(value, root, nullable, out var result, option, tracker) == false)
             {
                 return result;
             }
@@ -100,106 +100,106 @@ namespace ExcelTableConverter.Factory
                 case "byte":
                 case "uint8":
                 case "uint8_t":
-                    return ByteType(value, root, nullable, option);
+                    return ByteType(value, root, nullable, option, tracker);
 
                 case "sbyte":
                 case "int8":
                 case "int8_t":
-                    return SbyteType(value, root, nullable, option);
+                    return SbyteType(value, root, nullable, option, tracker);
 
                 case "short":
                 case "int16":
                 case "int16_t":
-                    return ShortType(value, root, nullable, option);
+                    return ShortType(value, root, nullable, option, tracker);
 
                 case "ushort":
                 case "uint16":
                 case "uint16_t":
-                    return UshortType(value, root, nullable, option);
+                    return UshortType(value, root, nullable, option, tracker);
 
                 case "bool":
-                    return BooleanType(value, root, nullable, option);
+                    return BooleanType(value, root, nullable, option, tracker);
 
                 case "int":
                 case "int32":
                 case "int32_t":
-                    return IntType(value, root, nullable, option);
+                    return IntType(value, root, nullable, option, tracker);
 
                 case "uint":
                 case "uint32":
                 case "uint32_t":
-                    return UintType(value, root, nullable, option);
+                    return UintType(value, root, nullable, option, tracker);
 
                 case "long":
                 case "int64":
                 case "int64_t":
-                    return LongType(value, root, nullable, option);
+                    return LongType(value, root, nullable, option, tracker);
 
                 case "ulong":
                 case "uint64":
                 case "uint64_t":
-                    return UlongType(value, root, nullable, option);
+                    return UlongType(value, root, nullable, option, tracker);
 
                 case "double":
                 case "float64":
-                    return DoubleType(value, root, nullable, option);
+                    return DoubleType(value, root, nullable, option, tracker);
 
                 case "float":
                 case "float32":
-                    return FloatType(value, root, nullable, option);
+                    return FloatType(value, root, nullable, option, tracker);
 
                 case "string":
-                    return StringType(value, root, option);
+                    return StringType(value, root, option, tracker);
 
                 case "dsl":
-                    return DslType(value, root, nullable, option);
+                    return DslType(value, root, nullable, option, tracker);
 
                 case "TimeSpan":
-                    return TimeSpanType(value, root, nullable, option);
+                    return TimeSpanType(value, root, nullable, option, tracker);
 
                 case "DateTime":
-                    return DateTimeType(value, root, nullable, option);
+                    return DateTimeType(value, root, nullable, option, tracker);
 
                 case "DateRange":
-                    return DateRangeType(value, root, nullable, option);
+                    return DateRangeType(value, root, nullable, option, tracker);
             }
 
             if (Util.Type.IsArray(naked, out var e))
             {
-                return ArrayType(value, root, e, option);
+                return ArrayType(value, root, e, option, tracker);
             }
 
             if (Util.Type.IsMap(naked, out var pair))
             {
-                return DictionaryType(value, root, pair.Key, pair.Value, option);
+                return DictionaryType(value, root, pair.Key, pair.Value, option, tracker);
             }
 
             if (Util.Type.IsPoint(naked, out var pointType))
             {
-                return PointType(value, root, string.IsNullOrEmpty(pointType) ? "uint" : pointType, nullable, option);
+                return PointType(value, root, string.IsNullOrEmpty(pointType) ? "uint" : pointType, nullable, option, tracker);
             }
 
             if (Util.Type.IsSize(naked, out var sizeType))
             {
-                return SizeType(value, root, string.IsNullOrEmpty(sizeType) ? "uint" : sizeType, nullable, option);
+                return SizeType(value, root, string.IsNullOrEmpty(sizeType) ? "uint" : sizeType, nullable, option, tracker);
             }
 
             if (Util.Type.IsRange(naked, out var rangeType))
             {
-                return RangeType(value, root, string.IsNullOrEmpty(rangeType) ? "uint" : rangeType, nullable, option);
+                return RangeType(value, root, string.IsNullOrEmpty(rangeType) ? "uint" : rangeType, nullable, option, tracker);
             }
 
             if (Util.Type.IsArea(naked, out var areaType))
             {
-                return AreaType(value, root, string.IsNullOrEmpty(areaType) ? "uint" : areaType, nullable, option);
+                return AreaType(value, root, string.IsNullOrEmpty(areaType) ? "uint" : areaType, nullable, option, tracker);
             }
 
             if (Context.Completed.Enum.ContainsKey(naked))
             {
-                return EnumType(value, root, naked, nullable, option);
+                return EnumType(value, root, naked, nullable, option, tracker);
             }
 
-            throw new NotImplementedException($"{naked} 타입은 정의되지 않은 타입 형식입니다.");
+            throw new LogicException($"{naked} 타입은 정의되지 않은 타입 형식입니다.", tracker);
         }
     }
 }

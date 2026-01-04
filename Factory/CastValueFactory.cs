@@ -36,7 +36,7 @@ namespace ExcelTableConverter.Factory
             return castedValues.GetOrAdd(value, _ => fn());
         }
 
-        protected override object BooleanType(object value, string root, bool nullable, DataFormatOption option)
+        protected override object BooleanType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             if (value is bool b)
                 return b;
@@ -55,7 +55,7 @@ namespace ExcelTableConverter.Factory
             return DP(root, value, result);
         }
 
-        protected override object ArrayType(object value, string root, string e, DataFormatOption option)
+        protected override object ArrayType(object value, string root, string e, DataFormatOption option, IExcelFileTrackable tracker)
         {
             if (value is List<object>)
                 return value;
@@ -70,7 +70,7 @@ namespace ExcelTableConverter.Factory
                 .ToList());
         }
 
-        protected override object DictionaryType(object value, string root, string k, string v, DataFormatOption option)
+        protected override object DictionaryType(object value, string root, string k, string v, DataFormatOption option, IExcelFileTrackable tracker)
         {
             if (value is Dictionary<object, object>)
                 return value;
@@ -82,7 +82,7 @@ namespace ExcelTableConverter.Factory
             foreach (var kvpair in _splitRgx.Split($"{value}").Select(x => x.Trim()).Where(x => string.IsNullOrEmpty(x) == false).Select(x => x.Trim().Split(":")))
             {
                 if (kvpair.Length != 2)
-                    throw new LogicException($"맵 데이터 포맷이 올바르지 않습니다. ({string.Join(", ", kvpair)})".AsSpan());
+                    throw new LogicException($"맵 데이터 포맷이 올바르지 않습니다. ({string.Join(", ", kvpair)})", tracker);
 
                 result.Add(Build(k, kvpair[0].Trim()), Build(v, kvpair[1].Trim()));
             }
@@ -90,7 +90,7 @@ namespace ExcelTableConverter.Factory
             return DP(root, value, result);
         }
 
-        protected override object DoubleType(object value, string root, bool nullable, DataFormatOption option)
+        protected override object DoubleType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             if (Util.Value.IsNull(value))
             {
@@ -119,7 +119,7 @@ namespace ExcelTableConverter.Factory
             }
         }
 
-        protected override object DslType(object value, string root, bool nullable, DataFormatOption option)
+        protected override object DslType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             if (Util.Value.IsNull(value))
             {
@@ -130,10 +130,10 @@ namespace ExcelTableConverter.Factory
             }
 
             if (Util.Value.IsDSL(value, out var header, out var parameters) == false)
-                throw new LogicException($"{value}는 DSL로 변환할 수 없습니다.".AsSpan());
+                throw new LogicException($"{value}는 DSL로 변환할 수 없습니다.", tracker);
 
             if (Context.DSL.TryGetValue(header, out var sourceDSL) == false)
-                throw new LogicException($"{header}는 정의되지 않은 dsl입니다.".AsSpan());
+                throw new LogicException($"{header}는 정의되지 않은 dsl입니다.", tracker);
 
             var dsl = sourceDSL as JArray;
             var definedParams = dsl
@@ -145,10 +145,10 @@ namespace ExcelTableConverter.Factory
                 essentialParams = new Dictionary<int, JObject>();
 
             if (parameters.Count < essentialParams.Count)
-                throw new LogicException($"{value} 형식이 올바르지 않습니다. {header}는 최소 {essentialParams.Count}의 인자가 필요합니다. ".AsSpan());
+                throw new LogicException($"{value} 형식이 올바르지 않습니다. {header}는 최소 {essentialParams.Count}의 인자가 필요합니다. ", tracker);
 
             if (parameters.Count > definedParams.Count)
-                throw new LogicException($"{value} 형식이 올바르지 않습니다. {header}는 최대 {definedParams.Count}의 인자만 받습니다.".AsSpan());
+                throw new LogicException($"{value} 형식이 올바르지 않습니다. {header}는 최대 {definedParams.Count}의 인자만 받습니다.", tracker);
 
             var castedParams = new List<object>();
             for (int i = 0; i < definedParams.Count; i++)
@@ -157,7 +157,7 @@ namespace ExcelTableConverter.Factory
                 if (param == null)
                 {
                     if (definedParams[i].TryGetValue("default", out var defaultValue) == false)
-                        throw new LogicException($"{header}의 {i + 1}번째 파라미터 {definedParams[i]["name"]}은 디폴트로 정의할 수 없습니다.".AsSpan());
+                        throw new LogicException($"{header}의 {i + 1}번째 파라미터 {definedParams[i]["name"]}은 디폴트로 정의할 수 없습니다.", tracker);
 
                     param = defaultValue.Value<string>();
                 }
@@ -226,7 +226,7 @@ namespace ExcelTableConverter.Factory
             return data.Reverse().ToList();
         }
 
-        private object GetEnumValue(string root, List<object> values)
+        private object GetEnumValue(string root, List<object> values, IExcelFileTrackable tracker)
         {
             if (values.Count == 1)
                 return values[0] as string;
@@ -265,7 +265,7 @@ namespace ExcelTableConverter.Factory
                             var x1 = Context.Completed.Enum.ConvertToInt(root, stack.Pop());
                             var x2 = Context.Completed.Enum.ConvertToInt(root, stack.Pop());
                             if (x1 == 0)
-                                throw new LogicException($"{root}에서 0으로 나누기를 시도했습니다.".AsSpan());
+                                throw new LogicException($"{root}에서 0으로 나누기를 시도했습니다.", tracker);
                             stack.Push(x2 / x1);
                         }
                         break;
@@ -295,7 +295,7 @@ namespace ExcelTableConverter.Factory
             return stack.Pop();
         }
 
-        protected override object EnumType(object value, string root, string e, bool nullable, DataFormatOption option)
+        protected override object EnumType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             if (Util.Value.IsNull(value))
             {
@@ -307,49 +307,49 @@ namespace ExcelTableConverter.Factory
 
             var naked = Util.Type.Nake(root);
             if (Context.Completed.Enum.TryGetValue(naked, out var enumSet) == false)
-                throw new LogicException($"{naked}는 정의된 열거형 타입이 아닙니다.".AsSpan());
+                throw new LogicException($"{naked}는 정의된 열거형 타입이 아닙니다.", tracker);
 
             var parsed = (value as string).ParseValue(false);
             foreach (var x in parsed.ExtractEnumValues())
             {
                 if (enumSet.ContainsKey(x) == false)
-                    throw new LogicException($"{x}는 {naked}에 존재하지 않는 열거형 데이터입니다.".AsSpan());
+                    throw new LogicException($"{x}는 {naked}에 존재하지 않는 열거형 데이터입니다.", tracker);
             }
 
-            return DP(root, value, GetEnumValue(root, parsed));
+            return DP(root, value, GetEnumValue(root, parsed, tracker));
         }
 
-        protected override object FloatType(object value, string root, bool nullable, DataFormatOption option)
+        protected override object FloatType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
-            var casted = DoubleType(value, root, nullable, option);
+            var casted = DoubleType(value, root, nullable, option, tracker);
             if (casted != null)
             {
                 if ((double)casted < float.MinValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.".AsSpan());
+                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.", tracker);
 
                 if ((double)casted > float.MaxValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.".AsSpan());
+                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.", tracker);
             }
 
             return casted;
         }
 
-        protected override object IntType(object value, string root, bool nullable, DataFormatOption option)
+        protected override object IntType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
-            var casted = LongType(value, root, nullable, option);
+            var casted = LongType(value, root, nullable, option, tracker);
             if (casted != null)
             {
                 if ((long)casted < int.MinValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.".AsSpan());
+                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.", tracker);
 
                 if ((long)casted > int.MaxValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.".AsSpan());
+                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.", tracker);
             }
 
             return casted;
         }
 
-        protected override object LongType(object value, string root, bool nullable, DataFormatOption option)
+        protected override object LongType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             if (Util.Value.IsNull(value))
             {
@@ -366,7 +366,7 @@ namespace ExcelTableConverter.Factory
 
                 case ulong v:
                     if (v > long.MaxValue)
-                        throw new LogicException($"{v}는 {root} 타입의 최대값보다 큰 값입니다.".AsSpan());
+                        throw new LogicException($"{v}는 {root} 타입의 최대값보다 큰 값입니다.", tracker);
 
                     return DP(root, value, v);
 
@@ -405,82 +405,82 @@ namespace ExcelTableConverter.Factory
             }
         }
 
-        protected override object ByteType(object value, string root, bool nullable, DataFormatOption option)
+        protected override object ByteType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
-            var casted = UlongType(value, root, nullable, option);
+            var casted = UlongType(value, root, nullable, option, tracker);
             if (casted != null)
             {
                 if ((ulong)casted < byte.MinValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.".AsSpan());
+                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.", tracker);
 
                 if ((ulong)casted > byte.MaxValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.".AsSpan());
+                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.", tracker);
             }
 
             return casted;
         }
 
-        protected override object SbyteType(object value, string root, bool nullable, DataFormatOption option)
+        protected override object SbyteType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
-            var casted = LongType(value, root, nullable, option);
+            var casted = LongType(value, root, nullable, option, tracker);
             if (casted != null)
             {
                 if ((long)casted < sbyte.MinValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.".AsSpan());
+                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.", tracker);
 
                 if ((long)casted > sbyte.MaxValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.".AsSpan());
+                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.", tracker);
             }
 
             return casted;
         }
 
-        protected override object ShortType(object value, string root, bool nullable, DataFormatOption option)
+        protected override object ShortType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
-            var casted = LongType(value, root, nullable, option);
+            var casted = LongType(value, root, nullable, option, tracker);
             if (casted != null)
             {
                 if ((long)casted < short.MinValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.".AsSpan());
+                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.", tracker);
 
                 if ((long)casted > short.MaxValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.".AsSpan());
+                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.", tracker);
             }
 
             return casted;
         }
 
-        protected override object UshortType(object value, string root, bool nullable, DataFormatOption option)
+        protected override object UshortType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
-            var casted = UlongType(value, root, nullable, option);
+            var casted = UlongType(value, root, nullable, option, tracker);
             if (casted != null)
             {
                 if ((ulong)casted < ushort.MinValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.".AsSpan());
+                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.", tracker);
 
                 if ((ulong)casted > ushort.MaxValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.".AsSpan());
+                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.", tracker);
             }
 
             return casted;
         }
 
-        protected override object UintType(object value, string root, bool nullable, DataFormatOption option)
+        protected override object UintType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
-            var casted = UlongType(value, root, nullable, option);
+            var casted = UlongType(value, root, nullable, option, tracker);
             if (casted != null)
             {
                 if ((ulong)casted < uint.MinValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.".AsSpan());
+                    throw new LogicException($"{casted}는 {root} 타입의 최소값보다 작은 값입니다.", tracker);
 
                 if ((ulong)casted > uint.MaxValue)
-                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.".AsSpan());
+                    throw new LogicException($"{casted}는 {root} 타입의 최대값보다 큰 값입니다.", tracker);
             }
 
             return casted;
         }
 
-        protected override object UlongType(object value, string root, bool nullable, DataFormatOption option)
+        protected override object UlongType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             if (Util.Value.IsNull(value))
             {
@@ -506,35 +506,35 @@ namespace ExcelTableConverter.Factory
 
                 case float v:
                     if (v < 0)
-                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.".AsSpan());
+                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.", tracker);
 
                     return DP(root, value, (ulong)v);
 
                 case double v:
                     if (v < 0)
-                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.".AsSpan());
+                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.", tracker);
 
                     return DP(root, value, (ulong)v);
 
                 case long v:
                     if (v < 0)
-                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.".AsSpan());
+                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.", tracker);
 
                     return DP(root, value, v);
 
                 case sbyte v:
                     if (v < 0)
-                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.".AsSpan());
+                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.", tracker);
                     return DP(root, value, (ulong)v);
 
                 case short v:
                     if (v < 0)
-                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.".AsSpan());
+                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.", tracker);
                     return DP(root, value, (ulong)v);
 
                 case int v:
                     if (v < 0)
-                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.".AsSpan());
+                        throw new LogicException($"{v}는 {root} 타입의 최소값보다 작은 값입니다.", tracker);
 
                     return DP(root, value, (ulong)v);
 
@@ -545,11 +545,11 @@ namespace ExcelTableConverter.Factory
                     }
                     catch (FormatException)
                     {
-                        throw new LogicException($"{v}는 {root} 타입의 형식이 올바르지 않습니다.".AsSpan());
+                        throw new LogicException($"{v}는 {root} 타입의 형식이 올바르지 않습니다.", tracker);
                     }
                     catch (OverflowException)
                     {
-                        throw new LogicException($"{v}는 {root} 타입의 범위를 초과합니다.".AsSpan());
+                        throw new LogicException($"{v}는 {root} 타입의 범위를 초과합니다.", tracker);
                     }
 
                 default:
@@ -560,7 +560,7 @@ namespace ExcelTableConverter.Factory
             }
         }
 
-        protected override object StringType(object value, string root, DataFormatOption option)
+        protected override object StringType(object value, string root, DataFormatOption option, IExcelFileTrackable tracker)
         {
             if (Util.Value.IsNull(value))
             {
@@ -573,7 +573,7 @@ namespace ExcelTableConverter.Factory
             return DP(root, value, $"{value}");
         }
 
-        protected override object TimeSpanType(object value, string root, bool nullable, DataFormatOption option)
+        protected override object TimeSpanType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             if (Util.Value.IsNull(value))
             {
@@ -601,7 +601,7 @@ namespace ExcelTableConverter.Factory
             }
         }
 
-        protected override object DateRangeType(object value, string root, bool nullable, DataFormatOption option)
+        protected override object DateRangeType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             if (Util.Value.IsNull(value))
             {
@@ -636,7 +636,7 @@ namespace ExcelTableConverter.Factory
             throw new TypeCastException(value, root);
         }
 
-        protected override object DateTimeType(object value, string root, bool nullable, DataFormatOption option)
+        protected override object DateTimeType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             if (Util.Value.IsNull(value))
             {
@@ -664,7 +664,7 @@ namespace ExcelTableConverter.Factory
             }
         }
 
-        protected override object PointType(object value, string root, string e, bool nullable, DataFormatOption option)
+        protected override object PointType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             if (Util.Value.IsNull(value))
             {
@@ -696,7 +696,7 @@ namespace ExcelTableConverter.Factory
             }
         }
 
-        protected override object SizeType(object value, string root, string e, bool nullable, DataFormatOption option)
+        protected override object SizeType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             if (Util.Value.IsNull(value))
             {
@@ -728,7 +728,7 @@ namespace ExcelTableConverter.Factory
             }
         }
 
-        protected override object RangeType(object value, string root, string e, bool nullable, DataFormatOption option)
+        protected override object RangeType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             if (Util.Value.IsNull(value))
             {
@@ -760,12 +760,12 @@ namespace ExcelTableConverter.Factory
             }
         }
 
-        public object Build(string type, object value)
+        public object Build(string type, object value, IExcelFileTrackable tracker = null)
         {
             return base.Build(type, value);
         }
 
-        protected override object AreaType(object value, string root, string e, bool nullable, DataFormatOption option)
+        protected override object AreaType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             if (Util.Value.IsNull(value))
             {

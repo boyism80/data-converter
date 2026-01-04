@@ -90,7 +90,7 @@ namespace ExcelTableConverter.Worker.Validator
 
         protected override void OnWorked(StrongTypeValidationData input, bool output, int percent)
         {
-            Logger.Write($"강연결 타입 데이터를 검사했습니다. - {input.Type}".AsSpan());
+            Logger.Write($"강연결 타입 데이터를 검사했습니다. - {input.Type}");
         }
 
         protected override void OnError(StrongTypeValidationData input, Exception e, IExcelFileTrackable tracker = null)

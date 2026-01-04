@@ -45,7 +45,7 @@ namespace ExcelTableConverter.Worker.Loader
         protected override void OnWorked(string input, Workbook output, int percent)
         {
             if (!_quiet)
-                Logger.Write($"엑셀 파일을 읽었습니다. - {output.FileName}".AsSpan());
+                Logger.Write($"엑셀 파일을 읽었습니다. - {output.FileName}");
         }
 
         protected override IReadOnlyList<Workbook> OnFinish(IReadOnlyList<Workbook> output)

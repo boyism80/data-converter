@@ -55,7 +55,7 @@ namespace ExcelTableConverter.Worker.Generator.Go
 
         protected override void OnWorked(KeyValuePair<string, List<DSLParameter>> input, DslCodeGeneratorResult output, int percent)
         {
-            Logger.Write($"DSL 파일을 생성했습니다. - {input.Key}".AsSpan());
+            Logger.Write($"DSL 파일을 생성했습니다. - {input.Key}");
             base.OnWorked(input, output, percent);
         }
 

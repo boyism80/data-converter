@@ -30,7 +30,7 @@ namespace ExcelTableConverter.Worker.Validator
                 if (basedSet.Count > 1)
                 {
                     var trace = string.Join(", ", basedSet.Select(x => $"{x.Key}({x.Value.FileName}:{x.Value.SheetName})"));
-                    throw new LogicException($"{rsd.TableName} 테이블이 서로 다른 테이블을 상속받고 있습니다. - {trace}".AsSpan());
+                    throw new LogicException($"{rsd.TableName} 테이블이 서로 다른 테이블을 상속받고 있습니다. - {trace}");
                 }
             }
 
@@ -63,7 +63,7 @@ namespace ExcelTableConverter.Worker.Validator
 
         protected override void OnWorked(List<SourceSheetData> input, bool output, int percent)
         {
-            Logger.Write($"스키마 병합 가능 여부를 검사했습니다. - {input[0].TableName}".AsSpan());
+            Logger.Write($"스키마 병합 가능 여부를 검사했습니다. - {input[0].TableName}");
         }
 
         protected override IReadOnlyList<bool> OnFinish(IReadOnlyList<bool> output)

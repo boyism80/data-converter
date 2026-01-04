@@ -134,7 +134,7 @@ namespace ExcelTableConverter.Worker
         protected override void OnWorked(SourceSheetData[] input, List<RelationValueValidationData> output, int percent)
         {
             var tracker = input[0] as IExcelFileTrackable;
-            Logger.Write($"관계타입 데이터를 순회중입니다. - {tracker.FileName}:{tracker.SheetName}".AsSpan());
+            Logger.Write($"관계타입 데이터를 순회중입니다. - {tracker.FileName}:{tracker.SheetName}");
         }
 
         protected override void OnError(SourceSheetData[] input, Exception e, IExcelFileTrackable tracker = null)

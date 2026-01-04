@@ -16,33 +16,33 @@ namespace ExcelTableConverter.Factory.CS
             return $"{prefix}{result}";
         }
 
-        protected override string ArrayType(object obj, string root, string e, DataFormatOption option)
+        protected override string ArrayType(object obj, string root, string e, DataFormatOption option, IExcelFileTrackable tracker)
         {
-            return $"({obj} as object[]).Select(x => {Build(e, "x")}).ToList()";
+            return $"({obj} as object[]).Select(x => {Build(e, "x", tracker)}).ToList()";
         }
 
-        protected override string BooleanType(object obj, string root, bool nullable, DataFormatOption option)
+        protected override string BooleanType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
-            return WithNullable(obj as string, $"({new TypeFactory(Context).Build(root)})System.Convert.ChangeType({obj}, typeof({root}))", nullable);
+            return WithNullable(obj as string, $"({new TypeFactory(Context).Build(root, tracker)})System.Convert.ChangeType({obj}, typeof({root}))", nullable);
         }
 
-        protected override string DateRangeType(object obj, string root, bool nullable, DataFormatOption option)
+        protected override string DateRangeType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             return WithNullable(obj as string, $"DateRange.Parse({obj})", nullable);
         }
 
-        protected override string DateTimeType(object obj, string root, bool nullable, DataFormatOption option)
+        protected override string DateTimeType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             return WithNullable(obj as string, $"DateTime.Parse({obj}.ToString())", nullable);
         }
 
-        protected override string DictionaryType(object obj, string root, string k, string v, DataFormatOption option)
+        protected override string DictionaryType(object obj, string root, string k, string v, DataFormatOption option, IExcelFileTrackable tracker)
         {
             // TODO: 디버깅 후 다시 작성
             return $"({obj} as object[]).Select(x => {Build(k, "x")}).ToList()";
         }
 
-        protected override string DoubleType(object obj, string root, bool nullable, DataFormatOption option)
+        protected override string DoubleType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             var result = $"(double){obj}";
             if (nullable)
@@ -51,7 +51,7 @@ namespace ExcelTableConverter.Factory.CS
             return WithNullable(obj as string, result, nullable);
         }
 
-        protected override string DslType(object obj, string root, bool nullable, DataFormatOption option)
+        protected override string DslType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             var result = $"Newtonsoft.Json.JsonConvert.DeserializeObject<Dsl>(Newtonsoft.Json.JsonConvert.SerializeObject({obj}))";
             if (nullable)
@@ -59,14 +59,14 @@ namespace ExcelTableConverter.Factory.CS
             return WithNullable(obj as string, result, nullable);
         }
 
-        protected override string EnumType(object obj, string root, string e, bool nullable, DataFormatOption option)
+        protected override string EnumType(object obj, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             var namespaces = Context.Configuration.Namespace.Concat(Context.Configuration.EnumNamespace).Select(x => ScribanEx.UpperCamel(x));
             var prefix = ScribanEx.NamespaceAccess(namespaces, LanguageType.CS);
             return WithNullable(obj as string, $"({prefix}.{ScribanEx.UpperCamel(root)})Enum.Parse(typeof({prefix}.{ScribanEx.UpperCamel(root)}), {obj}.ToString())", nullable);
         }
 
-        protected override string FloatType(object obj, string root, bool nullable, DataFormatOption option)
+        protected override string FloatType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             var result = $"(float)(double){obj}";
             if (nullable)
@@ -75,7 +75,7 @@ namespace ExcelTableConverter.Factory.CS
             return WithNullable(obj as string, result, nullable);
         }
 
-        protected override string IntType(object obj, string root, bool nullable, DataFormatOption option)
+        protected override string IntType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             var result = $"(int)(long){obj}";
             if (nullable)
@@ -84,7 +84,7 @@ namespace ExcelTableConverter.Factory.CS
             return WithNullable(obj as string, result, nullable);
         }
 
-        protected override string LongType(object obj, string root, bool nullable, DataFormatOption option)
+        protected override string LongType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             var result = $"(long){obj}";
             if (nullable)
@@ -93,7 +93,7 @@ namespace ExcelTableConverter.Factory.CS
             return WithNullable(obj as string, result, nullable);
         }
 
-        protected override string ByteType(object obj, string root, bool nullable, DataFormatOption option)
+        protected override string ByteType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             var result = $"(byte){obj}";
             if (nullable)
@@ -102,7 +102,7 @@ namespace ExcelTableConverter.Factory.CS
             return WithNullable(obj as string, result, nullable);
         }
 
-        protected override string SbyteType(object obj, string root, bool nullable, DataFormatOption option)
+        protected override string SbyteType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             var result = $"(ubyte){obj}";
             if (nullable)
@@ -111,7 +111,7 @@ namespace ExcelTableConverter.Factory.CS
             return WithNullable(obj as string, result, nullable);
         }
 
-        protected override string ShortType(object obj, string root, bool nullable, DataFormatOption option)
+        protected override string ShortType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             var result = $"(short){obj}";
             if (nullable)
@@ -120,7 +120,7 @@ namespace ExcelTableConverter.Factory.CS
             return WithNullable(obj as string, result, nullable);
         }
 
-        protected override string UshortType(object obj, string root, bool nullable, DataFormatOption option)
+        protected override string UshortType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             var result = $"(ushort){obj}";
             if (nullable)
@@ -129,7 +129,7 @@ namespace ExcelTableConverter.Factory.CS
             return WithNullable(obj as string, result, nullable);
         }
 
-        protected override string UintType(object obj, string root, bool nullable, DataFormatOption option)
+        protected override string UintType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             var result = $"(uint){obj}";
             if (nullable)
@@ -138,7 +138,7 @@ namespace ExcelTableConverter.Factory.CS
             return WithNullable(obj as string, result, nullable);
         }
 
-        protected override string UlongType(object obj, string root, bool nullable, DataFormatOption option)
+        protected override string UlongType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             var result = $"(ulong){obj}";
             if (nullable)
@@ -147,12 +147,12 @@ namespace ExcelTableConverter.Factory.CS
             return WithNullable(obj as string, result, nullable);
         }
 
-        protected override string StringType(object obj, string root, DataFormatOption option)
+        protected override string StringType(object obj, string root, DataFormatOption option, IExcelFileTrackable tracker)
         {
             return $"{obj}?.ToString()";
         }
 
-        protected override string TimeSpanType(object obj, string root, bool nullable, DataFormatOption option)
+        protected override string TimeSpanType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             var result = $"TimeSpan.Parse({obj}.ToString())";
             if (nullable)
@@ -161,27 +161,27 @@ namespace ExcelTableConverter.Factory.CS
             return WithNullable(obj as string, result, nullable);
         }
 
-        public string Build(string type, string value)
+        public string Build(string type, string value, IExcelFileTrackable tracker = null)
         {
-            return base.Build(type, value);
+            return base.Build(type, value, null, tracker);
         }
 
-        protected override string PointType(object value, string root, string e, bool nullable, DataFormatOption option)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override string SizeType(object value, string root, string e, bool nullable, DataFormatOption option)
+        protected override string PointType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             throw new NotImplementedException();
         }
 
-        protected override string RangeType(object value, string root, string e, bool nullable, DataFormatOption option)
+        protected override string SizeType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             throw new NotImplementedException();
         }
 
-        protected override string AreaType(object value, string root, string e, bool nullable, DataFormatOption option)
+        protected override string RangeType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override string AreaType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             throw new NotImplementedException();
         }

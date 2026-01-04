@@ -96,9 +96,9 @@ namespace ExcelTableConverter.Model
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
 
-        public object Cast(string type, object value)
+        public object Cast(string type, object value, IExcelFileTrackable tracker = null)
         {
-            return _castFactory.Build(type, value);
+            return _castFactory.Build(type, value, tracker);
         }
 
         public bool Save()

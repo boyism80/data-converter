@@ -33,7 +33,7 @@ namespace ExcelTableConverter.Worker.Loader
 
                 var parsed = value.ParseValue();
                 if (values.ContainsKey(name))
-                    throw new LogicException($"{sheet.FullName}에 {name}이 중복 정의되었습니다.".AsSpan());
+                    throw new LogicException($"{sheet.FullName}에 {name}이 중복 정의되었습니다.");
 
                 values.Add(name, parsed);
             }
@@ -55,7 +55,7 @@ namespace ExcelTableConverter.Worker.Loader
             }
             sourceEnums.Add(output);
 
-            Logger.Write($"열거형 데이터를 읽었습니다. - {input.SheetName}".AsSpan());
+            Logger.Write($"열거형 데이터를 읽었습니다. - {input.SheetName}");
         }
 
         protected override IReadOnlyList<SourceEnum> OnFinish(IReadOnlyList<SourceEnum> output)

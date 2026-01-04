@@ -144,7 +144,7 @@ namespace ExcelTableConverter.Worker
                     {
                         try
                         {
-                            values.Add(k, Context.Cast(normalColumnSet[k].Type, v));
+                            values.Add(k, Context.Cast(normalColumnSet[k].Type, v, chunkData.Tracker));
                         }
                         catch (LogicException e)
                         {
@@ -214,7 +214,7 @@ namespace ExcelTableConverter.Worker
 
         protected override void OnWorked(CastTypeChunkData input, DataConvertResult output, int percent)
         {
-            Logger.Write($"테이블 데이터를 변환했습니다. - {input.Tracker.GetRootName()}".AsSpan());
+            Logger.Write($"테이블 데이터를 변환했습니다. - {input.Tracker.GetRootName()}");
         }
 
         protected override int RuntimeAdditionalCount()

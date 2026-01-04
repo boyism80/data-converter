@@ -324,21 +324,21 @@ namespace ExcelTableConverter.Controller
                     var refer = split[1];
 
                     if (TryGetValue(naked, out var schemaSet) == false)
-                        throw new LogicException($"{naked} 테이블은 정의되지 않았습니다.".AsSpan());
+                        throw new LogicException($"{naked} 테이블은 정의되지 않았습니다.");
 
                     if (schemaSet.TryGetValue(refer, out var x) == false)
-                        throw new LogicException($"{refer}는 {naked} 테이블에 정의되지 않았습니다.".AsSpan());
+                        throw new LogicException($"{refer}는 {naked} 테이블에 정의되지 않았습니다.");
 
                     type = Util.Type.Nake(x.Type, Util.NakeFlag.Key);
                 }
                 else
                 {
                     if (TryGetValue(naked, out var schemaSet) == false)
-                        throw new LogicException($"{naked} 테이블은 정의되지 않았습니다.".AsSpan());
+                        throw new LogicException($"{naked} 테이블은 정의되지 않았습니다.");
 
                     var key = schemaSet.Key;
                     if (key == null)
-                        throw new LogicException($"{naked} 테이블은 키 정의가 되지 않았습니다.".AsSpan());
+                        throw new LogicException($"{naked} 테이블은 키 정의가 되지 않았습니다.");
 
                     type = Util.Type.Nake(schemaSet[key].Type, Util.NakeFlag.Key);
                 }

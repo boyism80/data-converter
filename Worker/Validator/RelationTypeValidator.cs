@@ -112,7 +112,7 @@ namespace ExcelTableConverter.Worker.Validator
 
         protected override void OnWorked(RelationTypeValidationData input, bool output, int percent)
         {
-            Logger.Write($"참조 타입을 검사했습니다. - {input.Type}".AsSpan());
+            Logger.Write($"참조 타입을 검사했습니다. - {input.Type}");
         }
 
         protected override IReadOnlyList<bool> OnFinish(IReadOnlyList<bool> output)

@@ -179,7 +179,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                     ["class"] = GenerateClassCode(items),
                     ["dsl"] = dslCodeGenerator.Result,
                     ["container"] = bindCodeGenerator.Result[scope],
-                    ["lua"] = GenerateLuaCode(enumCodeGenerator),
+                    ["lua"] = GenerateLuaCode(enumCodeGenerator) + "\n" + constCodeGenerator.LuaCode,
                     ["config"] = Context.Configuration,
                 };
                 ctx.PushGlobal(obj);

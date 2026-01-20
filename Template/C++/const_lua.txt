@@ -1,0 +1,132 @@
+#ifdef LUA
+namespace lua {
+
+{{~
+func push_value_to_lua(value_path, type_info, indent)
+    indent_str = ''
+    for i in 0..indent
+        indent_str = indent_str + '    '
+    end
+    
+    $result = ''
+    
+    if type_info.is_nullable
+        if type_info.is_null_value
+            $result = indent_str + 'lua_pushnil(lua);'
+        else
+            inner_path = value_path + '.value()'
+            $result = push_value_to_lua(inner_path, type_info.inner_type, indent)
+        end
+    else if type_info.is_array
+        $result = indent_str + 'lua_newtable(lua);' + '\n'
+        $result = $result + indent_str + 'for (size_t i = 0; i < ' + value_path + '.size(); ++i)' + '\n'
+        $result = $result + indent_str + '{' + '\n'
+        $result = $result + indent_str + '    lua_pushinteger(lua, static_cast<lua_Integer>(i + 1));' + '\n'
+        $result = $result + push_value_to_lua(value_path + '[i]', type_info.array_element, indent + 1) + '\n'
+        $result = $result + indent_str + '    lua_settable(lua, -3);' + '\n'
+        $result = $result + indent_str + '}'
+    else if type_info.is_map
+        $result = indent_str + 'lua_newtable(lua);' + '\n'
+        $result = $result + indent_str + 'for (const auto& pair : ' + value_path + ')' + '\n'
+        $result = $result + indent_str + '{' + '\n'
+        $result = $result + push_value_to_lua('pair.first', type_info.map_key_type, indent + 1) + '\n'
+        $result = $result + push_value_to_lua('pair.second', type_info.map_value_type, indent + 1) + '\n'
+        $result = $result + indent_str + '    lua_settable(lua, -3);' + '\n'
+        $result = $result + indent_str + '}'
+    else if type_info.is_bool
+        $result = indent_str + 'lua_pushboolean(lua, ' + value_path + ');'
+    else if type_info.is_string
+        $result = indent_str + 'lua_pushstring(lua, ' + value_path + ');'
+    else if type_info.is_numeric
+        $result = indent_str + 'lua_pushinteger(lua, static_cast<lua_Integer>(' + value_path + '));'
+    else if type_info.is_enum
+        if type_info.enum_value
+            $result = indent_str + 'lua_getglobal(lua, "' + type_info.enum_name + '");' + '\n'
+            $result = $result + indent_str + 'lua_getfield(lua, -1, "' + type_info.enum_value + '");' + '\n'
+            $result = $result + indent_str + 'lua_remove(lua, -2);'
+        else
+            $result = indent_str + 'lua_pushinteger(lua, static_cast<lua_Integer>(' + value_path + '));'
+        end
+    else if type_info.is_date_time
+        $result = indent_str + 'lua_pushstring(lua, ' + value_path + '.to_string().c_str());'
+    else if type_info.is_time_span
+        $result = indent_str + 'lua_pushstring(lua, ' + value_path + '.to_string().c_str());'
+    else if type_info.is_date_range
+        $result = indent_str + 'lua_newtable(lua);' + '\n'
+        $result = $result + indent_str + 'lua_pushstring(lua, ' + value_path + '.begin.to_string().c_str());' + '\n'
+        $result = $result + indent_str + 'lua_setfield(lua, -2, "begin");' + '\n'
+        $result = $result + indent_str + 'lua_pushstring(lua, ' + value_path + '.end.to_string().c_str());' + '\n'
+        $result = $result + indent_str + 'lua_setfield(lua, -2, "end");'
+    else if type_info.is_point
+        $result = indent_str + 'lua_newtable(lua);' + '\n'
+        $result = $result + indent_str + 'lua_pushinteger(lua, static_cast<lua_Integer>(' + value_path + '.x));' + '\n'
+        $result = $result + indent_str + 'lua_setfield(lua, -2, "x");' + '\n'
+        $result = $result + indent_str + 'lua_pushinteger(lua, static_cast<lua_Integer>(' + value_path + '.y));' + '\n'
+        $result = $result + indent_str + 'lua_setfield(lua, -2, "y");'
+    else if type_info.is_range
+        $result = indent_str + 'lua_newtable(lua);' + '\n'
+        $result = $result + indent_str + 'lua_pushinteger(lua, static_cast<lua_Integer>(' + value_path + '.min));' + '\n'
+        $result = $result + indent_str + 'lua_setfield(lua, -2, "min");' + '\n'
+        $result = $result + indent_str + 'lua_pushinteger(lua, static_cast<lua_Integer>(' + value_path + '.max));' + '\n'
+        $result = $result + indent_str + 'lua_setfield(lua, -2, "max");'
+    else if type_info.is_size
+        $result = indent_str + 'lua_newtable(lua);' + '\n'
+        $result = $result + indent_str + 'lua_pushinteger(lua, static_cast<lua_Integer>(' + value_path + '.width));' + '\n'
+        $result = $result + indent_str + 'lua_setfield(lua, -2, "width");' + '\n'
+        $result = $result + indent_str + 'lua_pushinteger(lua, static_cast<lua_Integer>(' + value_path + '.height));' + '\n'
+        $result = $result + indent_str + 'lua_setfield(lua, -2, "height");'
+    else if type_info.is_area
+        $result = indent_str + 'lua_newtable(lua);' + '\n'
+        $result = $result + indent_str + 'lua_pushinteger(lua, static_cast<lua_Integer>(' + value_path + '.left));' + '\n'
+        $result = $result + indent_str + 'lua_setfield(lua, -2, "left");' + '\n'
+        $result = $result + indent_str + 'lua_pushinteger(lua, static_cast<lua_Integer>(' + value_path + '.top));' + '\n'
+        $result = $result + indent_str + 'lua_setfield(lua, -2, "top");' + '\n'
+        $result = $result + indent_str + 'lua_pushinteger(lua, static_cast<lua_Integer>(' + value_path + '.right));' + '\n'
+        $result = $result + indent_str + 'lua_setfield(lua, -2, "right");' + '\n'
+        $result = $result + indent_str + 'lua_pushinteger(lua, static_cast<lua_Integer>(' + value_path + '.bottom));' + '\n'
+        $result = $result + indent_str + 'lua_setfield(lua, -2, "bottom");'
+    else
+        $result = indent_str + '// TODO: Handle type ' + type_info.naked_type
+    end
+    
+    ret $result
+end
+~}}
+
+template <typename ConstTableType>
+inline void const_map(lua_State*)
+{
+    static_assert(sizeof(ConstTableType) == 0, "const_map specialization is required for this type");
+}
+
+{{~ for const_table in const_tables ~}}
+template <>
+inline void const_map<{{ config.namespace | array.concat config.const_namespace | array.add const_table.name | array.join '::'}}>(lua_State* lua)
+{
+    lua_newtable(lua);
+{{~ for prop in const_table.props ~}}
+    {{~ 
+        const_path = config.namespace | array.concat config.const_namespace | array.add const_table.name | array.add prop.name | array.join '::'
+        code = push_value_to_lua(const_path, prop.type_info, 0)
+    ~}}
+{{ code }}
+    lua_setfield(lua, -2, "{{ prop.name | @upper_snake }}");
+{{~ end ~}}
+}
+
+{{~ end ~}}
+
+inline static void map_const(lua_State* lua)
+{
+    lua_newtable(lua);
+    
+{{~ for const_table in const_tables ~}}
+    const_map<{{ config.namespace | array.concat config.const_namespace | array.add const_table.name | array.join '::'}}>(lua);
+    lua_setfield(lua, -2, "{{ const_table.name | @upper_snake }}");
+{{~ end ~}}
+    
+    lua_setglobal(lua, "CONST");
+}
+
+} 
+#endif

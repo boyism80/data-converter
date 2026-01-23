@@ -1,4 +1,4 @@
-﻿using ExcelTableConverter.Model;
+using ExcelTableConverter.Model;
 using Newtonsoft.Json.Linq;
 
 namespace ExcelTableConverter.Factory.Go
@@ -37,7 +37,7 @@ namespace ExcelTableConverter.Factory.Go
         protected override string DateRangeType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
         {
             var range = value as DateRange;
-            return $"DateRange{{Start: {Build("DateTime", range.Start, option, tracker)}, End: {Build("DateTime", range.End, option, tracker)}}}";
+            return $"DateRange{{Begin: {Build("DateTime", range.Begin, option, tracker)}, End: {Build("DateTime", range.End, option, tracker)}}}";
         }
 
         protected override string DateTimeType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)

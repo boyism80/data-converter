@@ -616,19 +616,24 @@ namespace ExcelTableConverter.Factory
                 if (s.Contains("~"))
                 {
                     var split = s.Split('~', StringSplitOptions.TrimEntries);
+                    var beginStr = split.Length > 0 ? split[0] : string.Empty;
+                    var endStr = split.Length > 1 ? split[1] : string.Empty;
+                    
+                    var begin = string.IsNullOrWhiteSpace(beginStr) ? null : (DateTime?)Build("DateTime", beginStr);
+                    var end = string.IsNullOrWhiteSpace(endStr) ? null : (DateTime?)Build("DateTime", endStr);
+                    
                     return DP(root, value, new DateRange
                     {
-                        Start = (DateTime)Build("DateTime", split[0]),
-                        End = (DateTime)Build("DateTime", split[1])
+                        Begin = begin,
+                        End = end
                     });
                 }
                 else
                 {
-                    var ts = (TimeSpan)Build("TimeSpan", s);
                     return DP(root, value, new DateRange
                     {
-                        Start = DateTime.MinValue,
-                        End = DateTime.MinValue + ts
+                        Begin = (DateTime)Build("DateTime", s),
+                        End = null
                     });
                 }
             }

@@ -403,7 +403,7 @@ func NewDateRangeBuilder() *DateRangeBuilder {
 
 func (b *DateRangeBuilder) Build(data json.RawMessage) (DateRange, error) {
 	var raw struct {
-		Start json.RawMessage `json:"Start"`
+		Begin json.RawMessage `json:"Begin"`
 		End   json.RawMessage `json:"End"`
 	}
 
@@ -412,7 +412,7 @@ func (b *DateRangeBuilder) Build(data json.RawMessage) (DateRange, error) {
 	}
 
 	result := DateRange{}
-	begin, err := NewDateTimeBuilder().Build(raw.Start)
+	begin, err := NewDateTimeBuilder().Build(raw.Begin)
 	if err != nil {
 		return DateRange{}, err
 	}

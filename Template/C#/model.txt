@@ -25,6 +25,12 @@ using System.Runtime.Serialization;
 
 namespace {{ config.namespace | array.each @upper_camel | array.join '.' }}
 {
+    public class DateRange
+    {
+        public DateTime? Begin { get; set; }
+        public DateTime? End { get; set; }
+    }
+
     public struct Point<T>
     { 
         public T X { get; set; }

@@ -1,4 +1,4 @@
-﻿using ExcelTableConverter.Model;
+using ExcelTableConverter.Model;
 using Newtonsoft.Json.Linq;
 
 namespace ExcelTableConverter.Factory.CPP
@@ -40,7 +40,7 @@ namespace ExcelTableConverter.Factory.CPP
             switch (value)
             {
                 case DateRange dr:
-                    return $"{{ {Build("DateTime", dr.Start)}, {Build("DateTime", dr.End)} }}";
+                    return $"{{ {Build("DateTime", dr.Begin)}, {Build("DateTime", dr.End)} }}";
 
                 default:
                     throw new InvalidOperationException("알 수 없는 에러");

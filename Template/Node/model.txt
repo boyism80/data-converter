@@ -154,7 +154,7 @@ module.exports = (function () {
                     return null
                 
                 return {
-                    Start: DateTimeBuilder().build(v.Start),
+                    Begin: DateTimeBuilder().build(v.Begin),
                     End: DateTimeBuilder().build(v.End)
                 }
             }

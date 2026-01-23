@@ -36,7 +36,7 @@ func push_value_to_lua(value_path, type_info, indent)
     else if type_info.is_bool
         $result = indent_str + 'lua_pushboolean(lua, ' + value_path + ');'
     else if type_info.is_string
-        $result = indent_str + 'lua_pushstring(lua, fb::model::option::encode(' + value_path + ').c_str());'
+        $result = indent_str + 'lua_pushstring(lua, ' + namespace_access_cpp(config.namespace) + 'option::encode(' + value_path + ').c_str());'
     else if type_info.is_numeric
         $result = indent_str + 'lua_pushinteger(lua, static_cast<lua_Integer>(' + value_path + '));'
     else if type_info.is_enum

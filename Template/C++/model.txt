@@ -62,6 +62,7 @@ public:
 
 private:
     encoding_func_type decoding_func;
+    encoding_func_type encoding_func;
 
 private:
     option() = default;
@@ -89,6 +90,12 @@ public:
         ist.decoding_func = fn;
     }
 
+    static void encoding(const encoding_func_type& fn)
+    {
+        auto& ist = get();
+        ist.encoding_func = fn;
+    }
+
 public:
     static std::string decode(const std::string& value)
     {
@@ -96,6 +103,19 @@ public:
         if (ist.decoding_func)
         {
             return ist.decoding_func(value);
+        }
+        else
+        {
+            return value;
+        }
+    }
+
+    static std::string encode(const std::string& value)
+    {
+        auto& ist = get();
+        if (ist.encoding_func)
+        {
+            return ist.encoding_func(value);
         }
         else
         {

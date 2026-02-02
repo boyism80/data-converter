@@ -34,7 +34,7 @@ public:
     hook_funcs<V> hook;
 
 protected:
-    kv_container(const std::string& fname) : _fname(fname)
+    kv_container(std::string_view fname) : _fname(std::string(fname))
     { }
 
 public:
@@ -46,15 +46,16 @@ public:
     ~kv_container() = default;
 
 private:
-    void load(const std::string& fname)
+    void load(std::string_view fname)
     {
+        auto fname_str = std::string(fname);
         Json::Value             json;
         std::ifstream           ifstream;
-        ifstream.open(fname);
+        ifstream.open(fname_str);
         if (ifstream.is_open() == false)
         {
             auto sstream = std::stringstream();
-            sstream << "cannot find json file : " << fname;
+            sstream << "cannot find json file : " << fname_str;
             throw std::runtime_error(sstream.str());
         }
 
@@ -84,7 +85,7 @@ private:
 public:
     void load()
     {
-        this->load(this->_fname);
+        this->load(std::string_view(this->_fname));
     }
 
     bool contains(const K& k) const
@@ -162,7 +163,7 @@ public:
     hook_funcs<T> hook;
 
 protected:
-    array_container(const std::string& fname) : _fname(fname)
+    array_container(std::string_view fname) : _fname(std::string(fname))
     { }
 
 public:
@@ -174,15 +175,16 @@ public:
     ~array_container() = default;
 
 private:
-    void load(const std::string& fname)
+    void load(std::string_view fname)
     {
+        auto fname_str = std::string(fname);
         Json::Value             json;
         std::ifstream           ifstream;
-        ifstream.open(fname);
+        ifstream.open(fname_str);
         if (ifstream.is_open() == false)
         {
             auto sstream = std::stringstream();
-            sstream << "cannot find json file : " << fname;
+            sstream << "cannot find json file : " << fname_str;
             throw std::runtime_error(sstream.str());
         }
 
@@ -192,7 +194,7 @@ private:
             ifstream.close();
 
             auto sstream = std::stringstream();
-            sstream << "cannot parse json file : " << fname;
+            sstream << "cannot parse json file : " << fname_str;
             throw std::runtime_error(sstream.str());
         }
 
@@ -219,7 +221,7 @@ private:
 public:
     void load()
     {
-        this->load(this->_fname);
+        this->load(std::string_view(this->_fname));
     }
 
     const T* find(uint32_t i) const
@@ -318,7 +320,7 @@ public:
 #ifdef DECLARE_{{ table.name | string.upcase }}_CONTAINER_CUSTOM_CONSTRUCTOR
 DECLARE_{{ table.name | string.upcase }}_CONTAINER_CUSTOM_CONSTRUCTOR
 #else
-    __{{ table.name }}() : {{ table.type }}<{{ table.generic }}>(std::string("{{ config.json_file_path }}/{{ table.name }}.json"))
+    __{{ table.name }}() : {{ table.type }}<{{ table.generic }}>(std::string_view("{{ config.json_file_path }}/{{ table.name }}.json"))
     { }
     __{{ table.name }}(const __{{ table.name }}&) = delete;
     ~__{{ table.name }}() = default;

@@ -39,7 +39,7 @@ end
 namespace {{ config.enum_namespace | array.join '::' }} {
 
 template <typename T>
-inline T enum_parse(const std::string k)
+inline T enum_parse(std::string_view k)
 {
     throw std::runtime_error("cannot parse enum value");
 }
@@ -59,7 +59,7 @@ enum class {{ e.name }}
 }; // end of enum '{{ e.name }}'
 
 template <>
-inline {{ e.name }} enum_parse<{{ e.name }}>(const std::string k)
+inline {{ e.name }} enum_parse<{{ e.name }}>(std::string_view k)
 {
     static const std::unordered_map<std::string, {{ e.name }}> enums
     {
@@ -68,9 +68,10 @@ inline {{ e.name }} enum_parse<{{ e.name }}>(const std::string k)
 {{~ end ~}}
     };
 
-    auto i = enums.find(k);
+    auto k_str = std::string(k);
+    auto i = enums.find(k_str);
     if (i == enums.end())
-        throw std::runtime_error(std::format("{} is not a valid type in {}", k, "{{ e.name }}"));
+        throw std::runtime_error(std::format("{} is not a valid type in {}", k_str, "{{ e.name }}"));
 
     return i->second;
 }

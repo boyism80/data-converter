@@ -21,6 +21,7 @@
 #define __MODEL_H__
 
 #include <string>
+#include <string_view>
 #include <format>
 #include <map>
 #include <vector>
@@ -58,7 +59,7 @@ namespace {{ config.namespace | array.join '::' }} {
 class option
 {
 public:
-    using encoding_func_type = std::function<std::string(const std::string&)>;
+    using encoding_func_type = std::function<std::string(std::string_view)>;
 
 private:
     encoding_func_type decoding_func;
@@ -97,7 +98,7 @@ public:
     }
 
 public:
-    static std::string decode(const std::string& value)
+    static std::string decode(std::string_view value)
     {
         auto& ist = get();
         if (ist.decoding_func)
@@ -106,11 +107,11 @@ public:
         }
         else
         {
-            return value;
+            return std::string(value);
         }
     }
 
-    static std::string encode(const std::string& value)
+    static std::string encode(std::string_view value)
     {
         auto& ist = get();
         if (ist.encoding_func)
@@ -119,7 +120,7 @@ public:
         }
         else
         {
-            return value;
+            return std::string(value);
         }
     }
 };

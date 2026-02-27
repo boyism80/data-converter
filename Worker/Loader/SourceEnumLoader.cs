@@ -31,7 +31,7 @@ namespace ExcelTableConverter.Worker.Loader
                     _ => line[1].StringCellValue.Replace(" ", string.Empty)
                 };
 
-                var parsed = value.ParseValue();
+                var parsed = value.ParseValue(tracker: sheet);
                 if (values.ContainsKey(name))
                     throw new LogicException($"{sheet.FullName}에 {name}이 중복 정의되었습니다.");
 

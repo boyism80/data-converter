@@ -309,7 +309,7 @@ namespace ExcelTableConverter.Factory
             if (Context.Completed.Enum.TryGetValue(naked, out var enumSet) == false)
                 throw new LogicException($"{naked}는 정의된 열거형 타입이 아닙니다.", tracker);
 
-            var parsed = (value as string).ParseValue(false);
+            var parsed = (value as string).ParseValue(false, tracker);
             foreach (var x in parsed.ExtractEnumValues())
             {
                 if (enumSet.ContainsKey(x) == false)
@@ -541,7 +541,7 @@ namespace ExcelTableConverter.Factory
                 case string v:
                     try
                     {
-                        return DP(root, value, Build(root, v.StartsWith("0x") ? Convert.ToUInt64(v, 16) : ulong.Parse(v)));
+                        return DP(root, value, Build(root, v.StartsWith("0x") ? Convert.ToUInt64(v, 16) : ulong.Parse(v), tracker));
                     }
                     catch (FormatException)
                     {
@@ -618,10 +618,10 @@ namespace ExcelTableConverter.Factory
                     var split = s.Split('~', StringSplitOptions.TrimEntries);
                     var beginStr = split.Length > 0 ? split[0] : string.Empty;
                     var endStr = split.Length > 1 ? split[1] : string.Empty;
-                    
+
                     var begin = string.IsNullOrWhiteSpace(beginStr) ? null : (DateTime?)Build("DateTime", beginStr);
                     var end = string.IsNullOrWhiteSpace(endStr) ? null : (DateTime?)Build("DateTime", endStr);
-                    
+
                     return DP(root, value, new DateRange
                     {
                         Begin = begin,
@@ -767,7 +767,7 @@ namespace ExcelTableConverter.Factory
 
         public object Build(string type, object value, IExcelFileTrackable tracker = null)
         {
-            return base.Build(type, value);
+            return base.Build(type, value, tracker: tracker);
         }
 
         protected override object AreaType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)

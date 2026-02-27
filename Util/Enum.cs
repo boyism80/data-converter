@@ -1,3 +1,4 @@
+using ExcelTableConverter.Model;
 using System.Text.RegularExpressions;
 
 namespace ExcelTableConverter.Util
@@ -15,7 +16,7 @@ namespace ExcelTableConverter.Util
             return matched;
         }
 
-        public static List<object> ParseValue(this string value, bool allowHex = true)
+        public static List<object> ParseValue(this string value, bool allowHex = true, IExcelFileTrackable tracker = null)
         {
             value = value.Replace(" ", string.Empty);
 
@@ -36,7 +37,7 @@ namespace ExcelTableConverter.Util
                 {
                     var array = stack.Pop();
                     if (stack.Count == 0)
-                        throw new LogicException("구문이 잘못됐습니다.");
+                        throw new LogicException("구문이 잘못됐습니다.", tracker);
 
                     stack.Peek().Add(array);
                     index++;
@@ -45,7 +46,7 @@ namespace ExcelTableConverter.Util
                 {
                     var matched = Util.Enum.Parse(substr, allowHex);
                     if (matched.Success == false)
-                        throw new LogicException("구문이 잘못됐습니다.");
+                        throw new LogicException("구문이 잘못됐습니다.", tracker);
 
                     var current = string.Empty;
                     if (matched.Groups["value"].Success)
@@ -71,10 +72,10 @@ namespace ExcelTableConverter.Util
             }
 
             if (stack.TryPop(out var result) == false)
-                throw new LogicException("구문이 잘못됐습니다.");
+                throw new LogicException("구문이 잘못됐습니다.", tracker);
 
             if (stack.Count > 0)
-                throw new LogicException("구문이 잘못됐습니다.");
+                throw new LogicException("구문이 잘못됐습니다.", tracker);
 
             return result;
         }

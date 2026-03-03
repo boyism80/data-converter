@@ -34,6 +34,7 @@
 #include <unordered_map>
 #include <functional>
 #include <mutex>
+#include <cmath>
 {{~ for header in config.additional_header_files ~}}
 #include <{{ header }}>
 {{~ end ~}}

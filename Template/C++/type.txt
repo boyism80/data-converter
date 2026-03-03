@@ -58,6 +58,45 @@ public:
     {
         return {{ for prop in class.props }}this->{{prop}} != r.{{prop}}{{if !for.last }} || {{ end }}{{ end }};
     }
+{{~ if class.name == "point" ~}}
+
+public:
+    T manhattan_distance(const point<T>& r) const
+    {
+        return std::abs(this->x - r.x) + std::abs(this->y - r.y);
+    }
+
+    float distance(const point<T>& r) const
+    {
+        auto dx = static_cast<float>(this->x - r.x);
+        auto dy = static_cast<float>(this->y - r.y);
+        return std::sqrt(dx * dx + dy * dy);
+    }
+{{~ else if class.name == "size" ~}}
+
+public:
+    bool empty() const
+    {
+        return this->width == 0 && this->height == 0;
+    }
+{{~ else if class.name == "area" ~}}
+
+public:
+    bool empty() const
+    {
+        return this->left >= this->right || this->top >= this->bottom;
+    }
+
+    bool intersects(const area<T>& other) const
+    {
+        return !(this->left >= other.right || this->right <= other.left || this->top >= other.bottom || this->bottom <= other.top);
+    }
+
+    bool contains(const point<T>& p) const
+    {
+        return this->left <= p.x && p.x < this->right && this->top <= p.y && p.y < this->bottom;
+    }
+{{~ end ~}}
 #ifdef DECLARE_{{ class.name | string.upcase }}_EXTENSION
 DECLARE_{{ class.name | string.upcase }}_EXTENSION
 #endif

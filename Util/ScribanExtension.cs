@@ -1,4 +1,5 @@
-﻿using Scriban.Runtime;
+﻿using Scriban;
+using Scriban.Runtime;
 
 namespace ExcelTableConverter.Util
 {
@@ -9,6 +10,15 @@ namespace ExcelTableConverter.Util
 
     public class ScribanEx : ScriptObject
     {
+        public static TemplateContext CreateContext()
+        {
+            return new TemplateContext
+            {
+                LoopLimit      = 0,
+                RecursiveLimit = 0,
+            };
+        }
+
         public static string UpperCamel(string value)
         {
             if (value == null)

@@ -73,7 +73,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
                 ["config"] = Context.Configuration,
             };
 
-            var ctx = new TemplateContext();
+            var ctx = ScribanEx.CreateContext();
             ctx.PushGlobal(obj);
 
             Result = _template.Render(ctx);

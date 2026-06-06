@@ -73,7 +73,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 ["tables"] = buffer,
                 ["config"] = Context.Configuration
             };
-            var ctx = new TemplateContext();
+            var ctx = ScribanEx.CreateContext();
             ctx.PushGlobal(obj);
             var code = _template.Render(ctx);
             yield return new KeyValuePair<Scope, string>(scope, code);

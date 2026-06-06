@@ -35,7 +35,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 ["config"] = Context.Configuration,
             };
 
-            var ctx = new TemplateContext();
+            var ctx = ScribanEx.CreateContext();
             ctx.PushGlobal(obj);
 
             var template = Template.Parse(File.ReadAllText("Template/C++/class.txt"));
@@ -48,7 +48,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             {
                 ["config"] = Context.Configuration,
             };
-            var ctx = new TemplateContext();
+            var ctx = ScribanEx.CreateContext();
             ctx.PushGlobal(obj);
 
             var template = Template.Parse(File.ReadAllText("Template/C++/type.txt"));
@@ -62,7 +62,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 ["config"] = Context.Configuration
             };
 
-            var ctx = new TemplateContext();
+            var ctx = ScribanEx.CreateContext();
             ctx.PushGlobal(obj);
 
             var template = Template.Parse(File.ReadAllText("Template/C++/datetime.txt"));
@@ -77,7 +77,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 ["config"] = Context.Configuration,
             };
 
-            var ctx = new TemplateContext();
+            var ctx = ScribanEx.CreateContext();
             ctx.PushGlobal(obj);
 
             var template = Template.Parse(File.ReadAllText("Template/C++/lua.txt"));
@@ -168,7 +168,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             if (g.ContainsKey(Scope.Client) == false)
                 g.Add(Scope.Client, new List<object>());
 
-            var ctx = new TemplateContext();
+            var ctx = ScribanEx.CreateContext();
             foreach (var (scope, items) in g)
             {
                 var obj = new ScribanEx

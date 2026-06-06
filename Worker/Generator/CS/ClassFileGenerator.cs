@@ -37,7 +37,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
                 ["config"] = Context.Configuration,
             };
 
-            var ctx = new TemplateContext();
+            var ctx = ScribanEx.CreateContext();
             ctx.PushGlobal(obj);
 
             var template = Template.Parse(File.ReadAllText("Template/C#/class.txt"));
@@ -135,7 +135,7 @@ namespace ExcelTableConverter.Worker.Generator.CS
                     ["container"] = bindCodeGenerator.Result[scope],
                     ["dsl"] = dslCodeGenerator.Result,
                 };
-                var ctx = new TemplateContext();
+                var ctx = ScribanEx.CreateContext();
                 ctx.PushGlobal(obj);
 
                 File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", "Model.cs"), modelTemplate.Render(ctx));

@@ -28,7 +28,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 ["enums"] = enums,
                 ["config"] = Context.Configuration,
             };
-            var ctx = new TemplateContext();
+            var ctx = ScribanEx.CreateContext();
             ctx.PushGlobal(obj);
             return _declarationTemplate.Render(ctx);
         }

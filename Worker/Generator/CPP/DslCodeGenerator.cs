@@ -63,7 +63,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 ["dsls"] = _prototypes.Keys.OrderBy(x => x).ToList(),
                 ["config"] = Context.Configuration,
             };
-            var ctx = new TemplateContext();
+            var ctx = ScribanEx.CreateContext();
             ctx.PushGlobal(obj);
             Result = template.Render(ctx);
             return base.OnFinish(output);

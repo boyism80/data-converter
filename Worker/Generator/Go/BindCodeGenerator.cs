@@ -226,7 +226,7 @@ namespace ExcelTableConverter.Worker.Generator.Go
                 ["base_tables"] = Context.Completed.Schema.FindBaseTables(),
             };
 
-            var ctx = new TemplateContext();
+            var ctx = ScribanEx.CreateContext();
             ctx.PushGlobal(obj);
             var code = _template.Render(ctx);
             yield return new KeyValuePair<Scope, string>(scope, code);

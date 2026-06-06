@@ -55,7 +55,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 ["items"] = items,
                 ["config"] = Context.Configuration,
             };
-            var ctx = new TemplateContext();
+            var ctx = ScribanEx.CreateContext();
             ctx.PushGlobal(obj);
             yield return _template.Render(ctx);
         }
@@ -108,7 +108,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 ["config"] = Context.Configuration,
             };
 
-            var ctx = new TemplateContext();
+            var ctx = ScribanEx.CreateContext();
             ctx.PushGlobal(obj);
             LuaCode = _luaTemplate.Render(ctx);
         }

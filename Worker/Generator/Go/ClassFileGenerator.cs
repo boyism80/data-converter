@@ -41,7 +41,7 @@ namespace ExcelTableConverter.Worker.Generator.Go
                 ["base_tables"] = baseTables,
             };
 
-            var ctx = new TemplateContext();
+            var ctx = ScribanEx.CreateContext();
             ctx.PushGlobal(obj);
 
             var template = Template.Parse(File.ReadAllText("Template/Go/class.txt"));
@@ -145,7 +145,7 @@ namespace ExcelTableConverter.Worker.Generator.Go
                     ["container"] = bindCodeGenerator.Result[scope],
                     ["dsl"] = dslCodeGenerator.Result,
                 };
-                var ctx = new TemplateContext();
+                var ctx = ScribanEx.CreateContext();
                 ctx.PushGlobal(obj);
 
                 File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", "model.go"), modelTemplate.Render(ctx));

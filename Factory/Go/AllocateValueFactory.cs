@@ -191,7 +191,7 @@ namespace ExcelTableConverter.Factory.Go
             return value.ToString();
         }
 
-        public new string Build(string type, object value, IExcelFileTrackable tracker = null)
+        public string Build(string type, object value, IExcelFileTrackable tracker = null)
         {
             return base.Build(type, value, null, tracker);
         }

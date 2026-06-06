@@ -220,7 +220,7 @@ namespace ExcelTableConverter
         /// </summary>
         /// <param name="text">The error message to log</param>
         /// <param name="tracker">Optional file tracker for error source identification</param>
-        public static void Error(string text, IExcelFileTrackable tracker = null)
+        public static void Error(string text, IExcelFileTrackable? tracker = null)
         {
             _errorFilesMutex.WaitOne();
             if (tracker != null)

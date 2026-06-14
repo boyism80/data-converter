@@ -120,7 +120,7 @@ end
         }
     }
 
-    public class Table
+    public partial class Table
     {
 {{~ for table in tables | array.filter @containable ~}}
         [Table("{{ config.json_file_path }}/{{ table.name }}.json")]

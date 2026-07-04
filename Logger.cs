@@ -78,31 +78,33 @@ namespace ExcelTableConverter
                 text = OnDecorate(text.ToString()); // OnDecorate는 string 반환하므로 변환 필요
             }
 
-            // Calculate horizontal position based on alignment
-            var x = align switch
-            {
-                TextAlign.Left => 0,
-                TextAlign.Center => (Console.WindowWidth - text.Length - 1) / 2,
-                TextAlign.Right => Console.WindowWidth - text.Length - 1,
-                _ => 0,
-            };
-
-            var sb = new StringBuilder(Console.WindowWidth);
-            sb.Append(' ', x); // 정렬된 위치에 공백 추가
-            sb.Append(text); // 본문 추가
-
             lock (Console.Out)
             {
-                if (!TTY)
+                if (!TTY || Console.IsOutputRedirected)
                 {
-                    Console.WriteLine(sb.ToString());
+                    Console.WriteLine(text.ToString());
                     return;
                 }
+
+                var windowWidth = GetWindowWidth();
+
+                // Calculate horizontal position based on alignment
+                var x = align switch
+                {
+                    TextAlign.Left => 0,
+                    TextAlign.Center => (windowWidth - text.Length - 1) / 2,
+                    TextAlign.Right => windowWidth - text.Length - 1,
+                    _ => 0,
+                };
+
+                var sb = new StringBuilder(windowWidth);
+                sb.Append(' ', x);
+                sb.Append(text);
 
                 var beforeForeground = Console.ForegroundColor;
                 Console.ForegroundColor = foreground;
                 Position(_y - _commentLine);
-                Clear();
+                Clear(windowWidth);
                 Console.Write(sb.ToString());
                 Console.ForegroundColor = beforeForeground;
             }
@@ -147,10 +149,10 @@ namespace ExcelTableConverter
         /// <param name="y">The line number to position the cursor at</param>
         public static void Position(int y)
         {
-            if (!TTY)
+            if (!TTY || Console.IsOutputRedirected)
                 return;
 
-            y = Math.Max(0, Math.Min(Console.WindowHeight - 1, y));
+            y = Math.Max(0, Math.Min(GetWindowHeight() - 1, y));
             Console.SetCursorPosition(0, y);
         }
 
@@ -182,10 +184,34 @@ namespace ExcelTableConverter
         /// <summary>
         /// Clears the current line in TTY mode
         /// </summary>
-        private static void Clear()
+        private static void Clear(int windowWidth)
         {
-            Console.Write(new string(' ', Console.WindowWidth));
+            Console.Write(new string(' ', windowWidth));
             Position(_y - _commentLine);
+        }
+
+        private static int GetWindowWidth()
+        {
+            try
+            {
+                return Math.Max(80, Console.WindowWidth);
+            }
+            catch (IOException)
+            {
+                return 120;
+            }
+        }
+
+        private static int GetWindowHeight()
+        {
+            try
+            {
+                return Math.Max(1, Console.WindowHeight);
+            }
+            catch (IOException)
+            {
+                return 40;
+            }
         }
 
         /// <summary>

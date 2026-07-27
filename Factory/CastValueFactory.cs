@@ -9,6 +9,7 @@ namespace ExcelTableConverter.Factory
     public class CastValueFactory : DataFormatFactory<object>
     {
         private readonly Regex _splitRgx = new Regex(@"[&|\n](?![^()]*\))", RegexOptions.Compiled);
+        private readonly Regex _arraySplitRgx = new Regex(@"[,&\n](?![^()]*\))", RegexOptions.Compiled);
         private readonly Regex _pointRgx = new Regex(@"(?<x>\d+)\s*,\s*(?<y>\d+)", RegexOptions.Compiled);
         private readonly Regex _sizeRgx = new Regex(@"(?<width>\d+)\s*,\s*(?<height>\d+)", RegexOptions.Compiled);
         private readonly Regex _rangeRgx = new Regex(@"(?<min>\d+)\s*~\s*(?<max>\d+)", RegexOptions.Compiled);
@@ -63,7 +64,13 @@ namespace ExcelTableConverter.Factory
             if (Util.Value.IsNull(value))
                 return DP(root, value, new List<object>());
 
-            return DP(root, value, _splitRgx.Split($"{value}")
+            // point/size/area embed commas as field separators — keep legacy &/|/newline splits only.
+            // Scalar (and DSL) arrays also accept comma: "1,2", "1, 2", or newline-separated.
+            var splitRgx = Util.Type.IsPoint(e, out _) || Util.Type.IsSize(e, out _) || Util.Type.IsArea(e, out _)
+                ? _splitRgx
+                : _arraySplitRgx;
+
+            return DP(root, value, splitRgx.Split($"{value}")
                 .Select(x => x.Trim())
                 .Where(x => string.IsNullOrEmpty(x) == false)
                 .Select(x => Build(e, x))

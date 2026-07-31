@@ -35,6 +35,10 @@
 #include <functional>
 #include <mutex>
 #include <cmath>
+#include <memory>
+#include <atomic>
+#include <cassert>
+#include <string_view>
 {{~ for header in config.additional_header_files ~}}
 #include <{{ header }}>
 {{~ end ~}}

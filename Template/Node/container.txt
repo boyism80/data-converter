@@ -20,11 +20,13 @@ func containable(table)
 end
 ~}}
 
-// Global table instances
+// Global table instances (published generations)
 {{~ for table in tables | array.filter @containable ~}}
     let {{ table.name }} = null;
     let {{ table.name }}Hook = null;
 {{~ end ~}}
+
+    let _tableRoot = '.';
 
 // Global containers array
     const Containers = [
@@ -34,20 +36,39 @@ end
             load: async function(root) {
                 const data = JSON.parse(await fs.readFile(path.join(root, '{{ config.json_file_path }}/{{ table.name }}.json')));
                 {{ table.name }} = {{ table.name }}ContainerBuilder({{ table.name }}Hook).build(data);
+            },
+            reload: async function() {
+                const data = JSON.parse(await fs.readFile(path.join(_tableRoot, '{{ config.json_file_path }}/{{ table.name }}.json')));
+                {{ table.name }} = {{ table.name }}ContainerBuilder({{ table.name }}Hook).build(data);
             }
         }{{ if !for.last }},{{ end }}
 {{~ end ~}}
     ];
 
 // Table object for global access
+// Capture a local reference for a stable snapshot: const snap = Table.spell;
     const Table = {
 {{~ for table in tables | array.filter @containable ~}}
         get {{ table.name }}() { return {{ table.name }}; },
         set {{ table.name }}Hook(hook) { {{ table.name }}Hook = hook; },
 {{~ end ~}}
         async load(root) {
+            _tableRoot = root;
             for (const container of Containers) {
                 await container.load(root);
+            }
+        },
+        async reload(name) {
+            const container = Containers.find(c => c.name === name);
+            if (!container) {
+                return false;
+            }
+            await container.reload();
+            return true;
+        },
+        async reloadAll() {
+            for (const container of Containers) {
+                await container.reload();
             }
         }
     };

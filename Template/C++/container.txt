@@ -14,8 +14,19 @@ public:
 class container
 {
 public:
+    virtual ~container() = default;
     virtual uint32_t size() const = 0;
     virtual void load() = 0;
+};
+
+class slot_base
+{
+public:
+    virtual ~slot_base() = default;
+    virtual void load() = 0;
+    virtual void reload() = 0;
+    virtual uint32_t size() const = 0;
+    virtual std::string_view name() const = 0;
 };
 
 template <typename K, typename V>
@@ -86,6 +97,11 @@ public:
     void load()
     {
         this->load(std::string_view(this->_fname));
+    }
+
+    const std::string& fname() const
+    {
+        return this->_fname;
     }
 
     bool contains(const K& k) const
@@ -224,6 +240,11 @@ public:
         this->load(std::string_view(this->_fname));
     }
 
+    const std::string& fname() const
+    {
+        return this->_fname;
+    }
+
     const T* find(uint32_t i) const
     {
         if (i > this->_data.size() - 1)
@@ -313,6 +334,211 @@ const typename array_container<T>::const_iterator array_container<T>::end() cons
     return array_container<T>::const_iterator(this->_data.cend());
 }
 
+template <typename T>
+class table_view;
+
+template <typename T>
+struct model_pin
+{
+    std::shared_ptr<void> generation;
+    const T*              ptr = nullptr;
+
+    const T& get() const
+    {
+        assert(this->ptr != nullptr);
+        return *this->ptr;
+    }
+
+    explicit operator bool() const
+    {
+        return this->ptr != nullptr;
+    }
+};
+
+template <typename T>
+class table_slot : public slot_base
+{
+private:
+    std::shared_ptr<T>              _buf[2];
+    std::atomic<int>                _active{0};
+    std::atomic<std::shared_ptr<T>> _published;
+    std::vector<std::shared_ptr<T>> _keep_alive;
+    std::string                     _name;
+    bool                            _loaded{false};
+
+public:
+    explicit table_slot(std::string_view name) :
+        _name(std::string(name))
+    {
+        auto initial = std::make_shared<T>();
+        this->_buf[0] = initial;
+        this->_published.store(initial, std::memory_order_release);
+        this->_keep_alive.push_back(initial);
+    }
+
+    table_slot(const table_slot&)            = delete;
+    table_slot& operator=(const table_slot&) = delete;
+
+    std::atomic<std::shared_ptr<T>>& hub()
+    {
+        return this->_published;
+    }
+
+    std::shared_ptr<T> published() const
+    {
+        return this->_published.load(std::memory_order_acquire);
+    }
+
+    std::string_view name() const override
+    {
+        return this->_name;
+    }
+
+    uint32_t size() const override
+    {
+        auto p = this->published();
+        return p != nullptr ? p->size() : 0;
+    }
+
+    void load() override
+    {
+        if (this->_loaded)
+        {
+            this->reload();
+            return;
+        }
+
+        auto cur = this->published();
+        cur->load();
+        this->_loaded = true;
+    }
+
+    void reload() override
+    {
+        auto cur  = this->published();
+        auto next = std::make_shared<T>();
+        // Copy factory hook only. Instance hooks (built) stay from T's constructor.
+        if (cur != nullptr)
+            next->hook.build = cur->hook.build;
+
+        next->load();
+
+        auto back = 1 - this->_active.load(std::memory_order_relaxed);
+        this->_buf[back] = next;
+        this->_active.store(back, std::memory_order_relaxed);
+        this->_published.store(next, std::memory_order_release);
+        this->_keep_alive.push_back(next);
+        this->_loaded = true;
+    }
+};
+
+template <typename T>
+class table_view
+{
+private:
+    std::atomic<std::shared_ptr<T>>* _hub = nullptr;
+    std::shared_ptr<T>               _p;
+
+public:
+    explicit table_view(table_slot<T>& slot) :
+        _hub(&slot.hub()),
+        _p(slot.published())
+    { }
+
+    // auto snap = table::spell;  // pins published generation
+    table_view(const table_view& rhs) :
+        _hub(nullptr),
+        _p(rhs._hub != nullptr ? rhs._hub->load(std::memory_order_acquire) : rhs._p)
+    { }
+
+    table_view(table_view&&)                 = delete;
+    table_view& operator=(const table_view&) = delete;
+    table_view& operator=(table_view&&)      = delete;
+
+    std::shared_ptr<T> get() const
+    {
+        if (this->_hub != nullptr)
+            return this->_hub->load(std::memory_order_acquire);
+        return this->_p;
+    }
+
+    // Root: thread_local pin of published (safe for -> method calls).
+    // Snapshot: use pinned generation.
+    T* operator->() const
+    {
+        if (this->_hub != nullptr)
+        {
+            thread_local std::shared_ptr<T> tls;
+            tls = this->_hub->load(std::memory_order_acquire);
+            return tls.get();
+        }
+        assert(this->_p != nullptr);
+        return this->_p.get();
+    }
+
+    T& operator*() const
+    {
+        return *this->operator->();
+    }
+
+    // Prefer snapshot: auto snap = table::spell; snap[id]
+    // Root uses thread_local pin — do not keep returned refs across another root [].
+    template <typename K>
+    decltype(auto) operator[](const K& k) const
+    {
+        if (this->_hub != nullptr)
+        {
+            thread_local std::shared_ptr<T> tls;
+            tls = this->_hub->load(std::memory_order_acquire);
+            return (*tls)[k];
+        }
+        assert(this->_p != nullptr);
+        return (*this->_p)[k];
+    }
+
+    auto begin() const
+    {
+        auto p = this->pinned();
+        return p->begin();
+    }
+
+    auto end() const
+    {
+        auto p = this->pinned();
+        return p->end();
+    }
+
+    auto begin()
+    {
+        auto p = this->pinned();
+        return p->begin();
+    }
+
+    auto end()
+    {
+        auto p = this->pinned();
+        return p->end();
+    }
+
+    uint32_t size() const
+    {
+        return this->pinned()->size();
+    }
+
+private:
+    std::shared_ptr<T> pinned() const
+    {
+        if (this->_hub != nullptr)
+        {
+            thread_local std::shared_ptr<T> tls;
+            tls = this->_hub->load(std::memory_order_acquire);
+            return tls;
+        }
+        assert(this->_p != nullptr);
+        return this->_p;
+    }
+};
+
 {{~ for table in tables | array.filter @containable ~}}
 class __{{ table.name }} : public {{ table.type }}<{{ table.generic }}>
 {
@@ -336,18 +562,22 @@ DECLARE_{{ table.name | string.upcase }}_CONTAINER_EXTENSION
 
 class table
 {
-public:
+private:
 {{~ for table in tables | array.filter @containable ~}}
-    inline static {{ config.namespace | @namespace_access_cpp }}__{{ table.name }} {{ table.name }};
+    inline static {{ config.namespace | @namespace_access_cpp }}table_slot<{{ config.namespace | @namespace_access_cpp }}__{{ table.name }}> _{{ table.name }}_slot{std::string_view{"{{ table.name }}"}};
 {{~ end ~}}
 
-private:
-    inline static const std::vector<{{ config.namespace | @namespace_access_cpp }}container*> _containers = 
+    inline static {{ config.namespace | @namespace_access_cpp }}slot_base* _slots[] = 
     {
 {{~ for table in tables | array.filter @containable ~}}
-        &{{ table.name }}{{ if !for.last }},{{ end }}
+        &_{{ table.name }}_slot{{ if !for.last }},{{ end }}
 {{~ end ~}}
     };
+
+public:
+{{~ for table in tables | array.filter @containable ~}}
+    inline static {{ config.namespace | @namespace_access_cpp }}table_view<{{ config.namespace | @namespace_access_cpp }}__{{ table.name }}> {{ table.name }}{_{{ table.name }}_slot};
+{{~ end ~}}
 
 public:
     table() = delete;
@@ -358,11 +588,31 @@ public:
     ~table() = delete;
 
 public:
-    static void foreach(const std::function<void({{ config.namespace | @namespace_access_cpp }}container&)>& fn)
+    static void foreach(const std::function<void({{ config.namespace | @namespace_access_cpp }}slot_base&)>& fn)
     {
-        for (auto container : table::_containers)
+        for (auto* slot : table::_slots)
         {
-            fn(*container);
+            fn(*slot);
         }
+    }
+
+    static void reload_all()
+    {
+        table::foreach([](auto& slot) {
+            slot.reload();
+        });
+    }
+
+    static bool reload(std::string_view name)
+    {
+        for (auto* slot : table::_slots)
+        {
+            if (slot->name() == name)
+            {
+                slot->reload();
+                return true;
+            }
+        }
+        return false;
     }
 };

@@ -34,8 +34,10 @@ end
             public Action<T> Built { get; set; }
         }
 
+        public abstract string Name { get; }
         public abstract void Load();
         public abstract void Load(string json);
+        public abstract Container Reload();
     }
 
     public class KeyValueContainer<K, V> : Container, IReadOnlyDictionary<K, V> where V : class
@@ -43,6 +45,8 @@ end
         private readonly Dictionary<K, V> _raw = new Dictionary<K, V>();
 
         public HookFuncs<V> Hook { get; private set; } = new HookFuncs<V>();
+
+        public override string Name => GetType().GetCustomAttribute<TableAttribute>(true)?.Path ?? GetType().Name;
 
         public override void Load()
         {
@@ -60,6 +64,14 @@ end
                 if (Hook.Built != null)
                     Hook.Built.Invoke(obj);
             }
+        }
+
+        public override Container Reload()
+        {
+            var next = (KeyValueContainer<K, V>)Activator.CreateInstance(GetType());
+            next.Hook.Build = Hook.Build;
+            next.Load();
+            return next;
         }
 
         public V this[K key] => _raw.TryGetValue(key, out var value) ? value : default;
@@ -85,6 +97,8 @@ end
 
         public HookFuncs<T> Hook { get; private set; } = new HookFuncs<T>();
 
+        public override string Name => GetType().GetCustomAttribute<TableAttribute>(true)?.Path ?? GetType().Name;
+
         public override void Load()
         {
             var attr = GetType().GetCustomAttribute<TableAttribute>(true);
@@ -99,6 +113,14 @@ end
                 _raw.Add(obj);
                 Hook.Built?.Invoke(obj);
             }
+        }
+
+        public override Container Reload()
+        {
+            var next = (ArrayContainer<T>)Activator.CreateInstance(GetType());
+            next.Hook.Build = Hook.Build;
+            next.Load();
+            return next;
         }
 
         public T this[int index] => _raw.ElementAtOrDefault(index);
@@ -125,11 +147,22 @@ end
 {{~ for table in tables | array.filter @containable ~}}
         [Table("{{ config.json_file_path }}/{{ table.name }}.json")]
         public partial class {{ table.name | @upper_camel }}Table : {{ table.type }}<{{ table.generic }}>
-        { }
-        public static {{ table.name | @upper_camel }}Table {{ table.name | @upper_camel }} { get; private set; } = new {{ table.name | @upper_camel }}Table();
+        {
+            public override string Name => "{{ table.name }}";
+        }
+        private static {{ table.name | @upper_camel }}Table _{{ table.name }} = new {{ table.name | @upper_camel }}Table();
+        /// <summary>
+        /// Current published generation. Capture a local reference for a stable snapshot:
+        /// var snap = Table.{{ table.name | @upper_camel }};
+        /// </summary>
+        public static {{ table.name | @upper_camel }}Table {{ table.name | @upper_camel }}
+        {
+            get => Volatile.Read(ref _{{ table.name }});
+            private set => Volatile.Write(ref _{{ table.name }}, value);
+        }
 {{~ end ~}}
 
-        public static Container[] Containers { get; private set; } = new Container[]
+        public static Container[] Containers => new Container[]
         {
 {{~ for table in tables | array.filter @containable ~}}
             {{ table.name | @upper_camel }}{{ if !for.last }}, {{ end }}
@@ -138,5 +171,29 @@ end
 
         private Table()
         {
+        }
+
+        public static void ReloadAll()
+        {
+{{~ for table in tables | array.filter @containable ~}}
+            Reload("{{ table.name }}");
+{{~ end ~}}
+        }
+
+        public static bool Reload(string name)
+        {
+            switch (name)
+            {
+{{~ for table in tables | array.filter @containable ~}}
+                case "{{ table.name }}":
+                {
+                    var next = ({{ table.name | @upper_camel }}Table)_{{ table.name | @upper_camel }}.Reload();
+                    {{ table.name | @upper_camel }} = next;
+                    return true;
+                }
+{{~ end ~}}
+                default:
+                    return false;
+            }
         }
     }

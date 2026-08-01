@@ -24,6 +24,11 @@ class slot_base
 public:
     virtual ~slot_base() = default;
     virtual void load() = 0;
+    // Build a new generation from local JSON without publishing.
+    virtual std::shared_ptr<container> build() = 0;
+    // Atomically publish a previously built generation.
+    virtual void publish(std::shared_ptr<container> next) = 0;
+    // Convenience: build() then publish(). Prefer table::reload() for all-or-nothing.
     virtual void reload() = 0;
     virtual uint32_t size() const = 0;
     virtual std::string_view name() const = 0;
@@ -413,7 +418,7 @@ public:
         this->_loaded = true;
     }
 
-    void reload() override
+    std::shared_ptr<container> build() override
     {
         auto cur  = this->published();
         auto next = std::make_shared<T>();
@@ -422,13 +427,23 @@ public:
             next->hook.build = cur->hook.build;
 
         next->load();
+        return next;
+    }
 
-        auto back = 1 - this->_active.load(std::memory_order_relaxed);
-        this->_buf[back] = next;
+    void publish(std::shared_ptr<container> next) override
+    {
+        auto typed = std::static_pointer_cast<T>(next);
+        auto back  = 1 - this->_active.load(std::memory_order_relaxed);
+        this->_buf[back] = typed;
         this->_active.store(back, std::memory_order_relaxed);
-        this->_published.store(next, std::memory_order_release);
-        this->_keep_alive.push_back(next);
+        this->_published.store(typed, std::memory_order_release);
+        this->_keep_alive.push_back(typed);
         this->_loaded = true;
+    }
+
+    void reload() override
+    {
+        this->publish(this->build());
     }
 };
 
@@ -596,23 +611,19 @@ public:
         }
     }
 
-    static void reload_all()
+    // Sync full reload: build every table, then publish all-or-nothing.
+    // Callers that must not block logic threads should offload via fb::model::reload_async().
+    static void reload()
     {
-        table::foreach([](auto& slot) {
-            slot.reload();
-        });
-    }
+        static std::mutex mtx;
+        auto              lock = std::lock_guard<std::mutex>{mtx};
 
-    static bool reload(std::string_view name)
-    {
-        for (auto* slot : table::_slots)
-        {
-            if (slot->name() == name)
-            {
-                slot->reload();
-                return true;
-            }
-        }
-        return false;
+        auto built = std::vector<std::pair<slot_base*, std::shared_ptr<container>>>{};
+        table::foreach([&](auto& slot) {
+            built.emplace_back(&slot, slot.build());
+        });
+
+        for (auto& [slot, generation] : built)
+            slot->publish(generation);
     }
 };

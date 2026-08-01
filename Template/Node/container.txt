@@ -37,9 +37,9 @@ end
                 const data = JSON.parse(await fs.readFile(path.join(root, '{{ config.json_file_path }}/{{ table.name }}.json')));
                 {{ table.name }} = {{ table.name }}ContainerBuilder({{ table.name }}Hook).build(data);
             },
-            reload: async function() {
+            build: async function() {
                 const data = JSON.parse(await fs.readFile(path.join(_tableRoot, '{{ config.json_file_path }}/{{ table.name }}.json')));
-                {{ table.name }} = {{ table.name }}ContainerBuilder({{ table.name }}Hook).build(data);
+                return {{ table.name }}ContainerBuilder({{ table.name }}Hook).build(data);
             }
         }{{ if !for.last }},{{ end }}
 {{~ end ~}}
@@ -58,17 +58,13 @@ end
                 await container.load(root);
             }
         },
-        async reload(name) {
-            const container = Containers.find(c => c.name === name);
-            if (!container) {
-                return false;
-            }
-            await container.reload();
-            return true;
-        },
-        async reloadAll() {
-            for (const container of Containers) {
-                await container.reload();
-            }
+        // Build every table, then publish all-or-nothing.
+        async reload() {
+{{~ for table in tables | array.filter @containable ~}}
+            const next_{{ table.name }} = await Containers.find(c => c.name === '{{ table.name }}').build();
+{{~ end ~}}
+{{~ for table in tables | array.filter @containable ~}}
+            {{ table.name }} = next_{{ table.name }};
+{{~ end ~}}
         }
     };

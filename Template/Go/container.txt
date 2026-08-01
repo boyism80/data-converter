@@ -38,7 +38,6 @@ end
 type Container interface {
 	Name() string
 	Load() error
-	Reload() error
 }
 
 {{~ for table in tables | array.filter @containable ~}}
@@ -62,24 +61,24 @@ func (c *{{ table.name | @upper_camel }}Container) Name() string {
 	return "{{ table.name }}"
 }
 
-func (c *{{ table.name | @upper_camel }}Container) Load() error {
+func (c *{{ table.name | @upper_camel }}Container) build() ({{ table.return_type }}, error) {
 	jsonData, err := readJsonFile("{{ config.json_file_path }}/{{ table.name }}.json")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	builder := {{ table.name | @upper_camel }}ContainerBuilder{
 		Hook: {{ table.name | @upper_camel }}Hook,
 	}
-	result, err := builder.Build(jsonData)
+	return builder.Build(jsonData)
+}
+
+func (c *{{ table.name | @upper_camel }}Container) Load() error {
+	result, err := c.build()
 	if err != nil {
 		return err
 	}
 	{{ table.name | @upper_camel }} = result
 	return nil
-}
-
-func (c *{{ table.name | @upper_camel }}Container) Reload() error {
-	return c.Load()
 }
 
 {{~ end ~}}
@@ -113,22 +112,21 @@ func LoadAll(callback func(float64)) {
 	wg.Wait()
 }
 
-// Reload reloads a single table by name from its local json path.
-func Reload(name string) error {
-	for _, container := range Containers {
-		if container.Name() == name {
-			return container.Reload()
-		}
-	}
-	return fmt.Errorf("unknown table: %s", name)
-}
+var reloadMu sync.Mutex
 
-// ReloadAll reloads every table from its local json path.
-func ReloadAll() error {
-	for _, container := range Containers {
-		if err := container.Reload(); err != nil {
-			return err
-		}
+// Reload builds every table, then publishes all-or-nothing.
+func Reload() error {
+	reloadMu.Lock()
+	defer reloadMu.Unlock()
+
+{{~ for table in tables | array.filter @containable ~}}
+	next{{ table.name | @upper_camel }}, err := (&{{ table.name | @upper_camel }}Container{}).build()
+	if err != nil {
+		return err
 	}
+{{~ end ~}}
+{{~ for table in tables | array.filter @containable ~}}
+	{{ table.name | @upper_camel }} = next{{ table.name | @upper_camel }}
+{{~ end ~}}
 	return nil
 }

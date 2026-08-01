@@ -173,27 +173,31 @@ end
         {
         }
 
-        public static void ReloadAll()
+        private static readonly SemaphoreSlim ReloadGate = new(1, 1);
+
+        // Sync full reload: build every table, then publish all-or-nothing.
+        public static void Reload()
         {
 {{~ for table in tables | array.filter @containable ~}}
-            Reload("{{ table.name }}");
+            var next{{ table.name | @upper_camel }} = ({{ table.name | @upper_camel }}Table){{ table.name | @upper_camel }}.Reload();
 {{~ end ~}}
+{{~ for table in tables | array.filter @containable ~}}
+            {{ table.name | @upper_camel }} = next{{ table.name | @upper_camel }};
+{{~ end ~}}
+            AbilityStackedExp.BuildCache();
         }
 
-        public static bool Reload(string name)
+        // Offloads Reload() to the thread pool. Safe to call from request/AMQP threads.
+        public static async Task ReloadAsync(CancellationToken cancellationToken = default)
         {
-            switch (name)
+            await ReloadGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
             {
-{{~ for table in tables | array.filter @containable ~}}
-                case "{{ table.name }}":
-                {
-                    var next = ({{ table.name | @upper_camel }}Table)_{{ table.name | @upper_camel }}.Reload();
-                    {{ table.name | @upper_camel }} = next;
-                    return true;
-                }
-{{~ end ~}}
-                default:
-                    return false;
+                await Task.Run(() => Reload(), cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                ReloadGate.Release();
             }
         }
     }

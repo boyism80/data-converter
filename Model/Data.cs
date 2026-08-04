@@ -36,7 +36,7 @@ namespace ExcelTableConverter.Model
     public class SourceSchemaData
     {
         public string Name { get; set; }
-        public Scope Scope { get; set; }
+        public uint Scope { get; set; }
         public string Type { get; set; }
         public bool Bold { get; set; }
 

@@ -18,13 +18,7 @@ namespace ExcelTableConverter.Worker.Loader
                     continue;
 
                 var name = line[0].StringCellValue.Trim();
-                var scope = line[1].StringCellValue.Trim() switch
-                {
-                    "server" => Scope.Server,
-                    "client" => Scope.Client,
-                    "common" => Scope.Common,
-                    _ => throw new LogicException("invalid scope value")
-                };
+                var scope = Context.Configuration.ParseScope(line[1].StringCellValue.Trim());
                 var type = line[2].StringCellValue;
                 var value = GetValue(line[3], type);
 

@@ -1,4 +1,5 @@
-﻿using ExcelTableConverter.Model;
+﻿using ExcelTableConverter.Configuration;
+using ExcelTableConverter.Model;
 
 namespace ExcelTableConverter.Worker.Validator
 {
@@ -54,8 +55,8 @@ namespace ExcelTableConverter.Worker.Validator
                     if (inherited.Type != type)
                         throw new LogicException($"{inherited.Name}의 타입({inherited.Type})이 {basedSheet.TableName}에 정의된 타입({type})과 다릅니다.", pivot);
 
-                    if (inherited.Scope.HasFlag(scope) == false)
-                        throw new LogicException($"{inherited.Name}의 스코프({inherited.Scope})가 {basedSheet.TableName}에 정의된 스코프({scope})에 포함되지 않습니다.", pivot);
+                    if (AppConfiguration.ContainsScope(inherited.Scope, scope) == false)
+                        throw new LogicException($"{inherited.Name}의 스코프({Context.Configuration.FormatScope(inherited.Scope)})가 {basedSheet.TableName}에 정의된 스코프({Context.Configuration.FormatScope(scope)})에 포함되지 않습니다.", pivot);
                 }
             }
             yield return true;

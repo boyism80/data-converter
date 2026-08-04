@@ -1,4 +1,5 @@
-﻿using ExcelTableConverter.Factory.CPP;
+﻿using ExcelTableConverter.Configuration;
+using ExcelTableConverter.Factory.CPP;
 using ExcelTableConverter.Model;
 using ExcelTableConverter.Util;
 using Scriban;
@@ -6,34 +7,34 @@ using System.Text.RegularExpressions;
 
 namespace ExcelTableConverter.Worker.Generator.CPP
 {
-    public class ConstCodeGenerator : ParallelWorker<Scope, string>
+    public class ConstCodeGenerator : ParallelWorker<uint, string>
     {
         private static readonly Template _template = Template.Parse(File.ReadAllText($"Template/C++/const.txt"));
         private static readonly Template _luaTemplate = Template.Parse(File.ReadAllText($"Template/C++/const_lua.txt"));
         private static readonly Regex _enumValueRegex = new Regex(@"^([A-Z_][A-Z0-9_]*)\s*::\s*([A-Z_][A-Z0-9_]*)$", RegexOptions.Compiled);
 
-        public Dictionary<Scope, string> Declaration { get; private set; } = new Dictionary<Scope, string>();
+        public Dictionary<uint, string> Declaration { get; private set; } = new Dictionary<uint, string>();
         public string LuaCode { get; private set; }
 
         public ConstCodeGenerator(Context ctx) : base(ctx)
         {
         }
 
-        protected override IEnumerable<Scope> OnReady()
+        protected override IEnumerable<uint> OnReady()
         {
-            foreach (var scope in new[] { Scope.Server, Scope.Client })
+            foreach (var (scope, _) in Context.Configuration.DefinedScopes)
             {
                 yield return scope;
             }
         }
 
-        protected override IEnumerable<string> OnWork(Scope scope)
+        protected override IEnumerable<string> OnWork(uint scope)
         {
             var items = new Dictionary<string, List<object>>();
             foreach (var (groupName, constSet) in Context.Completed.Const.OrderBy(x => x.Key))
             {
                 var props = new List<object>();
-                foreach (var constData in constSet.Values.Where(x => x.Scope.HasFlag(scope)))
+                foreach (var constData in constSet.Values.Where(x => AppConfiguration.ContainsScope(x.Scope, scope)))
                 {
                     props.Add(new
                     {
@@ -51,7 +52,6 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 
             var obj = new ScribanEx
             {
-                ["super"] = scope == Scope.Common,
                 ["items"] = items,
                 ["config"] = Context.Configuration,
             };
@@ -60,7 +60,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             yield return _template.Render(ctx);
         }
 
-        protected override void OnWorked(Scope input, string output, int percent)
+        protected override void OnWorked(uint input, string output, int percent)
         {
             Declaration.Add(input, output);
             base.OnWorked(input, output, percent);

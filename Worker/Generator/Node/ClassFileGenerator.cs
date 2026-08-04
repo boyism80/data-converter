@@ -1,19 +1,20 @@
-﻿using ExcelTableConverter.Factory.Node;
+﻿using ExcelTableConverter.Configuration;
+using ExcelTableConverter.Factory.Node;
 using ExcelTableConverter.Model;
 using Scriban;
 
 namespace ExcelTableConverter.Worker.Generator.Node
 {
-    public class ClassFileGenerator : ParallelWorker<string, (Scope Scope, string Name, List<object> Props)>
+    public class ClassFileGenerator : ParallelWorker<string, (uint Scope, string Name, List<object> Props)>
     {
         private readonly string _dir;
 
         public ClassFileGenerator(Context ctx) : base(ctx)
         {
             _dir = Path.Join(Context.Output, "Node");
-            foreach (var scope in new[] { Scope.Server, Scope.Client })
+            foreach (var (_, scopeName) in Context.Configuration.DefinedScopes)
             {
-                var path = Path.Join(_dir, $"{scope}".ToLower());
+                var path = Path.Join(_dir, scopeName);
                 if (Directory.Exists(path) == false)
                     Directory.CreateDirectory(path);
             }
@@ -27,10 +28,10 @@ namespace ExcelTableConverter.Worker.Generator.Node
             }
         }
 
-        protected override IEnumerable<(Scope Scope, string Name, List<object> Props)> OnWork(string tableName)
+        protected override IEnumerable<(uint Scope, string Name, List<object> Props)> OnWork(string tableName)
         {
             var schemaSet = Context.Completed.Schema[tableName];
-            var result = new[] { Scope.Server, Scope.Client }.ToDictionary(x => x, x => new List<object>());
+            var result = Context.Configuration.DefinedScopes.ToDictionary(x => x.Flag, x => new List<object>());
             var properties = schemaSet.Values.ToList();
             for (int i = 0; i < properties.Count; i++)
             {
@@ -45,9 +46,9 @@ namespace ExcelTableConverter.Worker.Generator.Node
                     Initializer = new InitValueFactory(Context).Build(property.Type, property.Name)
                 };
 
-                foreach (var scope in new[] { Scope.Server, Scope.Client })
+                foreach (var (scope, _) in Context.Configuration.DefinedScopes)
                 {
-                    if (property.Scope.HasFlag(scope))
+                    if (AppConfiguration.ContainsScope(property.Scope, scope))
                     {
                         result[scope].Add(ccgp);
                     }
@@ -63,12 +64,12 @@ namespace ExcelTableConverter.Worker.Generator.Node
             }
         }
 
-        protected override void OnWorked(string input, (Scope Scope, string Name, List<object> Props) output, int percent)
+        protected override void OnWorked(string input, (uint Scope, string Name, List<object> Props) output, int percent)
         {
             Logger.Write($"클래스 코드 파일을 저장했습니다. - {input}");
         }
 
-        protected override IReadOnlyList<(Scope Scope, string Name, List<object> Props)> OnFinish(IReadOnlyList<(Scope Scope, string Name, List<object> Props)> output)
+        protected override IReadOnlyList<(uint Scope, string Name, List<object> Props)> OnFinish(IReadOnlyList<(uint Scope, string Name, List<object> Props)> output)
         {
             var enumCodeGenerator = new EnumCodeGenerator(Context);
             enumCodeGenerator.Run();
@@ -95,15 +96,15 @@ namespace ExcelTableConverter.Worker.Generator.Node
                 } as object).ToList();
             });
 
-            if (g.ContainsKey(Scope.Server) == false)
-                g.Add(Scope.Server, new List<object>());
-
-            if (g.ContainsKey(Scope.Client) == false)
-                g.Add(Scope.Client, new List<object>());
+            foreach (var (scope, _) in Context.Configuration.DefinedScopes)
+            {
+                if (g.ContainsKey(scope) == false)
+                    g.Add(scope, new List<object>());
+            }
 
             foreach (var (scope, items) in g)
             {
-                File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", $"model.js"), modelTemplate.Render(new
+                File.WriteAllText(Path.Combine(_dir, Context.Configuration.GetScopeName(scope), $"model.js"), modelTemplate.Render(new
                 {
                     Enum = enumCodeGenerator.Result,
                     Dsl = dslCodeGenerator.Result,
@@ -113,7 +114,7 @@ namespace ExcelTableConverter.Worker.Generator.Node
                     Tables = Context.Completed.Schema.Where(x =>
                     {
                         var schemaSet = x.Value;
-                        var filter = schemaSet.Values.Where(x => x.Scope.HasFlag(scope)).ToList();
+                        var filter = schemaSet.Values.Where(x => AppConfiguration.ContainsScope(x.Scope, scope)).ToList();
                         return filter.Count > 0;
                     }).Select(x => new { Name = x.Key, Json = Context.Completed.Schema[x.Key].Json }).OrderBy(x => x.Name).ToList()
                 }));

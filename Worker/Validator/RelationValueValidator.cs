@@ -9,7 +9,7 @@ namespace ExcelTableConverter.Worker.Validator
         public string Name { get; set; }
         public string Type { get; set; }
         public object Value { get; set; }
-        public Scope Scope { get; set; }
+        public uint Scope { get; set; }
     }
 
     public class RelationValueValidator : ParallelWorker<RelationValueValidationData[], bool>

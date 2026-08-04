@@ -12,9 +12,9 @@ namespace ExcelTableConverter.Worker.Generator
 
         protected override IEnumerable<(string FileName, object DataSet)> OnReady()
         {
-            foreach (var scope in new[] { Scope.Server, Scope.Client })
+            foreach (var (scope, scopeName) in Context.Configuration.DefinedScopes)
             {
-                var dir = Path.Combine(Context.Output, Context.Configuration.JsonFilePath, $"{scope}".ToLower());
+                var dir = Path.Combine(Context.Output, Context.Configuration.JsonFilePath, scopeName);
                 if (Directory.Exists(dir) == false)
                     Directory.CreateDirectory(dir);
 

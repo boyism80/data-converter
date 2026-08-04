@@ -1,3 +1,4 @@
+using ExcelTableConverter.Configuration;
 using ExcelTableConverter.Factory;
 using ExcelTableConverter.Model;
 using ExcelTableConverter.Worker;
@@ -141,7 +142,7 @@ namespace ExcelTableConverter.Controller
         /// </summary>
         /// <param name="scope">The scope to filter data</param>
         /// <returns>Dictionary mapping JSON names to data containers with hierarchical structure</returns>
-        public Dictionary<string, object> GetHierarchicalDataSet(Scope scope)
+        public Dictionary<string, object> GetHierarchicalDataSet(uint scope)
         {
             // {table:rows}
             var tableRows = Data.Container.SelectMany(x => x.Value).GroupBy(x => x.Key).ToDictionary(x => x.Key, x =>
@@ -158,7 +159,7 @@ namespace ExcelTableConverter.Controller
                 var rows = new List<Dictionary<string, object>>();
                 foreach (var tableName in g.Select(x => x.Key))
                 {
-                    var schema = Schema.Container[tableName].Values.Where(x => x.Scope.HasFlag(scope));
+                    var schema = Schema.Container[tableName].Values.Where(x => AppConfiguration.ContainsScope(x.Scope, scope));
                     var columns = schema.Select(x => x.Name).ToHashSet();
                     if (columns.Count == 0)
                         continue;
@@ -206,10 +207,10 @@ namespace ExcelTableConverter.Controller
             return row;
         }
 
-        private Dictionary<string, object> FilterScope(string tableName, Scope scope, Dictionary<string, object> row)
+        private Dictionary<string, object> FilterScope(string tableName, uint scope, Dictionary<string, object> row)
         {
             var result = new Dictionary<string, object>();
-            var schema = Schema[tableName].Values.Where(x => x.Scope.HasFlag(scope));
+            var schema = Schema[tableName].Values.Where(x => AppConfiguration.ContainsScope(x.Scope, scope));
             var columns = schema.Where(x => !x.Inherited).Select(x => x.Name).ToHashSet();
 
             foreach (var column in columns)
@@ -233,7 +234,7 @@ namespace ExcelTableConverter.Controller
         /// </summary>
         /// <param name="scope">The scope to filter data</param>
         /// <returns>Dictionary mapping JSON names to data containers with flattened structure</returns>
-        public Dictionary<string, object> GetFlattenedDataSet(Scope scope)
+        public Dictionary<string, object> GetFlattenedDataSet(uint scope)
         {
             // {table:rows}
             var tableRows = Data.SelectMany(x => x.Value).GroupBy(x => x.Key).ToDictionary(x => x.Key, x =>
@@ -273,7 +274,7 @@ namespace ExcelTableConverter.Controller
                 var rows = new List<Dictionary<string, object>>();
                 foreach (var tableName in g.Select(x => x.Key))
                 {
-                    var schema = Schema[tableName].Values.Where(x => x.Scope.HasFlag(scope));
+                    var schema = Schema[tableName].Values.Where(x => AppConfiguration.ContainsScope(x.Scope, scope));
                     var columns = schema.Select(x => x.Name).ToHashSet();
                     if (columns.Count == 0)
                         continue;
@@ -300,14 +301,14 @@ namespace ExcelTableConverter.Controller
         /// </summary>
         /// <param name="scope">The scope to filter data</param>
         /// <returns>Dictionary mapping sheet names to table containers with hierarchical structure</returns>
-        public Dictionary<string, Dictionary<string, object>> GetHierarchicalDataSetWithSheetName(Scope scope)
+        public Dictionary<string, Dictionary<string, object>> GetHierarchicalDataSetWithSheetName(uint scope)
         {
             return Data.Container.SelectMany(x => x.Value.SelectMany(x => x.Value)).GroupBy(x => x.SheetName).ToDictionary(x => x.Key, x =>
             {
                 return x.GroupBy(x => x.TableName).ToDictionary(x => x.Key, x =>
                 {
                     var tableName = x.Key;
-                    var schema = Schema.Container[tableName].Values.Where(x => x.Scope.HasFlag(scope));
+                    var schema = Schema.Container[tableName].Values.Where(x => AppConfiguration.ContainsScope(x.Scope, scope));
                     var columns = schema.Select(x => x.Name).ToHashSet();
                     if (columns.Count == 0)
                         return null;

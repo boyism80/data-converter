@@ -9,7 +9,7 @@ A comprehensive tool that converts Excel files containing game data into strongl
 - **Data Validation**: Comprehensive validation including schema, keys, enums, and relationships
 - **Inheritance Support**: Table inheritance with polymorphic data loading
 - **Type Safety**: Strong typing with nullable type support
-- **Scope Management**: Separate data for server and client builds
+- **Scope Management**: Separate data into configurable output partitions (default: server|client)
 - **Real-time Processing**: Incremental compilation with error tracking
 
 ## Installation & Usage
@@ -40,6 +40,7 @@ ExcelTableConverter --dir=<path-to-excel-files>
 - `--parent-prop=<value>`: Parent property name (default: parent)
 - `--dsl-enum=<value>`: DSL enum name (default: DSL)
 - `--additional-headers=<value>`: Additional header files (pipe separated, default: none)
+- `--scopes=<value>`: Scope partition names (pipe separated, default: server|client)
 - `--help` or `-h`: Show help information
 
 ### Examples
@@ -134,7 +135,7 @@ Row 1: based=ParentTableName
 Row 2: json=output_filename.json
 Row 3: field1    field2    field3    ...
 Row 4: int       string    float     ...
-Row 5: server    common    client    ...
+Row 5: server    server|client    client    ...
 ```
 
 If no inheritance is needed, skip rows 1-2 and start directly with field definitions.
@@ -170,12 +171,13 @@ Add `?` after any type to make it nullable:
 
 ## Scope Definitions
 
-Define data visibility for different build targets:
+Scope names are configurable via `--scopes` (default: `server|client`). They are partition labels, not fixed server/client semantics. Combine multiple scopes with `|`:
 
-- **`server`**: Data only available in server builds
-- **`client`**: Data only available in client builds  
-- **`common`**: Data available in common server and client builds
+- **`server`**: Included only in the `server` output partition
+- **`client`**: Included only in the `client` output partition
+- **`server|client`**: Included in both partitions
 
+Unknown names and the legacy `common` value are rejected.
 ## Data Processing Pipeline
 
 ### 1. File Discovery & Categorization

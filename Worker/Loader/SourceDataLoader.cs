@@ -103,13 +103,7 @@ namespace ExcelTableConverter.Worker.Loader
                 {
                     Name = names[col].StringCellValue,
                     Type = types[col].StringCellValue,
-                    Scope = scopes[col].StringCellValue switch
-                    {
-                        "server" => Scope.Server,
-                        "client" => Scope.Client,
-                        "common" => Scope.Common,
-                        _ => throw new LogicException("invalid scope type")
-                    },
+                    Scope = Context.Configuration.ParseScope(scopes[col].StringCellValue),
                     Bold = names[col].CellStyle.GetFont(sheet.Parent.Source).IsBold,
                 });
             }

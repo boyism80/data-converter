@@ -201,7 +201,7 @@ namespace ExcelTableConverter.Controller
         /// <param name="scope">Scope to filter by</param>
         /// <param name="scopeFilterType">Type of scope filtering</param>
         /// <returns>Filtered schema set, or null if not found</returns>
-        public SchemaSet GetScopeSchema(string tableName, Scope scope, ScopeFilterType scopeFilterType = ScopeFilterType.Match)
+        public SchemaSet GetScopeSchema(string tableName, uint scope, ScopeFilterType scopeFilterType = ScopeFilterType.Match)
         {
             if (!Container.TryGetValue(tableName, out var schema))
                 return null;
@@ -211,7 +211,7 @@ namespace ExcelTableConverter.Controller
                 return scopeFilterType switch
                 {
                     ScopeFilterType.Match => scope == pair.Value.Scope,
-                    ScopeFilterType.Contains => pair.Value.Scope.HasFlag(scope),
+                    ScopeFilterType.Contains => Configuration.AppConfiguration.ContainsScope(pair.Value.Scope, scope),
                     _ => throw new InvalidOperationException(),
                 };
             }).ToDictionary(x => x.Key, x => x.Value);

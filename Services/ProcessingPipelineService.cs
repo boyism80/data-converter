@@ -289,9 +289,9 @@ namespace ExcelTableConverter.Services
         /// <param name="context">The context containing the output configuration</param>
         private void GenerateCrcFiles(Context context)
         {
-            foreach (var scope in new[] { Scope.Server, Scope.Client })
+            foreach (var (scope, scopeName) in _configuration.DefinedScopes)
             {
-                var jsonDir = Path.Combine(context.Output, _configuration.JsonFilePath, $"{scope}".ToLower());
+                var jsonDir = Path.Combine(context.Output, _configuration.JsonFilePath, scopeName);
                 if (!Directory.Exists(jsonDir))
                     continue;
 

@@ -1,4 +1,5 @@
-﻿using ExcelTableConverter.Factory.Go;
+﻿using ExcelTableConverter.Configuration;
+using ExcelTableConverter.Factory.Go;
 using ExcelTableConverter.Model;
 using ExcelTableConverter.Util;
 using Scriban;
@@ -7,7 +8,7 @@ namespace ExcelTableConverter.Worker.Generator.Go
 {
     public class ClassFileGeneratorResult
     {
-        public Scope Scope { get; set; }
+        public uint Scope { get; set; }
         public string Name { get; set; }
         public string Table { get; set; }
         public List<object> Props { get; set; }
@@ -23,15 +24,15 @@ namespace ExcelTableConverter.Worker.Generator.Go
         {
             _dir = Path.Join(Context.Output, "Go");
             _baseTables = ctx.Completed.Schema.FindBaseTables();
-            foreach (var scope in new[] { Scope.Server, Scope.Client })
+            foreach (var (_, scopeName) in Context.Configuration.DefinedScopes)
             {
-                var path = Path.Join(_dir, $"{scope}".ToLower());
+                var path = Path.Join(_dir, scopeName);
                 if (Directory.Exists(path) == false)
                     Directory.CreateDirectory(path);
             }
         }
 
-        private string GenerateClassCode(Scope scope, List<object> items, HashSet<string> baseTables)
+        private string GenerateClassCode(uint scope, List<object> items, HashSet<string> baseTables)
         {
             var obj = new ScribanEx
             {
@@ -59,7 +60,7 @@ namespace ExcelTableConverter.Worker.Generator.Go
         protected override IEnumerable<ClassFileGeneratorResult> OnWork(string tableName)
         {
             var schemaSet = Context.Completed.Schema[tableName];
-            var result = new[] { Scope.Server, Scope.Client }.ToDictionary(x => x, x => new List<object>());
+            var result = Context.Configuration.DefinedScopes.ToDictionary(x => x.Flag, x => new List<object>());
             var properties = schemaSet.Values.ToList();
             for (int i = 0; i < properties.Count; i++)
             {
@@ -67,14 +68,20 @@ namespace ExcelTableConverter.Worker.Generator.Go
                 if (property.Inherited)
                     continue;
 
-                result[property.Scope].Add(new
+                var prop = new
                 {
                     Index = i,
                     Key = Util.Type.IsKey(property.Type, out _),
                     Type = new TypeFactory(Context).Build(property.Type),
                     Name = property.Name,
                     Initializer = new InitValueFactory(Context).Build(property.Type, property.Name)
-                });
+                };
+
+                foreach (var (scope, _) in Context.Configuration.DefinedScopes)
+                {
+                    if (AppConfiguration.ContainsScope(property.Scope, scope))
+                        result[scope].Add(prop);
+                }
             }
 
             foreach (var (scope, props) in result)
@@ -126,11 +133,11 @@ namespace ExcelTableConverter.Worker.Generator.Go
                 } as object).ToList();
             });
 
-            if (g.ContainsKey(Scope.Server) == false)
-                g.Add(Scope.Server, new List<object>());
-
-            if (g.ContainsKey(Scope.Client) == false)
-                g.Add(Scope.Client, new List<object>());
+            foreach (var (scope, _) in Context.Configuration.DefinedScopes)
+            {
+                if (g.ContainsKey(scope) == false)
+                    g.Add(scope, new List<object>());
+            }
 
             var modelTemplate = Template.Parse(File.ReadAllText("Template/Go/model.txt"));
             foreach (var (scope, items) in g)
@@ -148,7 +155,7 @@ namespace ExcelTableConverter.Worker.Generator.Go
                 var ctx = ScribanEx.CreateContext();
                 ctx.PushGlobal(obj);
 
-                File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", "model.go"), modelTemplate.Render(ctx));
+                File.WriteAllText(Path.Combine(_dir, Context.Configuration.GetScopeName(scope), "model.go"), modelTemplate.Render(ctx));
             }
 
             Logger.Complete($"클래스 코드 파일을 저장했습니다.");

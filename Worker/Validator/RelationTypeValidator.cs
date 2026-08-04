@@ -7,7 +7,7 @@ namespace ExcelTableConverter.Worker.Validator
         public IExcelFileTrackable Tracker { get; set; }
         public string Name { get; set; }
         public string Type { get; set; }
-        public Scope Scope { get; set; }
+        public uint Scope { get; set; }
     }
 
     public class RelationTypeValidator : ParallelWorker<RelationTypeValidationData, bool>

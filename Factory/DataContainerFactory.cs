@@ -1,12 +1,13 @@
-﻿using ExcelTableConverter.Model;
+﻿using ExcelTableConverter.Configuration;
+using ExcelTableConverter.Model;
 
 namespace ExcelTableConverter.Factory
 {
     public class DataContainerFactory
     {
-        private readonly Scope _scope;
+        private readonly uint _scope;
 
-        public DataContainerFactory(Scope scope)
+        public DataContainerFactory(uint scope)
         {
             _scope = scope;
         }
@@ -33,7 +34,7 @@ namespace ExcelTableConverter.Factory
         private object InternalBuild(Context ctx, string table, List<Dictionary<string, object>> rows, bool chainParent)
         {
             var schema = ctx.Completed.Schema[table];
-            var gk = chainParent ? schema.Values.FirstOrDefault(x => x.Scope.HasFlag(_scope) && Util.Type.IsGroupKey(x.Type, out _)) : null;
+            var gk = chainParent ? schema.Values.FirstOrDefault(x => AppConfiguration.ContainsScope(x.Scope, _scope) && Util.Type.IsGroupKey(x.Type, out _)) : null;
             if (gk != null)
             {
                 return rows.GroupBy(x => GetKey(ctx, table, gk.Name, x)).ToDictionary(g => g.Key, g => InternalBuild(ctx, table, g.ToList(), false));

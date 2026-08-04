@@ -207,7 +207,7 @@ namespace ExcelTableConverter.Controller
         /// <param name="tableName">Name of the table</param>
         /// <param name="scope">Scope to filter by</param>
         /// <returns>Dictionary of constants matching the scope</returns>
-        public Dictionary<string, ConstData> GetConstsByScope(string tableName, Scope scope)
+        public Dictionary<string, ConstData> GetConstsByScope(string tableName, uint scope)
         {
             if (string.IsNullOrEmpty(tableName))
                 return new Dictionary<string, ConstData>();
@@ -218,7 +218,7 @@ namespace ExcelTableConverter.Controller
                 if (!Container.TryGetValue(tableName, out var constants))
                     return new Dictionary<string, ConstData>();
 
-                return constants.Where(pair => pair.Value.Scope.HasFlag(scope))
+                return constants.Where(pair => Configuration.AppConfiguration.ContainsScope(pair.Value.Scope, scope))
                     .ToDictionary(x => x.Key, x => x.Value);
             }) as Dictionary<string, ConstData>;
         }

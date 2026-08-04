@@ -1,4 +1,5 @@
-﻿using ExcelTableConverter.Factory.CPP;
+﻿using ExcelTableConverter.Configuration;
+using ExcelTableConverter.Factory.CPP;
 using ExcelTableConverter.Model;
 using ExcelTableConverter.Util;
 using Scriban;
@@ -7,7 +8,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
 {
     public class ClassFileGeneratorResult
     {
-        public Scope Scope { get; set; }
+        public uint Scope { get; set; }
         public string Name { get; set; }
         public List<object> Props { get; set; }
     }
@@ -19,9 +20,9 @@ namespace ExcelTableConverter.Worker.Generator.CPP
         public ClassFileGenerator(Context ctx) : base(ctx)
         {
             _dir = Path.Join(Context.Output, "C++");
-            foreach (var scope in new[] { Scope.Server, Scope.Client })
+            foreach (var (_, scopeName) in Context.Configuration.DefinedScopes)
             {
-                var path = Path.Join(_dir, $"{scope}".ToLower());
+                var path = Path.Join(_dir, scopeName);
                 if (Directory.Exists(path) == false)
                     Directory.CreateDirectory(path);
             }
@@ -95,7 +96,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
         protected override IEnumerable<ClassFileGeneratorResult> OnWork(string tableName)
         {
             var schemaSet = Context.Completed.Schema[tableName];
-            var result = new[] { Scope.Server, Scope.Client }.ToDictionary(x => x, x => new List<object>());
+            var result = Context.Configuration.DefinedScopes.ToDictionary(x => x.Flag, x => new List<object>());
             var properties = schemaSet.Values.ToList();
             for (int i = 0; i < properties.Count; i++)
             {
@@ -111,9 +112,9 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                     Initializer = new InitValueFactory(Context).Build(property.Type, property.Name)
                 };
 
-                foreach (var scope in new[] { Scope.Server, Scope.Client })
+                foreach (var (scope, _) in Context.Configuration.DefinedScopes)
                 {
-                    if (property.Scope.HasFlag(scope))
+                    if (AppConfiguration.ContainsScope(property.Scope, scope))
                         result[scope].Add(ccgp);
                 }
             }
@@ -162,11 +163,11 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                 } as object).ToList();
             });
 
-            if (g.ContainsKey(Scope.Server) == false)
-                g.Add(Scope.Server, new List<object>());
-
-            if (g.ContainsKey(Scope.Client) == false)
-                g.Add(Scope.Client, new List<object>());
+            foreach (var (scope, _) in Context.Configuration.DefinedScopes)
+            {
+                if (g.ContainsKey(scope) == false)
+                    g.Add(scope, new List<object>());
+            }
 
             var ctx = ScribanEx.CreateContext();
             foreach (var (scope, items) in g)
@@ -183,7 +184,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
                     ["config"] = Context.Configuration,
                 };
                 ctx.PushGlobal(obj);
-                File.WriteAllText(Path.Combine(_dir, $"{scope.ToString().ToLower()}", $"model.h"), modelTemplate.Render(ctx));
+                File.WriteAllText(Path.Combine(_dir, Context.Configuration.GetScopeName(scope), $"model.h"), modelTemplate.Render(ctx));
                 ctx.PopGlobal();
             }
 

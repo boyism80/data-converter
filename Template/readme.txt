@@ -22,6 +22,15 @@
    - double
    - float
    - string
+   - cron
+    ```
+    5-field Unix cron (minute hour day-of-month month day-of-week)
+    0 18 * * *
+    */10 * * * *
+    0 9 * * MON-FRI
+
+    Emitted as string in generated models/JSON. Format is validated.
+    ```
    - bool
    - DateTime
    - TimeSpan

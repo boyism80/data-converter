@@ -151,6 +151,10 @@ namespace ExcelTableConverter.Factory
                 case "string":
                     return StringType(value, root, option, tracker);
 
+                // Excel type is cron; emitted model/JSON type is string.
+                case "cron":
+                    return StringType(value, root, option, tracker);
+
                 case "dsl":
                     return DslType(value, root, nullable, option, tracker);
 

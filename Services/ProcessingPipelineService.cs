@@ -149,6 +149,7 @@ namespace ExcelTableConverter.Services
             Scheduler.Add(() => new KeyValidator(context).Run());
             Scheduler.Add(() => new EnumValidator(context).Run());
             Scheduler.Add(() => new DslValidator(context).Run());
+            Scheduler.Add(() => new CronValidator(context).Run());
             Scheduler.Add(() => new RelationTypeValidator(context).Run());
 
             // Schedule relation value validation

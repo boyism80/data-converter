@@ -173,7 +173,7 @@ namespace ExcelTableConverter.Worker.Generator.CPP
             var nakedType = Util.Type.Nake(rootType);
             var isEnum = Context.Completed.Enum.ContainsKey(nakedType);
 
-            string[] stringTypes = { "string" };
+            string[] stringTypes = { "string", "cron" };
             string[] numericTypes = { "int", "int32", "int32_t", "uint", "uint32", "uint32_t", "long", "int64", "int64_t", "ulong", "uint64", "uint64_t", "short", "int16", "int16_t", "ushort", "uint16", "uint16_t", "byte", "uint8", "uint8_t", "sbyte", "int8", "int8_t", "float", "double" };
 
             // enum 값 추출

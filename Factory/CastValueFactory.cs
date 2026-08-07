@@ -21,6 +21,31 @@ namespace ExcelTableConverter.Factory
 
         }
 
+        protected override bool OnStart(object value, string root, bool nullable, out object result, DataFormatOption option, IExcelFileTrackable tracker)
+        {
+            result = default;
+
+            // cron is stored as string, but format is validated at cast time.
+            if (Cron.IsCronType(root) == false)
+                return true;
+
+            if (Util.Value.IsNull(value))
+            {
+                if (nullable == false)
+                    throw new NullValueException(root);
+
+                result = DP(root, value, null);
+                return false;
+            }
+
+            var expression = value is string s ? s.Trim() : $"{value}".Trim();
+            if (Cron.IsValid(expression, out var error) == false)
+                throw new LogicException($"{expression}는 올바른 cron 형식이 아닙니다. ({error})", tracker);
+
+            result = DP(root, value, expression);
+            return false;
+        }
+
         private object DP(string type, object value, object result)
         {
             value ??= "null";

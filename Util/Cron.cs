@@ -3,8 +3,8 @@ using System.Text.RegularExpressions;
 namespace ExcelTableConverter.Util
 {
     /// <summary>
-    /// Validates standard 5-field Unix cron expressions:
-    /// minute hour day-of-month month day-of-week
+    /// Validates 6-field cron expressions compatible with croncpp (standard traits):
+    /// second minute hour day-of-month month day-of-week
     /// </summary>
     public static class Cron
     {
@@ -40,37 +40,43 @@ namespace ExcelTableConverter.Util
             }
 
             var fields = _whitespace.Split(expression.Trim());
-            if (fields.Length != 5)
+            if (fields.Length != 6)
             {
-                error = "expected 5 fields (minute hour day-of-month month day-of-week)";
+                error = "expected 6 fields (second minute hour day-of-month month day-of-week)";
                 return false;
             }
 
-            if (TryValidateField(fields[0], 0, 59, null, out error) == false)
+            if (TryValidateField(fields[0], 0, 59, null, allowQuestion: false, out error) == false)
+            {
+                error = $"second: {error}";
+                return false;
+            }
+
+            if (TryValidateField(fields[1], 0, 59, null, allowQuestion: false, out error) == false)
             {
                 error = $"minute: {error}";
                 return false;
             }
 
-            if (TryValidateField(fields[1], 0, 23, null, out error) == false)
+            if (TryValidateField(fields[2], 0, 23, null, allowQuestion: false, out error) == false)
             {
                 error = $"hour: {error}";
                 return false;
             }
 
-            if (TryValidateField(fields[2], 1, 31, null, out error) == false)
+            if (TryValidateField(fields[3], 1, 31, null, allowQuestion: true, out error) == false)
             {
                 error = $"day-of-month: {error}";
                 return false;
             }
 
-            if (TryValidateField(fields[3], 1, 12, _months, out error) == false)
+            if (TryValidateField(fields[4], 1, 12, _months, allowQuestion: false, out error) == false)
             {
                 error = $"month: {error}";
                 return false;
             }
 
-            if (TryValidateField(fields[4], 0, 7, _weekdays, out error) == false)
+            if (TryValidateField(fields[5], 0, 7, _weekdays, allowQuestion: true, out error) == false)
             {
                 error = $"day-of-week: {error}";
                 return false;
@@ -79,7 +85,7 @@ namespace ExcelTableConverter.Util
             return true;
         }
 
-        private static bool TryValidateField(string field, int min, int max, HashSet<string> names, out string error)
+        private static bool TryValidateField(string field, int min, int max, HashSet<string> names, bool allowQuestion, out string error)
         {
             error = null;
 
@@ -89,16 +95,19 @@ namespace ExcelTableConverter.Util
                 return false;
             }
 
+            if (allowQuestion && field == "?")
+                return true;
+
             foreach (var part in field.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
-                if (TryValidatePart(part, min, max, names, out error) == false)
+                if (TryValidatePart(part, min, max, names, allowQuestion, out error) == false)
                     return false;
             }
 
             return true;
         }
 
-        private static bool TryValidatePart(string part, int min, int max, HashSet<string> names, out string error)
+        private static bool TryValidatePart(string part, int min, int max, HashSet<string> names, bool allowQuestion, out string error)
         {
             error = null;
 
@@ -107,6 +116,9 @@ namespace ExcelTableConverter.Util
                 error = "empty part";
                 return false;
             }
+
+            if (allowQuestion && part == "?")
+                return true;
 
             var stepSplit = part.Split('/');
             if (stepSplit.Length > 2)

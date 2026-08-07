@@ -108,7 +108,7 @@ The second field, Type, supports the following formats:
 - double
 - float
 - string
-- cron (validated 5-field Unix cron; emitted as string)
+- cron (validated 6-field croncpp cron; emitted as string)
 - dsl
 - TimeSpan
 - DateTime
@@ -148,7 +148,7 @@ If no inheritance is needed, skip rows 1-2 and start directly with field definit
 - **Floating Point**: `float`, `double`
 - **Boolean**: `bool`
 - **Text**: `string`
-- **Cron**: `cron` - 5-field Unix cron expression (minute hour day-of-month month day-of-week). Validated at cast/validation time; generated model and JSON type is `string`.
+- **Cron**: `cron` - 6-field cron expression (second minute hour day-of-month month day-of-week), compatible with croncpp. Validated at cast/validation time; generated model and JSON type is `string`.
 - **Special**: `dsl` (Domain Specific Language references)
 
 ### Date/Time Types

@@ -103,7 +103,7 @@ namespace ExcelTableConverter.Factory.CPP
 
         protected override string StringType(object value, string root, DataFormatOption option, IExcelFileTrackable tracker)
         {
-            return WithNullable("std::string", value, false);
+            return WithNullable("std::string", value, Util.Type.IsNullable(root));
         }
 
         protected override string TimeSpanType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)

@@ -706,15 +706,21 @@ public:
         return *this;
     }
 
-    datetime& add_milliseconds(int ms)
+    datetime& add_milliseconds(int64_t ms)
     {
-        this->_ptime += boost::posix_time::milliseconds(ms);
+        constexpr int64_t ms_per_day = 86400000LL;
+        auto              days       = ms / ms_per_day;
+        auto              rem        = ms % ms_per_day;
+        if (days != 0)
+            this->_ptime += boost::gregorian::days(static_cast<int>(days));
+        if (rem != 0)
+            this->_ptime += boost::posix_time::milliseconds(static_cast<int>(rem));
         return *this;
     }
 
     datetime& add_timespan(const timespan& ts)
     {
-        this->add_milliseconds(static_cast<int>(ts.total_milliseconds()));
+        this->add_milliseconds(ts.total_milliseconds());
         return *this;
     }
 
@@ -728,14 +734,14 @@ public:
     friend datetime operator- (const datetime& dt, const timespan& ts)
     {
         auto result = datetime(dt);
-        result.add_milliseconds(-static_cast<int>(ts.total_milliseconds()));
+        result.add_milliseconds(-ts.total_milliseconds());
         return result;
     }
 
     friend timespan operator- (const datetime& dt1, const datetime& dt2)
     {
         auto diff = dt1._ptime - dt2._ptime;
-        return timespan(boost::posix_time::to_simple_string(diff));
+        return timespan(std::chrono::milliseconds(diff.total_milliseconds()));
     }
 
     datetime& operator+= (const timespan& ts)
@@ -746,7 +752,7 @@ public:
 
     datetime& operator-= (const timespan& ts)
     {
-        this->add_milliseconds(-static_cast<int>(ts.total_milliseconds()));
+        this->add_milliseconds(-ts.total_milliseconds());
         return *this;
     }
 

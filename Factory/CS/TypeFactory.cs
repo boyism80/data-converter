@@ -58,7 +58,7 @@ namespace ExcelTableConverter.Factory.CS
             var namespaces = Context.Configuration.Namespace.Concat(Context.Configuration.EnumNamespace).Select(x => ScribanEx.UpperCamel(x));
             var prefix = ScribanEx.NamespaceAccess(namespaces, LanguageType.CS);
 
-            return $"{prefix}.{ScribanEx.UpperCamel(Util.Type.Nake(root))}";
+            return WithNullable($"{prefix}.{ScribanEx.UpperCamel(Util.Type.Nake(root))}", nullable);
         }
 
         protected override string FloatType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)

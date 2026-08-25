@@ -555,16 +555,16 @@ private:
 };
 
 {{~ for table in tables | array.filter @containable ~}}
-class __{{ table.name }} : public {{ table.type }}<{{ table.generic }}>
+class ___{{ table.name }} : public {{ table.type }}<{{ table.generic }}>
 {
 public:
 #ifdef DECLARE_{{ table.name | string.upcase }}_CONTAINER_CUSTOM_CONSTRUCTOR
 DECLARE_{{ table.name | string.upcase }}_CONTAINER_CUSTOM_CONSTRUCTOR
 #else
-    __{{ table.name }}() : {{ table.type }}<{{ table.generic }}>(std::string_view("{{ config.json_file_path }}/{{ table.name }}.json"))
+    ___{{ table.name }}() : {{ table.type }}<{{ table.generic }}>(std::string_view("{{ config.json_file_path }}/{{ table.name }}.json"))
     { }
-    __{{ table.name }}(const __{{ table.name }}&) = delete;
-    ~__{{ table.name }}() = default;
+    ___{{ table.name }}(const ___{{ table.name }}&) = delete;
+    ~___{{ table.name }}() = default;
 #endif
 #ifdef DECLARE_{{ table.name | string.upcase }}_CONTAINER_EXTENSION
 DECLARE_{{ table.name | string.upcase }}_CONTAINER_EXTENSION
@@ -579,7 +579,7 @@ class table
 {
 private:
 {{~ for table in tables | array.filter @containable ~}}
-    inline static {{ config.namespace | @namespace_access_cpp }}table_slot<{{ config.namespace | @namespace_access_cpp }}__{{ table.name }}> _{{ table.name }}_slot{std::string_view{"{{ table.name }}"}};
+    inline static {{ config.namespace | @namespace_access_cpp }}table_slot<{{ config.namespace | @namespace_access_cpp }}___{{ table.name }}> _{{ table.name }}_slot{std::string_view{"{{ table.name }}"}};
 {{~ end ~}}
 
     inline static {{ config.namespace | @namespace_access_cpp }}slot_base* _slots[] = 
@@ -591,7 +591,7 @@ private:
 
 public:
 {{~ for table in tables | array.filter @containable ~}}
-    inline static {{ config.namespace | @namespace_access_cpp }}table_view<{{ config.namespace | @namespace_access_cpp }}__{{ table.name }}> {{ table.name }}{_{{ table.name }}_slot};
+    inline static {{ config.namespace | @namespace_access_cpp }}table_view<{{ config.namespace | @namespace_access_cpp }}___{{ table.name }}> {{ table.name }}{_{{ table.name }}_slot};
 {{~ end ~}}
 
 public:

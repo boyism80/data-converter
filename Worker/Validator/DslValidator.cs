@@ -40,13 +40,13 @@ namespace ExcelTableConverter.Worker.Validator
                 var param = dsl.Value[i] as JObject;
                 var name = param["name"].Value<string>();
                 var type = param["type"].Value<string>();
-                if (Util.Type.IsRelation(type, out var rel))
+                var rel = ColumnType.Parse(type).Relation;
+                if (rel != null)
                 {
-                    rel = Util.Type.Nake(rel);
-                    if (Context.Completed.Schema.GetAllTableNames().Contains(rel) == false)
+                    if (Context.Completed.Schema.ContainsKey(rel) == false)
                         throw new LogicException($"'{format}'에 정의된 {i + 1}번째 인자 '{name}'의 타입 '{rel}'은 존재하지 않는 테이블입니다.");
 
-                    if (Context.Completed.Schema.GetKeyTableNames().Contains(rel) == false)
+                    if (Context.Completed.Schema.KeyTableNames.Contains(rel) == false)
                         throw new LogicException($"'{format}'에 정의된 {i + 1}번째 인자 '{name}'의 타입 '{rel}'은 키가 정의되지 않는 테이블입니다.");
                 }
             }

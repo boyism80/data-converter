@@ -5,38 +5,24 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
-    <Version>1.3.3</Version>
-    <WarningsAsErrors />
-    <WarningsNotAsErrors>CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8625</WarningsNotAsErrors>
+    <Version>1.4.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Converter\**" />
     <Compile Remove="output\**" />
-    <EmbeddedResource Remove="Converter\**" />
     <EmbeddedResource Remove="output\**" />
-    <None Remove="Converter\**" />
     <None Remove="output\**" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Crc32.NET" Version="1.2.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="9.0.3" />
     <PackageReference Include="NDesk.Options.Core" Version="1.2.6" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="NPOI" Version="2.6.2" />
-    <PackageReference Include="Scriban" Version="7.2.0" />
-    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
+    <PackageReference Include="Scriban" Version="7.5.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="config.c#.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="config.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="dsl.c#.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -46,10 +32,6 @@
     <None Include=".\Template\**" LinkBase="Template">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Template\C++\" />
   </ItemGroup>
 
 </Project>

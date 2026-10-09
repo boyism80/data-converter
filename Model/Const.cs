@@ -34,7 +34,7 @@ namespace ExcelTableConverter.Model
     public class ConstData
     {
         public string Name { get; set; }
-        public object Value { get; set; }
+        public DataValue Value { get; set; }
         public string Type { get; set; }
         public uint Scope { get; set; }
     }

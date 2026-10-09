@@ -1,17 +1,13 @@
 ﻿using ExcelTableConverter.Model;
-using ExcelTableConverter.Util;
 
 namespace ExcelTableConverter.Worker.Validator
 {
     public class KeyValidator : ParallelWorker<SourceSheetData, bool>
     {
-        private readonly Mutex _mutex = new Mutex();
         private readonly Dictionary<string, List<(IExcelFileTrackable Tracker, object Key)>> _buffer = new Dictionary<string, List<(IExcelFileTrackable Tracker, object Key)>>();
 
         public KeyValidator(Context ctx) : base(ctx)
-        {
-
-        }
+        { }
 
         protected override IEnumerable<SourceSheetData> OnReady()
         {
@@ -29,36 +25,36 @@ namespace ExcelTableConverter.Worker.Validator
                 if (columns == null)
                     continue;
 
-                var pkList = columns.Where(x => Util.Type.IsPrimaryKey(x.Type, out _)).ToList();
+                var pkList = columns.Where(x => x.ColumnType.PrimaryKey).ToList();
                 if (pkList.Count > 1)
                     throw new LogicException($"기본키가 2개 이상 정의되었습니다. ({string.Join(", ", pkList.ConvertAll(x => x.Name))})", sheet);
 
                 foreach (var pk in pkList)
                 {
-                    if (Util.Type.IsNullable(pk.Type))
+                    if (pk.ColumnType.Nullable)
                         throw new LogicException($"기본키 {pk.Name}는 nullable 타입으로 정의할 수 없습니다.", sheet);
                 }
 
-                var gkList = columns.Where(x => Util.Type.IsGroupKey(x.Type, out _)).ToList();
+                var gkList = columns.Where(x => x.ColumnType.GroupKey).ToList();
                 if (gkList.Count > 1)
                     throw new LogicException($"그룹키가 2개 이상 정의되었습니다. ({string.Join(", ", gkList.ConvertAll(x => x.Name))})", sheet);
 
                 foreach (var gk in gkList)
                 {
-                    if (Util.Type.IsNullable(gk.Type))
+                    if (gk.ColumnType.Nullable)
                         throw new LogicException($"기본키 {gk.Name}는 nullable 타입으로 정의할 수 없습니다.", sheet);
                 }
             }
 
-            var boldKeyColumn = boldColumns?.FirstOrDefault(x => Util.Type.IsPrimaryKey(x.Type, out _));
-            var normalKeyColumn = normalColumns?.FirstOrDefault(x => Util.Type.IsPrimaryKey(x.Type, out _));
+            var boldKeyColumn = boldColumns?.FirstOrDefault(x => x.ColumnType.PrimaryKey);
+            var normalKeyColumn = normalColumns?.FirstOrDefault(x => x.ColumnType.PrimaryKey);
 
             if (boldKeyColumn != null)
             {
                 var values = boldKeyColumn.RowValuePairs.Values;
-                if (Context.Completed.Enum.ContainsKey(Util.Type.Nake(boldKeyColumn.Type)))
+                if (Context.Completed.Enum.ContainsKey(boldKeyColumn.ColumnType.Naked))
                 {
-                    var combinedEnumKeys = values.Where(x => Util.Enum.Combined(x as string)).Select(x => x as string).ToList();
+                    var combinedEnumKeys = values.Where(x => EnumExpression.IsCombined(x as string)).Select(x => x as string).ToList();
                     if (combinedEnumKeys.Count > 0)
                         throw new AggregateException(combinedEnumKeys.Select(key => new LogicException($"키에 열거형 조합({key})를 사용할 수 없습니다.", sheet)));
                 }
@@ -72,7 +68,7 @@ namespace ExcelTableConverter.Worker.Validator
             {
                 if (boldColumns != null)
                 {
-                    var gk = boldColumns.FirstOrDefault(x => Util.Type.IsPrimaryKey(x.Type, out _));
+                    var gk = boldColumns.FirstOrDefault(x => x.ColumnType.PrimaryKey);
                     var values = normalKeyColumn.RowValuePairs.Select(pair =>
                     {
                         var row = pair.Key;
@@ -86,21 +82,22 @@ namespace ExcelTableConverter.Worker.Validator
                     if (duplicatedList.Count > 0)
                         throw new AggregateException(duplicatedList.ConvertAll(duplicated => new LogicException($"키 '{duplicated[0]}'가 중복되었습니다.", sheet)));
 
-                    _mutex.WaitOne();
-                    if (_buffer.TryGetValue(sheet.TableName, out var keys) == false)
+                    lock (_buffer)
                     {
-                        keys = new List<(IExcelFileTrackable, object)>();
-                        _buffer.Add(sheet.TableName, keys);
+                        if (_buffer.TryGetValue(sheet.TableName, out var keys) == false)
+                        {
+                            keys = new List<(IExcelFileTrackable, object)>();
+                            _buffer.Add(sheet.TableName, keys);
+                        }
+                        keys.AddRange(values.Select(x => (sheet as IExcelFileTrackable, x as object)));
                     }
-                    keys.AddRange(values.Select(x => (sheet as IExcelFileTrackable, x as object)));
-                    _mutex.ReleaseMutex();
                 }
                 else
                 {
                     var values = normalKeyColumn.RowValuePairs.Values;
-                    if (Context.Completed.Enum.ContainsKey(Util.Type.Nake(normalKeyColumn.Type)))
+                    if (Context.Completed.Enum.ContainsKey(normalKeyColumn.ColumnType.Naked))
                     {
-                        var combinedEnumKeys = values.Where(x => Util.Enum.Combined(x as string)).Select(x => x as string).ToList();
+                        var combinedEnumKeys = values.Where(x => EnumExpression.IsCombined(x as string)).Select(x => x as string).ToList();
                         if (combinedEnumKeys.Count > 0)
                             throw new AggregateException(combinedEnumKeys.Select(key => new LogicException($"키에 열거형 조합({key})를 사용할 수 없습니다.", sheet)));
                     }
@@ -109,14 +106,15 @@ namespace ExcelTableConverter.Worker.Validator
                     if (duplicatedList.Count > 0)
                         throw new AggregateException(duplicatedList.ConvertAll(duplicated => new LogicException($"키 '{duplicated[0]}'가 중복되었습니다.", sheet)));
 
-                    _mutex.WaitOne();
-                    if (_buffer.TryGetValue(sheet.TableName, out var keys) == false)
+                    lock (_buffer)
                     {
-                        keys = new List<(IExcelFileTrackable, object)>();
-                        _buffer.Add(sheet.TableName, keys);
+                        if (_buffer.TryGetValue(sheet.TableName, out var keys) == false)
+                        {
+                            keys = new List<(IExcelFileTrackable, object)>();
+                            _buffer.Add(sheet.TableName, keys);
+                        }
+                        keys.AddRange(values.Select(x => (sheet as IExcelFileTrackable, x as object)));
                     }
-                    keys.AddRange(values.Select(x => (sheet as IExcelFileTrackable, x as object)));
-                    _mutex.ReleaseMutex();
                 }
             }
 

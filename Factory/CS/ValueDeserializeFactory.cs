@@ -1,189 +1,49 @@
 ﻿using ExcelTableConverter.Model;
-using ExcelTableConverter.Util;
 
 namespace ExcelTableConverter.Factory.CS
 {
-    public class ValueDeserializeFactory : DataFormatFactory<string>
+    public class ValueDeserializeFactory : ExpressionFormatFactory<string>
     {
         public ValueDeserializeFactory(Context ctx) : base(ctx)
-        {
+        { }
 
+        private static string Nullable(DataType type, string obj, string result)
+        {
+            return type.Nullable ? $"{obj} == null ? null : {result}" : result;
         }
 
-        private static string WithNullable(string obj, string result, bool nullable)
+        private static string Cast(DataType type, string obj, string name, string expr)
         {
-            var prefix = nullable ? $"{obj} == null ? null : " : string.Empty;
-            return $"{prefix}{result}";
+            return Nullable(type, obj, type.Nullable ? $"({name}?){expr}" : expr);
         }
 
-        protected override string ArrayType(object obj, string root, string e, DataFormatOption option, IExcelFileTrackable tracker)
+        protected override string ByteType(DataType type, string obj) => Cast(type, obj, "byte", $"(byte){obj}");
+        protected override string SbyteType(DataType type, string obj) => Cast(type, obj, "ubyte", $"(ubyte){obj}");
+        protected override string ShortType(DataType type, string obj) => Cast(type, obj, "short", $"(short){obj}");
+        protected override string UshortType(DataType type, string obj) => Cast(type, obj, "ushort", $"(ushort){obj}");
+        protected override string IntType(DataType type, string obj) => Cast(type, obj, "int", $"(int)(long){obj}");
+        protected override string UintType(DataType type, string obj) => Cast(type, obj, "uint", $"(uint){obj}");
+        protected override string LongType(DataType type, string obj) => Cast(type, obj, "long", $"(long){obj}");
+        protected override string UlongType(DataType type, string obj) => Cast(type, obj, "ulong", $"(ulong){obj}");
+        protected override string DoubleType(DataType type, string obj) => Cast(type, obj, "double", $"(double){obj}");
+        protected override string FloatType(DataType type, string obj) => Cast(type, obj, "float", $"(float)(double){obj}");
+        protected override string DslType(DataType type, string obj) => Cast(type, obj, "Dsl", $"Newtonsoft.Json.JsonConvert.DeserializeObject<Dsl>(Newtonsoft.Json.JsonConvert.SerializeObject({obj}))");
+        protected override string TimeSpanType(DataType type, string obj) => Cast(type, obj, "TimeSpan", $"TimeSpan.Parse({obj}.ToString())");
+        protected override string BoolType(DataType type, string obj) => Nullable(type, obj, $"({new TypeFactory(Context).Build(type.Root)})System.Convert.ChangeType({obj}, typeof({type.Root}))");
+        protected override string DateTimeType(DataType type, string obj) => Nullable(type, obj, $"DateTime.Parse({obj}.ToString())");
+        protected override string DateRangeType(DataType type, string obj) => Nullable(type, obj, $"DateRange.Parse({obj})");
+        protected override string StringType(DataType type, string obj) => $"{obj}?.ToString()";
+        protected override string ArrayType(ArrayDataType type, string obj) => $"({obj} as object[]).Select(x => {Build(type.Element, "x")}).ToList()";
+        protected override string MapType(MapDataType type, string obj) => $"({obj} as object[]).Select(x => {Build(type.Key, "x")}).ToList()";
+        protected override string PointType(GeometryDataType type, string obj) => throw new NotImplementedException();
+        protected override string SizeType(GeometryDataType type, string obj) => throw new NotImplementedException();
+        protected override string RangeType(GeometryDataType type, string obj) => throw new NotImplementedException();
+        protected override string AreaType(GeometryDataType type, string obj) => throw new NotImplementedException();
+
+        protected override string EnumType(EnumDataType type, string obj)
         {
-            return $"({obj} as object[]).Select(x => {Build(e, "x", tracker)}).ToList()";
-        }
-
-        protected override string BooleanType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable(obj as string, $"({new TypeFactory(Context).Build(root, tracker)})System.Convert.ChangeType({obj}, typeof({root}))", nullable);
-        }
-
-        protected override string DateRangeType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable(obj as string, $"DateRange.Parse({obj})", nullable);
-        }
-
-        protected override string DateTimeType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable(obj as string, $"DateTime.Parse({obj}.ToString())", nullable);
-        }
-
-        protected override string DictionaryType(object obj, string root, string k, string v, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            // TODO: 디버깅 후 다시 작성
-            return $"({obj} as object[]).Select(x => {Build(k, "x")}).ToList()";
-        }
-
-        protected override string DoubleType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            var result = $"(double){obj}";
-            if (nullable)
-                result = $"(double?){result}";
-
-            return WithNullable(obj as string, result, nullable);
-        }
-
-        protected override string DslType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            var result = $"Newtonsoft.Json.JsonConvert.DeserializeObject<Dsl>(Newtonsoft.Json.JsonConvert.SerializeObject({obj}))";
-            if (nullable)
-                result = $"(Dsl?){result}";
-            return WithNullable(obj as string, result, nullable);
-        }
-
-        protected override string EnumType(object obj, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            var namespaces = Context.Configuration.Namespace.Concat(Context.Configuration.EnumNamespace).Select(x => ScribanEx.UpperCamel(x));
-            var prefix = ScribanEx.NamespaceAccess(namespaces, LanguageType.CS);
-            return WithNullable(obj as string, $"({prefix}.{ScribanEx.UpperCamel(root)})Enum.Parse(typeof({prefix}.{ScribanEx.UpperCamel(root)}), {obj}.ToString())", nullable);
-        }
-
-        protected override string FloatType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            var result = $"(float)(double){obj}";
-            if (nullable)
-                result = $"(float?){result}";
-
-            return WithNullable(obj as string, result, nullable);
-        }
-
-        protected override string IntType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            var result = $"(int)(long){obj}";
-            if (nullable)
-                result = $"(int?){result}";
-
-            return WithNullable(obj as string, result, nullable);
-        }
-
-        protected override string LongType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            var result = $"(long){obj}";
-            if (nullable)
-                result = $"(long?){result}";
-
-            return WithNullable(obj as string, result, nullable);
-        }
-
-        protected override string ByteType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            var result = $"(byte){obj}";
-            if (nullable)
-                result = $"(byte?){result}";
-
-            return WithNullable(obj as string, result, nullable);
-        }
-
-        protected override string SbyteType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            var result = $"(ubyte){obj}";
-            if (nullable)
-                result = $"(ubyte?){result}";
-
-            return WithNullable(obj as string, result, nullable);
-        }
-
-        protected override string ShortType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            var result = $"(short){obj}";
-            if (nullable)
-                result = $"(short?){result}";
-
-            return WithNullable(obj as string, result, nullable);
-        }
-
-        protected override string UshortType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            var result = $"(ushort){obj}";
-            if (nullable)
-                result = $"(ushort?){result}";
-
-            return WithNullable(obj as string, result, nullable);
-        }
-
-        protected override string UintType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            var result = $"(uint){obj}";
-            if (nullable)
-                result = $"(uint?){result}";
-
-            return WithNullable(obj as string, result, nullable);
-        }
-
-        protected override string UlongType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            var result = $"(ulong){obj}";
-            if (nullable)
-                result = $"(ulong?){result}";
-
-            return WithNullable(obj as string, result, nullable);
-        }
-
-        protected override string StringType(object obj, string root, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"{obj}?.ToString()";
-        }
-
-        protected override string TimeSpanType(object obj, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            var result = $"TimeSpan.Parse({obj}.ToString())";
-            if (nullable)
-                result = $"(TimeSpan?){result}";
-
-            return WithNullable(obj as string, result, nullable);
-        }
-
-        public string Build(string type, string value, IExcelFileTrackable tracker = null)
-        {
-            return base.Build(type, value, null, tracker);
-        }
-
-        protected override string PointType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override string SizeType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override string RangeType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override string AreaType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            throw new NotImplementedException();
+            var enumType = Language.CSharp.Qualify(Context.EnumNamespace, type.Root);
+            return Nullable(type, obj, $"({enumType})Enum.Parse(typeof({enumType}), {obj}.ToString())");
         }
     }
 }

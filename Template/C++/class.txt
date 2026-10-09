@@ -1,5 +1,5 @@
-{{~ for item in items ~}}
-class {{ item.name }}{{ if item.based }} : public {{ namespace_access_cpp config.namespace }}{{ item.based }}{{ else }}
+{{~ for item in classes ~}}
+class {{ item.name }}{{ if item.based }} : public {{ ns.access }}{{ item.based }}{{ else }}
 #ifdef DECLARE_{{ item.name | string.upcase }}_INHERIT
 DECLARE_{{ item.name | string.upcase }}_INHERIT
 #endif{{ end }}
@@ -19,7 +19,7 @@ public:
 DECLARE_{{ item.name | string.upcase }}_CUSTOM_CONSTRUCTOR
 #else
 public:
-    {{ item.name }}(const Json::Value& json){{ if item.based || item.props.size > 0 }} : {{ end }}{{ if item.based }}{{ config.namespace | @namespace_access_cpp }}{{ item.based }}(json){{ if item.props.size > 0 }},{{ end }}{{ else }}
+    {{ item.name }}(const Json::Value& json){{ if item.based || item.props.size > 0 }} : {{ end }}{{ if item.based }}{{ ns.access }}{{ item.based }}(json){{ if item.props.size > 0 }},{{ end }}{{ else }}
 #ifdef DECLARE_{{ item.name | string.upcase }}_CONSTRUCTOR
 DECLARE_{{ item.name | string.upcase }}_CONSTRUCTOR
 #endif{{ end }}

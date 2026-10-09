@@ -1,4 +1,6 @@
-﻿namespace ExcelTableConverter.Model
+﻿using Newtonsoft.Json;
+
+namespace ExcelTableConverter.Model
 {
     public enum ScopeFilterType
     {
@@ -10,6 +12,7 @@
     {
         public string Name { get; set; }
         public string Type { get; set; }
+        [JsonIgnore] public ColumnType ColumnType => ColumnType.Parse(Type);
         public uint Scope { get; set; }
         public bool Inherited { get; set; }
     }
@@ -29,11 +32,11 @@
         {
             get
             {
-                var gk = Values.FirstOrDefault(x => Util.Type.IsGroupKey(x.Type, out _));
+                var gk = Values.FirstOrDefault(x => x.ColumnType.GroupKey);
                 if (gk != null)
                     return gk.Name;
 
-                var pk = Values.FirstOrDefault(x => Util.Type.IsPrimaryKey(x.Type, out _));
+                var pk = Values.FirstOrDefault(x => x.ColumnType.PrimaryKey);
                 if (pk != null)
                     return pk.Name;
 

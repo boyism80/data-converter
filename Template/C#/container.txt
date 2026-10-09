@@ -1,8 +1,3 @@
-{{~
-func containable(table)
-    ret table.name == table.json
-end
-~}}
     public class ContainerConverter : JsonConverter
     {
         public override bool CanConvert(Type objectType)
@@ -144,18 +139,18 @@ end
 
     public partial class Table
     {
-{{~ for table in tables | array.filter @containable ~}}
+{{~ for table in containers ~}}
         [Table("{{ config.json_file_path }}/{{ table.name }}.json")]
-        public partial class {{ table.name | @upper_camel }}Table : {{ table.type }}<{{ table.generic }}>
+        public partial class {{ table.identifier }}Table : {{ table.type }}<{{ table.generic }}>
         {
             public override string Name => "{{ table.name }}";
         }
-        private static {{ table.name | @upper_camel }}Table _{{ table.name }} = new {{ table.name | @upper_camel }}Table();
+        private static {{ table.identifier }}Table _{{ table.name }} = new {{ table.identifier }}Table();
         /// <summary>
         /// Current published generation. Capture a local reference for a stable snapshot:
-        /// var snap = Table.{{ table.name | @upper_camel }};
+        /// var snap = Table.{{ table.identifier }};
         /// </summary>
-        public static {{ table.name | @upper_camel }}Table {{ table.name | @upper_camel }}
+        public static {{ table.identifier }}Table {{ table.identifier }}
         {
             get => Volatile.Read(ref _{{ table.name }});
             private set => Volatile.Write(ref _{{ table.name }}, value);
@@ -164,8 +159,8 @@ end
 
         public static Container[] Containers => new Container[]
         {
-{{~ for table in tables | array.filter @containable ~}}
-            {{ table.name | @upper_camel }}{{ if !for.last }}, {{ end }}
+{{~ for table in containers ~}}
+            {{ table.identifier }}{{ if !for.last }}, {{ end }}
 {{~ end ~}}
         };
 
@@ -178,11 +173,11 @@ end
         // Sync full reload: build every table, then publish all-or-nothing.
         public static void Reload()
         {
-{{~ for table in tables | array.filter @containable ~}}
-            var next{{ table.name | @upper_camel }} = ({{ table.name | @upper_camel }}Table){{ table.name | @upper_camel }}.Reload();
+{{~ for table in containers ~}}
+            var next{{ table.identifier }} = ({{ table.identifier }}Table){{ table.identifier }}.Reload();
 {{~ end ~}}
-{{~ for table in tables | array.filter @containable ~}}
-            {{ table.name | @upper_camel }} = next{{ table.name | @upper_camel }};
+{{~ for table in containers ~}}
+            {{ table.identifier }} = next{{ table.identifier }};
 {{~ end ~}}
             AbilityStackedExp.BuildCache();
         }

@@ -1,5 +1,5 @@
 {{~
-    classes = [
+    geometries = [
         {
             name: 'point',
             props: ['x', 'y']
@@ -31,7 +31,7 @@ public:
     ~date_range() = default;
 };
 
-{{~ for class in classes ~}}
+{{~ for class in geometries ~}}
 template <typename T>
 struct {{ class.name }}
 {

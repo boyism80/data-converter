@@ -15,183 +15,23 @@
  *          Generation timestamp: {{ date.now | date.to_string '%d %b %Y' }}
  */
 
-{{~
-func containable(table)
-    ret table.name == table.json
-end
-~}}
 const fs = require('fs').promises;
 const path = require('path');
 const date = require('date-and-time')
 const timespan = require('timespan')
 
 module.exports = (function () {
-{{ enum }}
+{{ include 'Node/enum.txt' }}
 
-{{ const }}
+{{ include 'Node/const.txt' }}
 
-{{ dsl }}
+{{ include 'Node/dsl.txt' }}
 
-    function ArrayBuilder(build_fn) {
-        return {
-            build: function (v, hook) {
-                return v.map(e => hook?.build != null ? hook.build(v) ?? build_fn(e) : build_fn(e))
-            }
-        }
-    }
+{{ include 'Node/builder.txt' }}
 
-    function DictionaryBuilder(build_fn_k, build_fn_v) {
-        return {
-            build: function (v, hook) {
-                return Object.fromEntries(Object.entries(v).map(([k, v]) => [build_fn_k(k), hook?.build != null ? hook.build(v) ?? build_fn_v(v) : build_fn_v(v)]))
-            }
-        }
-    }
+{{ include 'Node/class.txt' }}
 
-    function DefaultBuilder() {
-        return {
-            build: function (v) {
-                return v
-            }
-        }
-    }
-
-    function EnumBuilder(type) {
-        return {
-            build: function (v) {
-                if($enum[type][v] == null)
-                    return v
-                else
-                    return $enum[type][v]
-            }
-        }
-    }
-
-    function PointBuilder() {
-        return {
-            build: function (v) {
-                return {
-                    x: v.x,
-                    y: v.y
-                }
-            }
-        }
-    }
-
-    function SizeBuilder() {
-        return {
-            build: function (v) {
-                return {
-                    width: v.width,
-                    height: v.height
-                }
-            }
-        }
-    }
-
-    function RangeBuilder() {
-        return {
-            build: function (v) {
-                return {
-                    min: v.min,
-                    max: v.max
-                }
-            }
-        }
-    }
-
-    function AreaBuilder() {
-        return {
-            build: function (v) {
-                return {
-                    left: v.left,
-                    top: v.top,
-                    right: v.right,
-                    bottom: v.bottom
-                }
-            }
-        }
-    }
-
-    function TimeSpanBuilder() {
-        return {
-            build: function (v) {
-                if (v == null)
-                    return null
-
-                const matched = /(?:(?<day>\d+)[\s\.])?(?<hour>\d+):(?<min>\d+):(?<sec>\d+)/.exec(v)
-                if (matched == null)
-                    return null
-
-                const days = matched.groups.day != null ? parseInt(matched.groups.day) : 0
-                const hours = parseInt(matched.groups.hour) + days * 24
-                const minutes = parseInt(matched.groups.min) + hours * 60
-                const seconds = parseInt(matched.groups.sec) + minutes * 60
-                const milliseconds = seconds * 1000;
-                if(milliseconds == 0)
-                    return new timespan.TimeSpan();
-                else
-                    return timespan.fromMilliseconds(milliseconds)
-            }
-        }
-    }
-
-    function DateTimeBuilder() {
-        return {
-            build: function (v) {
-                if(v == null)
-                    return null
-
-                return date.parse(v, 'YYYY-MM-DD HH:mm:ss')
-            }
-        }
-    }
-
-    function DateRangeBuilder() {
-        return {
-            build: function (v) {
-                if(v == null)
-                    return null
-                
-                return {
-                    Begin: DateTimeBuilder().build(v.Begin),
-                    End: DateTimeBuilder().build(v.End)
-                }
-            }
-        }
-    }
-
-    function DslBuilder() {
-        
-        function ParseDsl(header, params) {
-            if (header == null)
-                return null
-
-            if (params == null)
-                return null
-
-            return $dsl_parser[header](params)
-        }
-
-        return {
-            build: function (v) {
-                if (v == null)
-                    return null
-
-                return {
-                    Header: v.Header,
-                    Params: v.Params,
-                    Parse: function () { return ParseDsl(this.Header, this.Params) }
-                }
-            }
-        }
-    }
-
-{{ class }}
-
-{{ bind }}
-
-{{ container }}
+{{ include 'Node/container.txt' }}
 
     return {
         Table: Table,
@@ -207,7 +47,7 @@ module.exports = (function () {
         DateRangeBuilder: DateRangeBuilder,
         DslBuilder: DslBuilder,
 {{~ for table in tables ~}}
-        {{ table.name }}Builder: {{ table.name }}Builder,
+        {{ table }}Builder: {{ table }}Builder,
 {{~ end ~}}
         load: async function (root) {
             await Table.load(root)

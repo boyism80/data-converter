@@ -1,5 +1,4 @@
 ﻿using ExcelTableConverter.Model;
-using ExcelTableConverter.Util;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using System.Collections;
@@ -130,9 +129,9 @@ namespace ExcelTableConverter.Worker.Loader
             yield return new SourceSheetData
             {
                 Parent = sheet,
-                Columns = columns.Values.ToList(),
+                Columns = new SourceColumns(columns.Values),
                 Based = based,
-                Json = json ?? sheet.GetTableName(),
+                Json = json ?? sheet.Name,
             };
         }
 

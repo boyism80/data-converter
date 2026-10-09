@@ -1,5 +1,4 @@
 ﻿using ExcelTableConverter.Model;
-using ExcelTableConverter.Util;
 
 namespace ExcelTableConverter.Worker.Validator
 {
@@ -22,21 +21,21 @@ namespace ExcelTableConverter.Worker.Validator
 
         protected override IEnumerable<StrongTypeValidationData> OnReady()
         {
-            foreach (var tableName in Context.Source.Data.GetAllTableNames())
+            foreach (var tableName in Context.Source.Data.TableNames)
             {
-                foreach (var column in Context.Source.Data.GetSourceColumns(tableName)) // TODO: cache
+                foreach (var column in Context.Source.Data.FindColumns(tableName)) // TODO: cache
                 {
-                    var naked = Util.Type.Nake(column.Type, NakeFlag.All & ~(NakeFlag.Relation | NakeFlag.Strong));
-                    if (Util.Type.IsStrong(naked, out var strong) == false)
+                    var strong = column.ColumnType.Strong;
+                    if (strong == null)
                         continue;
 
-                    var tracker = Context.Source.Data.FindSourceSheetData(column);
+                    var tracker = Context.Source.Data.FindSheet(column);
                     if (_files.Contains(tracker.FileName) == false)
                         continue;
 
                     yield return new StrongTypeValidationData
                     {
-                        Tracker = Context.Source.Data.FindSourceSheetData(column),
+                        Tracker = Context.Source.Data.FindSheet(column),
                         Type = strong,
                         Name = column.Name,
                         Values = column.RowValuePairs.Values.ToList()
@@ -49,22 +48,24 @@ namespace ExcelTableConverter.Worker.Validator
 
         protected override IEnumerable<bool> OnWork(StrongTypeValidationData value)
         {
-            if (Util.Type.IsRelation(value.Type, out var rel))
+            var columnType = ColumnType.Parse(value.Type);
+            if (columnType.Relation != null)
             {
-                if (Util.Type.SplitReferenceType(rel, out var tableName, out var columnName) == false)
-                    throw new LogicException($"{rel}은 올바른 테이블 형식이 아닙니다.", value.Tracker);
+                var rel = columnType.Relation;
+                var tableName = columnType.RelationTable ?? throw new LogicException($"{rel}은 올바른 테이블 형식이 아닙니다.", value.Tracker);
+                var columnName = columnType.RelationColumn;
 
                 if (Context.Completed.Schema.ContainsKey(tableName) == false)
                     throw new LogicException($"{rel}은 정의되지 않은 테이블입니다.", value.Tracker);
 
-                var keyName = Context.Completed.Schema.GetKey(tableName)?.Name; // TODO: cache
+                var keyName = Context.Completed.Schema.FindKey(tableName)?.Name; // TODO: cache
                 if (keyName == null)
                     throw new LogicException($"강연결 타입은 키가 정의된 테이블이어야 합니다. {tableName} 테이블은 키가 정의되지 않은 테이블입니다.", value.Tracker);
 
                 if (columnName != null && keyName != columnName)
                     throw new LogicException($"강연결 타입은 반드시 테이블의 키와 연결되어야 합니다.", value.Tracker);
 
-                var keys = Context.Completed.Data.GetValues(tableName, keyName).Select(x => $"{x}"); // TODO: caching
+                var keys = Context.Completed.Data.Column(tableName, keyName).Select(x => $"{x}"); // TODO: caching
                 var values = value.Values.ConvertAll(x => $"{x}");
                 var diff = keys.Except(values).ToList();
                 if (diff.Count > 0)

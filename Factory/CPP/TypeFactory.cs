@@ -2,139 +2,40 @@
 
 namespace ExcelTableConverter.Factory.CPP
 {
-    public class TypeFactory : DataFormatFactory<string>
+    public class TypeFactory : TypeFormatFactory<string>
     {
         public TypeFactory(Context ctx) : base(ctx)
         { }
 
-        private string WithNullable(string type, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            var result = nullable ?
-                $"std::optional<{Util.Type.Nake(type)}>" : type;
+        private string Root => $"{Language.Cpp.Namespace(Context.RootNamespace)}::";
 
-            return result;
+        private static string Optional(string type, bool nullable)
+        {
+            return nullable ? $"std::optional<{type}>" : type;
         }
 
-        protected override string ArrayType(object value, string root, string e, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"std::vector<{Build(e, tracker)}>";
-        }
-
-        protected override string BooleanType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable(root, nullable, option, tracker);
-        }
-
-        protected override string DateRangeType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable($"{Util.CPP.Namespace.Access(Context.Configuration.Namespace)}date_range", nullable, option, tracker);
-        }
-
-        protected override string DateTimeType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable("datetime", nullable, option, tracker);
-        }
-
-        protected override string DictionaryType(object value, string root, string k, string v, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"std::map<{Build(k, tracker)}, {Build(v, tracker)}>";
-        }
-
-        protected override string DoubleType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable(root, nullable, option, tracker);
-        }
-
-        protected override string DslType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable($"{Util.CPP.Namespace.Access(Context.Configuration.Namespace)}dsl", nullable, option, tracker);
-        }
-
-        protected override string EnumType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable($"{Util.CPP.Namespace.Access(Context.Configuration.Namespace)}{Util.CPP.Namespace.Access(Context.Configuration.EnumNamespace)}{Util.Type.Nake(root)}", nullable, option, tracker);
-        }
-
-        protected override string FloatType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable(root, nullable, option, tracker);
-        }
-
-        protected override string IntType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable(root, nullable, option, tracker);
-        }
-
-        protected override string LongType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable("int64_t", nullable, option, tracker);
-        }
-
-        protected override string ByteType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable("uint8_t", nullable, option, tracker);
-        }
-
-        protected override string SbyteType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable("int8_t", nullable, option, tracker);
-        }
-
-        protected override string ShortType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable("int16_t", nullable, option, tracker);
-        }
-
-        protected override string UshortType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable("uint16_t", nullable, option, tracker);
-        }
-
-        protected override string UintType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable("uint32_t", nullable, option, tracker);
-        }
-
-        protected override string UlongType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable("uint64_t", nullable, option, tracker);
-        }
-
-        protected override string StringType(object value, string root, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            var nullable = Util.Type.IsNullable(root);
-            return WithNullable("std::string", nullable, option, tracker);
-        }
-
-        protected override string TimeSpanType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable("timespan", nullable, option, tracker);
-        }
-
-        protected override string PointType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable($"point<{Build(e, tracker)}>", nullable, option, tracker);
-        }
-
-        protected override string SizeType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable($"size<{Build(e, tracker)}>", nullable, option, tracker);
-        }
-
-        protected override string RangeType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable($"range<{Build(e, tracker)}>", nullable, option, tracker);
-        }
-
-        protected override string AreaType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable($"area<{Build(e, tracker)}>", nullable, option, tracker);
-        }
-
-        public string Build(string type, IExcelFileTrackable tracker = null)
-        {
-            var option = new DataFormatOption();
-            return Build(type, null, option, tracker);
-        }
+        protected override string ByteType(DataType type) => Optional("uint8_t", type.Nullable);
+        protected override string SbyteType(DataType type) => Optional("int8_t", type.Nullable);
+        protected override string ShortType(DataType type) => Optional("int16_t", type.Nullable);
+        protected override string UshortType(DataType type) => Optional("uint16_t", type.Nullable);
+        protected override string BoolType(DataType type) => Optional(type.Naked, type.Nullable);
+        protected override string IntType(DataType type) => Optional(type.Naked, type.Nullable);
+        protected override string UintType(DataType type) => Optional("uint32_t", type.Nullable);
+        protected override string LongType(DataType type) => Optional("int64_t", type.Nullable);
+        protected override string UlongType(DataType type) => Optional("uint64_t", type.Nullable);
+        protected override string DoubleType(DataType type) => Optional(type.Naked, type.Nullable);
+        protected override string FloatType(DataType type) => Optional(type.Naked, type.Nullable);
+        protected override string StringType(DataType type) => Optional("std::string", type.Nullable);
+        protected override string DslType(DataType type) => Optional($"{Root}dsl", type.Nullable);
+        protected override string TimeSpanType(DataType type) => Optional("timespan", type.Nullable);
+        protected override string DateTimeType(DataType type) => Optional("datetime", type.Nullable);
+        protected override string DateRangeType(DataType type) => Optional($"{Root}date_range", type.Nullable);
+        protected override string ArrayType(ArrayDataType type) => $"std::vector<{Build(type.Element)}>";
+        protected override string MapType(MapDataType type) => $"std::map<{Build(type.Key)}, {Build(type.Value)}>";
+        protected override string PointType(GeometryDataType type) => Optional($"point<{Build(type.Element)}>", type.Nullable);
+        protected override string SizeType(GeometryDataType type) => Optional($"size<{Build(type.Element)}>", type.Nullable);
+        protected override string RangeType(GeometryDataType type) => Optional($"range<{Build(type.Element)}>", type.Nullable);
+        protected override string AreaType(GeometryDataType type) => Optional($"area<{Build(type.Element)}>", type.Nullable);
+        protected override string EnumType(EnumDataType type) => Optional(Language.Cpp.Qualify(Context.EnumNamespace, type.Naked), type.Nullable);
     }
 }

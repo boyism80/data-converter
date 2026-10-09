@@ -3,163 +3,27 @@ using Newtonsoft.Json.Linq;
 
 namespace ExcelTableConverter.Factory.Node
 {
-    public class AllocateValueFactory : DataFormatFactory<string>
+    public class AllocateValueFactory : ValueFormatFactory<string>
     {
         public AllocateValueFactory(Context ctx) : base(ctx)
+        { }
+
+        protected override string Null(DataType type, IExcelFileTrackable tracker) => "null";
+        protected override string ByteType(DataType type, UnsignedValue value, IExcelFileTrackable tracker) => $"{value}";
+        protected override string SbyteType(DataType type, IntegerValue value, IExcelFileTrackable tracker) => $"{value}";
+        protected override string ShortType(DataType type, IntegerValue value, IExcelFileTrackable tracker) => $"{value}";
+        protected override string UshortType(DataType type, UnsignedValue value, IExcelFileTrackable tracker) => $"{value}";
+        protected override string BoolType(DataType type, BoolValue value, IExcelFileTrackable tracker) => value.Value ? "true" : "false";
+        protected override string IntType(DataType type, IntegerValue value, IExcelFileTrackable tracker) => $"{value}";
+        protected override string UintType(DataType type, UnsignedValue value, IExcelFileTrackable tracker) => $"{value}";
+        protected override string LongType(DataType type, IntegerValue value, IExcelFileTrackable tracker) => $"{value}";
+        protected override string UlongType(DataType type, UnsignedValue value, IExcelFileTrackable tracker) => $"{value}";
+        protected override string DoubleType(DataType type, RealValue value, IExcelFileTrackable tracker) => $"{value}";
+        protected override string FloatType(DataType type, RealValue value, IExcelFileTrackable tracker) => $"{value}";
+
+        protected override string StringType(DataType type, StringValue value, IExcelFileTrackable tracker)
         {
-
-        }
-
-        protected override bool OnStart(object value, string root, bool nullable, out string result, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            if (Util.Value.IsNull(value))
-            {
-                result = "null";
-                return false;
-            }
-
-            result = string.Empty;
-            return true;
-        }
-
-        protected override string ArrayType(object value, string root, string e, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            var list = value as List<object>;
-            var values = string.Join(", ", list.Select(x => Build(e, x, tracker)));
-
-            return $"[{values}]";
-        }
-
-        protected override string BooleanType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"{value}";
-        }
-
-        protected override string DateRangeType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            switch (value)
-            {
-                case DateRange dr:
-                    return $"{{ Begin: {Build("DateTime", dr.Begin, tracker)}, End: {Build("DateTime", dr.End, tracker)} }}";
-
-                default:
-                    throw new InvalidOperationException("알 수 없는 에러");
-            }
-        }
-
-        protected override string DateTimeType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            var dt = (DateTime)value;
-            return $"date.parse({Build("string", dt.ToString("yyyy-MM-dd HH:mm:ss"), tracker)}, 'YYYY-MM-DD HH:mm:ss')";
-        }
-
-        protected override string DictionaryType(object value, string root, string k, string v, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            var map = value as Dictionary<object, object>;
-            var values = string.Join(", ", map.Select(x =>
-            {
-                var key = x.Key;
-                var keyType = k;
-                var value = x.Value;
-                var valueType = v;
-                return $"[{Build(keyType, key, tracker)}]: {Build(valueType, value, tracker)}";
-            }));
-            return $"{{ {values} }}";
-        }
-
-        protected override string DoubleType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"{value}";
-        }
-
-        protected override string DslType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            var dsl = value as DSL;
-
-            if (Context.DSL.TryGetValue(dsl.Header, out var prototype) == false)
-                throw new LogicException($"{dsl.Header}는 정의되지 않은 DSL 형식입니다.");
-
-            var args = dsl.Params.Select((x, i) =>
-            {
-                var param = (prototype as JArray).ElementAt(i) as JObject;
-                var name = param["name"].Value<string>();
-                var type = param["type"].Value<string>();
-                return (Name: name, Value: Build(type, x, tracker));
-            }).ToList();
-
-            return $"new MasterData.Types.Dsl.Parameter.{dsl.Header} {{ {string.Join(", ", args.Select(x => $"{x.Name} = {x.Value}"))} }}.ToDsl()";
-        }
-
-        protected override string EnumType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            switch (value)
-            {
-                case string s:
-                    {
-                        if (Context.Completed.Enum[root].ContainsKey(s) == false)
-                            throw new LogicException($"{value}는 {root} 열거형에 존재하지 않는 값입니다.");
-
-                        return $"$enum.{root}.{s}";
-                    }
-
-                case int i:
-                    {
-                        return i.ToString();
-                    }
-
-                default:
-                    throw new LogicException($"{value}는 {root} 열거형에 존재하지 않는 값입니다.");
-            }
-        }
-
-        protected override string FloatType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"{value}";
-        }
-
-        protected override string IntType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"{value}";
-        }
-
-        protected override string LongType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"{value}";
-        }
-
-        protected override string ByteType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"{value}";
-        }
-
-        protected override string SbyteType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"{value}";
-        }
-
-        protected override string ShortType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"{value}";
-        }
-
-        protected override string UshortType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"{value}";
-        }
-
-        protected override string UintType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"{value}";
-        }
-
-        protected override string UlongType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"{value}";
-        }
-
-        protected override string StringType(object value, string root, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            var s = value as string;
+            var s = value.Value;
             if (string.IsNullOrEmpty(s))
                 return "null";
             else if (s.Contains('\n'))
@@ -168,39 +32,75 @@ namespace ExcelTableConverter.Factory.Node
                 return $"\"{s}\"";
         }
 
-        protected override string TimeSpanType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
+        protected override string DslType(DataType type, DslValue value, IExcelFileTrackable tracker)
         {
-            var ts = (TimeSpan)value;
+            if (Context.DSL.TryGetValue(value.Header, out var prototype) == false)
+                throw new LogicException($"{value.Header}는 정의되지 않은 DSL 형식입니다.");
+
+            var args = value.Params.Select((x, i) =>
+            {
+                var param = (prototype as JArray).ElementAt(i) as JObject;
+                return $"{param["name"].Value<string>()} = {Build(param["type"].Value<string>(), x, tracker)}";
+            });
+            return $"new MasterData.Types.Dsl.Parameter.{value.Header} {{ {string.Join(", ", args)} }}.ToDsl()";
+        }
+
+        protected override string TimeSpanType(DataType type, TimeSpanValue value, IExcelFileTrackable tracker)
+        {
+            var ts = value.Value;
             var ms = (long)ts.TotalMilliseconds;
             if (ms == 0)
-                return $"new timespan.TimeSpan()";
+                return "new timespan.TimeSpan()";
             else
                 return $"timespan.fromMilliseconds({ms}/*{ts}*/)";
         }
 
-        protected override string PointType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
+        protected override string DateTimeType(DataType type, DateTimeValue value, IExcelFileTrackable tracker)
         {
-            return $"{value}";
+            return $"date.parse({Build("string", new StringValue(value.Value.ToString("yyyy-MM-dd HH:mm:ss")), tracker)}, 'YYYY-MM-DD HH:mm:ss')";
         }
 
-        protected override string SizeType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
+        protected override string DateRangeType(DataType type, DateRangeValue value, IExcelFileTrackable tracker)
         {
-            return $"{value}";
+            return $"{{ Begin: {Build("DateTime", value.Begin, tracker)}, End: {Build("DateTime", value.End, tracker)} }}";
         }
 
-        protected override string RangeType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
+        protected override string ArrayType(ArrayDataType type, ArrayValue value, IExcelFileTrackable tracker)
         {
-            return $"{value}";
+            return $"[{string.Join(", ", value.Items.Select(x => Build(type.Element, x, tracker)))}]";
         }
 
-        protected override string AreaType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
+        protected override string MapType(MapDataType type, MapValue value, IExcelFileTrackable tracker)
         {
-            return $"{value}";
+            return $"{{ {string.Join(", ", value.Entries.Select(x => $"[{Build(type.Key, x.Key, tracker)}]: {Build(type.Value, x.Value, tracker)}"))} }}";
         }
 
-        public string Build(string type, object value, IExcelFileTrackable tracker = null)
+        protected override string PointType(GeometryDataType type, PointValue value, IExcelFileTrackable tracker)
         {
-            return base.Build(type, value, null, tracker);
+            return $"{{ x: {value.X}, y: {value.Y} }}";
+        }
+
+        protected override string SizeType(GeometryDataType type, SizeValue value, IExcelFileTrackable tracker)
+        {
+            return $"{{ width: {value.Width}, height: {value.Height} }}";
+        }
+
+        protected override string RangeType(GeometryDataType type, RangeValue value, IExcelFileTrackable tracker)
+        {
+            return $"{{ min: {value.Min}, max: {value.Max} }}";
+        }
+
+        protected override string AreaType(GeometryDataType type, AreaValue value, IExcelFileTrackable tracker)
+        {
+            return $"{{ left: {value.Left}, top: {value.Top}, right: {value.Right}, bottom: {value.Bottom} }}";
+        }
+
+        protected override string EnumType(EnumDataType type, EnumValue value, IExcelFileTrackable tracker)
+        {
+            if (value.Name == null)
+                return $"{value}";
+
+            return $"$enum.{type.Naked}.{value.Name}";
         }
     }
 }

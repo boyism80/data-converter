@@ -33,7 +33,8 @@ namespace ExcelTableConverter.Worker.Generator
         {
             var stringify = JsonConvert.SerializeObject(value.DataSet, Formatting.Indented, new JsonSerializerSettings
             {
-                DateFormatString = "yyyy-MM-dd HH:mm:ss"
+                DateFormatString = "yyyy-MM-dd HH:mm:ss",
+                Converters = { new DataValue.Converter() },
             });
             File.WriteAllText(value.FileName, stringify);
             yield return true;

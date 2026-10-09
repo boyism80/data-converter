@@ -1,19 +1,77 @@
-{{~
-func containable(table)
-    ret table.name == table.json
-end
+{{~ func value_builder(table, indent) ~}}
+{{~ if table.is_abstract ~}}
+{{ indent }}based, err := New{{ table.identifier }}Builder(nil).Build(data)
+{{ indent }}if err != nil {
+{{ indent }}   return nil, err
+{{ indent }}}
 
-func is_abstract(table)
-    ret table.is_abstract
-end
-~}}
+{{ indent }}if container.Hook != nil {
+{{ indent }}   return container.Hook(&based, data)
+{{ indent }}}
 
-{{~ for table in tables | array.filter @containable ~}}
-type {{ table.name | @upper_camel }}ContainerBuilder struct {
-    Hook func (*{{ table.name | @upper_camel }}, json.RawMessage) ({{ table.element_type }}, error)
+{{ indent }}return &based, nil
+{{~ else ~}}
+{{ indent }}return New{{ table.identifier }}Builder(container.Hook).Build(data)
+{{~ end ~}}
+{{~ end ~}}
+
+{{~ for table in containers ~}}
+type {{ table.identifier }}ContainerBuilder struct {
+    Hook func (*{{ table.identifier }}, json.RawMessage) ({{ table.element_type }}, error)
 }
 
-{{ table.build_func }}
+func (container *{{ table.identifier }}ContainerBuilder) Build(data json.RawMessage) ({{ table.return_type }}, error) {
+{{~ if table.kind == 'group_primary' ~}}
+   innerMapBuilder := func(data json.RawMessage) (map[{{ table.key_type }}]{{ table.identifier }}, error) {
+      innerDictBuilder := NewDictionaryBuilder(
+         func(data json.RawMessage) ({{ table.key_type }}, error) {
+            return {{ table.key_builder }}.Build(data)
+         },
+         func(data json.RawMessage) ({{ table.element_type }}, error) {
+{{ value_builder table '            ' ~}}
+         },
+      )
+      return innerDictBuilder.Build(data)
+   }
+
+   outerDictBuilder := NewDictionaryBuilder(
+      func(data json.RawMessage) ({{ table.group_type }}, error) {
+         return {{ table.group_builder }}.Build(data)
+      },
+      innerMapBuilder,
+   )
+
+   return outerDictBuilder.Build(data)
+{{~ else if table.kind == 'primary' ~}}
+   dictBuilder := NewDictionaryBuilder(
+      func(data json.RawMessage) ({{ table.key_type }}, error) {
+         return {{ table.key_builder }}.Build(data)
+      },
+      func(data json.RawMessage) ({{ table.element_type }}, error) {
+{{ value_builder table '         ' ~}}
+      },
+   )
+   return dictBuilder.Build(data)
+{{~ else if table.kind == 'group' ~}}
+   arrayBuilder := NewArrayBuilder(func(data json.RawMessage) ({{ table.element_type }}, error) {
+{{ value_builder table '      ' ~}}
+   })
+   dictBuilder := NewDictionaryBuilder(
+      func(data json.RawMessage) ({{ table.group_type }}, error) {
+         return {{ table.group_builder }}.Build(data)
+      },
+      func(data json.RawMessage) ([]{{ table.element_type }}, error) {
+         return arrayBuilder.Build(data)
+      },
+   )
+   return dictBuilder.Build(data)
+{{~ else ~}}
+   arrayBuilder := NewArrayBuilder(func(data json.RawMessage) ({{ table.element_type }}, error) {
+{{ value_builder table '      ' ~}}
+   })
+   return arrayBuilder.Build(data)
+{{~ end ~}}
+}
 
 {{~ end ~}}
 
@@ -28,11 +86,6 @@ func readJsonFile(path string) (json.RawMessage, error) {
 	return json.RawMessage(byteValue), nil
 }
 
-{{~
-func containable(table)
-    ret table.name == table.json
-end
-~}}
 
 // Container interface for all table containers
 type Container interface {
@@ -40,44 +93,44 @@ type Container interface {
 	Load() error
 }
 
-{{~ for table in tables | array.filter @containable ~}}
-// Global {{ table.name | @upper_camel }} table instance (published generation).
-// Capture a local variable for a stable snapshot: snap := {{ table.name | @upper_camel }}
-var {{ table.name | @upper_camel }} {{ table.return_type }}
+{{~ for table in containers ~}}
+// Global {{ table.identifier }} table instance (published generation).
+// Capture a local variable for a stable snapshot: snap := {{ table.identifier }}
+var {{ table.identifier }} {{ table.return_type }}
 
-// Global {{ table.name | @upper_camel }} hook function
-var {{ table.name | @upper_camel }}Hook func (*{{ table.name | @upper_camel }}, json.RawMessage) ({{ table.element_type }}, error)
+// Global {{ table.identifier }} hook function
+var {{ table.identifier }}Hook func (*{{ table.identifier }}, json.RawMessage) ({{ table.element_type }}, error)
 
 {{~ end ~}}
 
 // Table struct provides global access to all tables
 type Table struct{}
 
-{{~ for table in tables | array.filter @containable ~}}
-// {{ table.name | @upper_camel }}Container wraps the table data
-type {{ table.name | @upper_camel }}Container struct{}
+{{~ for table in containers ~}}
+// {{ table.identifier }}Container wraps the table data
+type {{ table.identifier }}Container struct{}
 
-func (c *{{ table.name | @upper_camel }}Container) Name() string {
+func (c *{{ table.identifier }}Container) Name() string {
 	return "{{ table.name }}"
 }
 
-func (c *{{ table.name | @upper_camel }}Container) build() ({{ table.return_type }}, error) {
+func (c *{{ table.identifier }}Container) build() ({{ table.return_type }}, error) {
 	jsonData, err := readJsonFile("{{ config.json_file_path }}/{{ table.name }}.json")
 	if err != nil {
 		return nil, err
 	}
-	builder := {{ table.name | @upper_camel }}ContainerBuilder{
-		Hook: {{ table.name | @upper_camel }}Hook,
+	builder := {{ table.identifier }}ContainerBuilder{
+		Hook: {{ table.identifier }}Hook,
 	}
 	return builder.Build(jsonData)
 }
 
-func (c *{{ table.name | @upper_camel }}Container) Load() error {
+func (c *{{ table.identifier }}Container) Load() error {
 	result, err := c.build()
 	if err != nil {
 		return err
 	}
-	{{ table.name | @upper_camel }} = result
+	{{ table.identifier }} = result
 	return nil
 }
 
@@ -85,8 +138,8 @@ func (c *{{ table.name | @upper_camel }}Container) Load() error {
 
 // Containers returns all table containers
 var Containers = []Container{
-{{~ for table in tables | array.filter @containable ~}}
-	&{{ table.name | @upper_camel }}Container{},
+{{~ for table in containers ~}}
+	&{{ table.identifier }}Container{},
 {{~ end ~}}
 }
 
@@ -119,14 +172,14 @@ func Reload() error {
 	reloadMu.Lock()
 	defer reloadMu.Unlock()
 
-{{~ for table in tables | array.filter @containable ~}}
-	next{{ table.name | @upper_camel }}, err := (&{{ table.name | @upper_camel }}Container{}).build()
+{{~ for table in containers ~}}
+	next{{ table.identifier }}, err := (&{{ table.identifier }}Container{}).build()
 	if err != nil {
 		return err
 	}
 {{~ end ~}}
-{{~ for table in tables | array.filter @containable ~}}
-	{{ table.name | @upper_camel }} = next{{ table.name | @upper_camel }}
+{{~ for table in containers ~}}
+	{{ table.identifier }} = next{{ table.identifier }}
 {{~ end ~}}
 	return nil
 }

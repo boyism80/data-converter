@@ -1,0 +1,52 @@
+class dsl;
+
+template <typename>   constexpr bool is_optional_impl = false;
+template <typename T> constexpr bool is_optional_impl<std::optional<T>> = true;
+template<>            constexpr bool is_optional_impl<std::nullopt_t> = true;
+template <typename T> constexpr bool is_optional = is_optional_impl<std::decay_t<T>>;
+
+template <typename>   constexpr bool is_unique_impl = false;
+template <typename T> constexpr bool is_unique_impl<std::unique_ptr<T>> = true;
+template <typename T> constexpr bool is_unique = is_unique_impl<std::decay_t<T>>;
+
+template <typename>   constexpr bool is_vector_impl = false;
+template <typename T> constexpr bool is_vector_impl<std::vector<T>> = true;
+template <typename T> constexpr bool is_vector = is_vector_impl<std::decay_t<T>>;
+
+template <typename T, typename Enabler = void> constexpr bool is_map_impl = false;
+template <typename T> constexpr bool is_map_impl<T, std::void_t<typename T::mapped_type>> = true;
+template <typename T>  constexpr bool is_map = is_map_impl<std::decay_t<T>>;
+
+template <typename>   constexpr bool is_point_impl = false;
+template <typename T> constexpr bool is_point_impl<{{ ns.access }}point<T>> = true;
+template <typename T> constexpr bool is_point = is_point_impl<std::decay_t<T>>;
+
+template <typename>   constexpr bool is_size_impl = false;
+template <typename T> constexpr bool is_size_impl<{{ ns.access }}size<T>> = true;
+template <typename T> constexpr bool is_size = is_size_impl<std::decay_t<T>>;
+
+template <typename>   constexpr bool is_range_impl = false;
+template <typename T> constexpr bool is_range_impl<{{ ns.access }}range<T>> = true;
+template <typename T> constexpr bool is_range = is_range_impl<std::decay_t<T>>;
+
+template <typename>   constexpr bool is_area_impl = false;
+template <typename T> constexpr bool is_area_impl<{{ ns.access }}area<T>> = true;
+template <typename T> constexpr bool is_area = is_area_impl<std::decay_t<T>>;
+
+template <typename T> inline static T build(const Json::Value& json);
+template <> int8_t build<int8_t>(const Json::Value& json);
+template <> uint8_t build<uint8_t>(const Json::Value& json);
+template <> int16_t build<int16_t>(const Json::Value& json);
+template <> uint16_t build<uint16_t>(const Json::Value& json);
+template <> int build<int>(const Json::Value& json);
+template <> uint32_t build<uint32_t>(const Json::Value& json);
+template <> int64_t build<int64_t>(const Json::Value& json);
+template <> uint64_t build<uint64_t>(const Json::Value& json);
+template <> std::string build<std::string>(const Json::Value& json);
+template <> float build<float>(const Json::Value& json);
+template <> double build<double>(const Json::Value& json);
+template <> bool build<bool>(const Json::Value& json);
+template <> {{ ns.root }}::datetime build<{{ ns.root }}::datetime>(const Json::Value& json);
+template <> {{ ns.root }}::timespan build<{{ ns.root }}::timespan>(const Json::Value& json);
+template <> {{ ns.access }}date_range build<{{ ns.access }}date_range>(const Json::Value& json);
+template <> {{ ns.access }}dsl build<{{ ns.access }}dsl>(const Json::Value& json);

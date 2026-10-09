@@ -1,90 +1,14 @@
 ﻿using ExcelTableConverter.Model;
-using ExcelTableConverter.Util;
-using Newtonsoft.Json.Linq;
 
 namespace ExcelTableConverter.Worker.Validator
 {
     public class EnumValidator : ParallelWorker<SourceEnum, bool>
     {
-        private readonly Dictionary<string, Dictionary<string, List<object>>> _merge = new Dictionary<string, Dictionary<string, List<object>>>();
+        private readonly Dictionary<string, Dictionary<string, EnumExpression>> _merge = new Dictionary<string, Dictionary<string, EnumExpression>>();
 
         public EnumValidator(Context ctx) : base(ctx)
         {
 
-        }
-
-        private void Assert(IExcelFileTrackable tracker, List<object> array)
-        {
-            var last = array.LastOrDefault();
-            if (last == null)
-                throw new LogicException("구문이 올바르지 않습니다.", tracker);
-
-            if (last is string lasts && Util.Enum.Parse(lasts).Groups["value"].Success == false)
-                throw new LogicException("구문이 올바르지 않습니다.", tracker);
-
-            for (int i = 0; i < array.Count; i++)
-            {
-                var prev = array.ElementAtOrDefault(i - 1);
-                var curr = array[i];
-
-                if (curr is JArray jarray)
-                {
-                    Assert(tracker, jarray.Select(x => x as object).ToList());
-                }
-                else if (curr is List<object> list)
-                {
-                    if (prev != null)
-                    {
-                        if (prev is List<object>)
-                            throw new LogicException("구문이 올바르지 않습니다.", tracker);
-
-                        if (prev is string prevs && Util.Enum.Parse(prevs).Groups["value"].Success)
-                            throw new LogicException("구문이 올바르지 않습니다.", tracker);
-                    }
-
-                    Assert(tracker, list);
-                }
-                else
-                {
-                    var str = curr is JValue jvalue ? jvalue.Value as string : curr as string;
-                    var matched = Util.Enum.Parse(str);
-                    if (matched.Groups["value"].Success)
-                    {
-                        var value = matched.Groups["value"].Value;
-                        var isHex = false;
-                        try { Convert.ToUInt32(value, 16); isHex = true; } catch { }
-
-                        if (!isHex && int.TryParse(value, out _) == false)
-                        {
-                            var table = tracker.GetTableName();
-                            if (_merge[table].ContainsKey(value) == false)
-                                throw new LogicException($"{value}는 {table}에 존재하지 않는 열거형입니다.", tracker);
-                        }
-
-                        if (prev != null)
-                        {
-                            if (prev is List<object>)
-                                throw new LogicException("구문이 올바르지 않습니다.", tracker);
-
-                            if (prev is string s && Util.Enum.Parse(s).Groups["value"].Success)
-                                throw new LogicException("구문이 올바르지 않습니다.", tracker);
-                        }
-                    }
-                    else if (matched.Groups["op"].Success)
-                    {
-                        if (prev == null)
-                            throw new LogicException("구문이 올바르지 않습니다.", tracker);
-
-                        if (prev is string s && Util.Enum.Parse(s).Groups["op"].Success)
-                            throw new LogicException("구문이 올바르지 않습니다.", tracker);
-                    }
-                    else if (matched.Groups["inv"].Success)
-                    {
-                        if (prev != null && prev is string s && Util.Enum.Parse(s).Groups["inv"].Success)
-                            throw new LogicException("구문이 올바르지 않습니다.", tracker);
-                    }
-                }
-            }
         }
 
         protected override IEnumerable<SourceEnum> OnReady()
@@ -92,7 +16,7 @@ namespace ExcelTableConverter.Worker.Validator
             foreach (var g in Context.Source.Enum.SelectMany(x => x.Value).GroupBy(x => x.Table))
             {
                 var table = g.Key;
-                var merge = new Dictionary<string, List<object>>();
+                var merge = new Dictionary<string, EnumExpression>();
                 foreach (var x in g.Select(x => x.Values))
                 {
                     foreach (var (k, v) in x)
@@ -111,9 +35,9 @@ namespace ExcelTableConverter.Worker.Validator
 
         protected override IEnumerable<bool> OnWork(SourceEnum value)
         {
-            foreach (var (k, v) in value.Values)
+            foreach (var expression in value.Values.Values)
             {
-                Assert(value, v);
+                expression.Validate(value.Table, _merge[value.Table], value);
             }
 
             yield return true;

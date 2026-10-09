@@ -1,5 +1,4 @@
 ﻿using ExcelTableConverter.Model;
-using ExcelTableConverter.Util;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 
@@ -13,7 +12,7 @@ namespace ExcelTableConverter.Worker.Loader
 
         protected override IEnumerable<SourceEnum> OnWork(Sheet sheet)
         {
-            var values = new Dictionary<string, List<object>>();
+            var values = new Dictionary<string, EnumExpression>();
             foreach (XSSFRow row in sheet.Source)
             {
                 var line = ReadLine(row);
@@ -31,7 +30,7 @@ namespace ExcelTableConverter.Worker.Loader
                     _ => line[1].StringCellValue.Replace(" ", string.Empty)
                 };
 
-                var parsed = value.ParseValue(tracker: sheet);
+                var parsed = EnumExpression.Parse(value, tracker: sheet);
                 if (values.ContainsKey(name))
                     throw new LogicException($"{sheet.FullName}에 {name}이 중복 정의되었습니다.");
 

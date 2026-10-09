@@ -1,13 +1,14 @@
 ﻿using ExcelTableConverter.Model;
-using ExcelTableConverter.Util;
-using System.Data;
+using Newtonsoft.Json;
+using System.IO.Compression;
+using System.Text;
 
 namespace ExcelTableConverter.Worker
 {
     public class CastTypeChunkData
     {
-        public IExcelFileTrackable Tracker { get; set; }
-        public List<SourceDataColumns> Columns { get; set; }
+        public SourceSheetData Tracker { get; set; }
+        public SourceColumns Columns { get; set; }
         public string Json { get; set; }
     }
 
@@ -16,7 +17,7 @@ namespace ExcelTableConverter.Worker
         public string FileName { get; set; }
         public string SheetName { get; set; }
         public string TableName { get; set; }
-        public List<Dictionary<string, object>> Rows { get; set; }
+        public List<Dictionary<string, DataValue>> Rows { get; set; }
         public string Json { get; set; }
     }
 
@@ -25,22 +26,10 @@ namespace ExcelTableConverter.Worker
         private const int CHUNK_SIZE = 250;
 
         private int _runtimeAdditionalCount = 0;
-        private readonly HashSet<string> _passedCacheFiles = new HashSet<string>();
-        private readonly Mutex _mutex = new Mutex();
+        private readonly HashSet<string> _loadedCacheFiles = new HashSet<string>();
 
         public DataTypeCaster(Context ctx) : base(ctx)
         {
-        }
-
-        private bool IsCachFileePassed(string fileName)
-        {
-            _mutex.WaitOne();
-            var result = _passedCacheFiles.Contains(fileName);
-            if (!result)
-                _passedCacheFiles.Add(fileName);
-            _mutex.ReleaseMutex();
-
-            return result;
         }
 
         protected override IEnumerable<CastTypeChunkData> OnReady()
@@ -53,7 +42,7 @@ namespace ExcelTableConverter.Worker
                     yield return new CastTypeChunkData
                     {
                         Tracker = sheetData,
-                        Columns = new List<SourceDataColumns>(),
+                        Columns = new SourceColumns(),
                         Json = sheetData.Json
                     };
                 }
@@ -77,9 +66,15 @@ namespace ExcelTableConverter.Worker
             var cacheFilePath = Context.GetCacheFilePath(chunkData.Tracker.FileName);
             if (File.Exists(cacheFilePath))
             {
-                if (IsCachFileePassed(cacheFilePath) == false)
+                bool first;
+                lock (_loadedCacheFiles)
+                    first = _loadedCacheFiles.Add(cacheFilePath);
+
+                if (first)
                 {
-                    foreach (var data in ZipUtil.Unzip<Dictionary<string, List<DataConvertResult>>>(File.ReadAllBytes(cacheFilePath)).SelectMany(x => x.Value))
+                    using var stream = new GZipStream(File.OpenRead(cacheFilePath), CompressionMode.Decompress);
+                    using var reader = new StreamReader(stream, Encoding.UTF8);
+                    foreach (var data in JsonConvert.DeserializeObject<Dictionary<string, List<DataConvertResult>>>(reader.ReadToEnd(), Context.CACHE_JSON).SelectMany(x => x.Value))
                         yield return data;
                 }
 
@@ -88,19 +83,19 @@ namespace ExcelTableConverter.Worker
 
             var errors = new List<Exception>();
             var (boldColumns, normalColumns) = chunkData.Columns.Split();
-            var boldKeyColumns = boldColumns?.FirstOrDefault(x => Util.Type.IsKey(x.Type, out _));
+            var boldKeyColumns = boldColumns?.FirstOrDefault(x => x.ColumnType.Key);
             if (boldColumns != null)
             {
                 Interlocked.Add(ref _runtimeAdditionalCount, 1);
 
                 var boldColumnSet = boldColumns.ToDictionary(x => x.Name);
-                var table = string.Format(Context.Configuration.ParentTableFormat, chunkData.Tracker.GetTableName());
-                var models = boldColumns.ToModels();
-                var dataSet = new List<Dictionary<string, object>>();
+                var table = string.Format(Context.Configuration.ParentTableFormat, chunkData.Tracker.TableName);
+                var models = boldColumns.Rows();
+                var dataSet = new List<Dictionary<string, DataValue>>();
                 for (int row = 0; row < models.Count; row++)
                 {
                     var model = models[row];
-                    var values = new Dictionary<string, object>();
+                    var values = new Dictionary<string, DataValue>();
                     foreach (var (k, v) in model)
                     {
                         try
@@ -132,14 +127,14 @@ namespace ExcelTableConverter.Worker
             if (normalColumns != null)
             {
                 var normalColumnSet = normalColumns.ToDictionary(x => x.Name);
-                var table = chunkData.Tracker.GetTableName();
-                var models = normalColumns.ToModels();
-                var dataSet = new List<Dictionary<string, object>>();
+                var table = chunkData.Tracker.TableName;
+                var models = normalColumns.Rows();
+                var dataSet = new List<Dictionary<string, DataValue>>();
 
                 for (int row = 0; row < models.Count; row++)
                 {
                     var model = models[row];
-                    var values = new Dictionary<string, object>();
+                    var values = new Dictionary<string, DataValue>();
                     foreach (var (k, v) in model)
                     {
                         try
@@ -187,14 +182,11 @@ namespace ExcelTableConverter.Worker
                 if (errors.Count > 0)
                     throw new AggregateException(errors);
 
-                if (dataSet.Count == 0)
-                    dataSet = new List<Dictionary<string, object>>();
-
                 yield return new DataConvertResult
                 {
                     FileName = chunkData.Tracker.FileName,
                     SheetName = chunkData.Tracker.SheetName,
-                    TableName = chunkData.Tracker.GetTableName(),
+                    TableName = chunkData.Tracker.TableName,
                     Rows = dataSet,
                     Json = chunkData.Json
                 };
@@ -205,8 +197,8 @@ namespace ExcelTableConverter.Worker
                 {
                     FileName = chunkData.Tracker.FileName,
                     SheetName = chunkData.Tracker.SheetName,
-                    TableName = chunkData.Tracker.GetTableName(),
-                    Rows = new List<Dictionary<string, object>>(),
+                    TableName = chunkData.Tracker.TableName,
+                    Rows = new List<Dictionary<string, DataValue>>(),
                     Json = chunkData.Json
                 };
             }
@@ -214,7 +206,7 @@ namespace ExcelTableConverter.Worker
 
         protected override void OnWorked(CastTypeChunkData input, DataConvertResult output, int percent)
         {
-            Logger.Write($"테이블 데이터를 변환했습니다. - {input.Tracker.GetRootName()}");
+            Logger.Write($"테이블 데이터를 변환했습니다. - {input.Tracker.Root}");
         }
 
         protected override int RuntimeAdditionalCount()

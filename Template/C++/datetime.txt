@@ -25,7 +25,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/date_time/gregorian/gregorian.hpp>
 
-namespace fb::model {
+namespace {{ ns.root }} {
 
 /**
  * @brief      A time duration class that represents a span of time with high precision.
@@ -876,6 +876,6 @@ public:
     }
 };
 
-} // end of namespace fb::model
+} // end of namespace {{ ns.root }}
 
 #endif

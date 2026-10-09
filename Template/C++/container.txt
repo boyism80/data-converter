@@ -1,8 +1,3 @@
-{{~
-func containable(table)
-    ret table.name == table.json
-end
-~}}
 template <typename T>
 class hook_funcs
 {
@@ -87,11 +82,11 @@ private:
             if (this->hook.build != nullptr)
                 ptr.reset(this->hook.build(*i));
             if (ptr == nullptr)
-                ptr = {{ config.namespace | @namespace_access_cpp }}build<std::unique_ptr<V>>(*i);
+                ptr = {{ ns.access }}build<std::unique_ptr<V>>(*i);
 
             auto raw = ptr.get();
             this->_ptrs.push_back(std::move(ptr));
-            this->_pairs.insert({ {{ config.namespace | @namespace_access_cpp }}build<K>(i.key()), *raw });
+            this->_pairs.insert({ {{ ns.access }}build<K>(i.key()), *raw });
 
             if(this->hook.built != nullptr)
                 this->hook.built(*raw);
@@ -230,7 +225,7 @@ private:
             if (this->hook.build != nullptr)
                 ptr.reset(this->hook.build(*i));
             if (ptr == nullptr)
-                ptr = {{ config.namespace | @namespace_access_cpp }}build<std::unique_ptr<T>>(*i);
+                ptr = {{ ns.access }}build<std::unique_ptr<T>>(*i);
 
             auto raw = ptr.get();
             this->_data.push_back(std::move(ptr));
@@ -554,7 +549,7 @@ private:
     }
 };
 
-{{~ for table in tables | array.filter @containable ~}}
+{{~ for table in containers ~}}
 class ___{{ table.name }} : public {{ table.type }}<{{ table.generic }}>
 {
 public:
@@ -578,20 +573,20 @@ DECLARE_{{ table.name | string.upcase }}_CONTAINER_EXTENSION
 class table
 {
 private:
-{{~ for table in tables | array.filter @containable ~}}
-    inline static {{ config.namespace | @namespace_access_cpp }}table_slot<{{ config.namespace | @namespace_access_cpp }}___{{ table.name }}> _{{ table.name }}_slot{std::string_view{"{{ table.name }}"}};
+{{~ for table in containers ~}}
+    inline static {{ ns.access }}table_slot<{{ ns.access }}___{{ table.name }}> _{{ table.name }}_slot{std::string_view{"{{ table.name }}"}};
 {{~ end ~}}
 
-    inline static {{ config.namespace | @namespace_access_cpp }}slot_base* _slots[] = 
+    inline static {{ ns.access }}slot_base* _slots[] = 
     {
-{{~ for table in tables | array.filter @containable ~}}
+{{~ for table in containers ~}}
         &_{{ table.name }}_slot{{ if !for.last }},{{ end }}
 {{~ end ~}}
     };
 
 public:
-{{~ for table in tables | array.filter @containable ~}}
-    inline static {{ config.namespace | @namespace_access_cpp }}table_view<{{ config.namespace | @namespace_access_cpp }}___{{ table.name }}> {{ table.name }}{_{{ table.name }}_slot};
+{{~ for table in containers ~}}
+    inline static {{ ns.access }}table_view<{{ ns.access }}___{{ table.name }}> {{ table.name }}{_{{ table.name }}_slot};
 {{~ end ~}}
 
 public:
@@ -603,7 +598,7 @@ public:
     ~table() = delete;
 
 public:
-    static void foreach(const std::function<void({{ config.namespace | @namespace_access_cpp }}slot_base&)>& fn)
+    static void foreach(const std::function<void({{ ns.access }}slot_base&)>& fn)
     {
         for (auto* slot : table::_slots)
         {

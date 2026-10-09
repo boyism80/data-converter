@@ -1,5 +1,5 @@
     const $const = {
-{{~ for item in items ~}}
+{{~ for item in consts ~}}
         {{ item.name }}: {
 {{~ for prop in item.props ~}}
             {{ prop.name }}: {{ prop.value }}{{ if !for.last }},{{ end }}

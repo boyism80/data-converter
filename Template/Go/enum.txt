@@ -1,78 +1,25 @@
-{{~
-func enum_recursive(v)
-    if object.typeof(v) == 'array'
-        $result = ''
-        $index = 0
-        if v.size > 1
-            $result += '('
-        end
-        
-        for x in v
-            $index = $index + 1
-            $result += enum_recursive(x)
-
-            if $index < v.size && x != '~'
-                $result += ' '
-            end
-        end
-        
-        if v.size > 1
-            $result += ')'
-        end
-
-        ret $result
-    else
-        ret v
-    end
-end
-
-func enum(v)
-    $result = enum_recursive(v)
-    if ($result | string.starts_with '(') && ($result | string.ends_with(')'))
-        $result = $result | string.remove_first '('
-        $result = $result | string.remove_last ')'
-    end
-
-    ret $result
-end
-
-func extract_enum_name(full_name, prefix)
-    if full_name | string.starts_with prefix
-        ret full_name | string.replace_first prefix ''
-    else
-        ret full_name
-    end
-end
-~}}
-{{~ for item in items ~}}
+{{~ for item in enums ~}}
 type {{ item.name }} uint32
 
 const (
 {{~ for prop in item.props ~}}
-    {{ prop.name }} {{ item.name }} = {{ enum(prop.value) }}
+    {{ prop.name }} {{ item.name }} = {{ prop.value }}
 {{~ end ~}}
 )
 
 // JSON marshaling for {{ item.name }}
 var {{ item.name | string.downcase }}_name_to_value = map[string]{{ item.name }}{
 {{~ for prop in item.props ~}}
-    "{{ extract_enum_name(prop.name, item.name + '_') }}": {{ prop.name }},
+    "{{ prop.label }}": {{ prop.name }},
 {{~ end ~}}
 }
 
 var {{ item.name | string.downcase }}_value_to_name = map[{{ item.name }}]string{
-{{~ 
-    $seen_values = []
-    for prop in item.props
-        $value = enum(prop.value)
-        if !($seen_values | array.contains $value)
-            $seen_values = $seen_values | array.add $value
-~}}
-    {{ prop.name }}: "{{ extract_enum_name(prop.name, item.name + '_') }}",
-{{~
-        end
-    end
-~}}
+{{~ for prop in item.props ~}}
+{{~ if prop.unique ~}}
+    {{ prop.name }}: "{{ prop.label }}",
+{{~ end ~}}
+{{~ end ~}}
 }
 
 {{~ end ~}}

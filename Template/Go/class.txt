@@ -1,28 +1,26 @@
-{{~ for item in items ~}}
-{{~ table_name = upper_camel(item.name) ~}}
+{{~ for item in classes ~}}
+{{~ table_name = item.identifier ~}}
 {{~ if item.is_abstract ~}}
-type {{ item.name | @upper_camel }}Interface interface {
-{{~ # Only include own properties for now to avoid infinite loops ~}}
+type {{ item.identifier }}Interface interface {
 {{~ for prop in item.props ~}}
-    Get{{ prop.name | @upper_camel }}() {{ prop.type }}
+    Get{{ prop.identifier }}() {{ prop.type }}
 {{~ end ~}}
-{{~ # Add parent interface embedding for proper inheritance ~}}
 {{~ if item.based ~}}
-    {{ item.based | @upper_camel }}Interface
+    {{ item.based_identifier }}Interface
 {{~ end ~}}
 }
 
 {{~ for prop in item.props ~}}
-func (obj *{{ item.name | @upper_camel }}) Get{{ prop.name | @upper_camel }}() {{ prop.type }} {
-    return obj.{{ prop.name | @upper_camel }}
+func (obj *{{ item.identifier }}) Get{{ prop.identifier }}() {{ prop.type }} {
+    return obj.{{ prop.identifier }}
 }
 {{~ end ~}}
 {{~ end ~}}
 
 type {{ table_name }} struct {
-    {{ if item.based }}*{{ item.based | @upper_camel }} `json:"{{ item.based }}"`{{ end }}
+    {{ if item.based }}*{{ item.based_identifier }} `json:"{{ item.based }}"`{{ end }}
 {{~ for prop in item.props ~}}
-    {{ prop.name | @upper_camel }} {{ prop.type }} `json:"{{ prop.name }}"`
+    {{ prop.identifier }} {{ prop.type }} `json:"{{ prop.name }}"`
 {{~ end ~}}
 }
 
@@ -37,7 +35,7 @@ func New{{ table_name }}Builder(hook func(*{{ table_name }}, json.RawMessage) ({
 func (b *{{ table_name }}Builder) Build(data json.RawMessage) ({{ table_name }}, error) {
 	var raw struct {
 {{~ for prop in item.props ~}}
-        {{ prop.name | @upper_camel }} json.RawMessage `json:"{{ prop.name }}"`
+        {{ prop.identifier }} json.RawMessage `json:"{{ prop.name }}"`
 {{~ end ~}}
 	}
 
@@ -47,11 +45,11 @@ func (b *{{ table_name }}Builder) Build(data json.RawMessage) ({{ table_name }},
 
     result := {{ table_name }}{}
 {{~ if item.based ~}}
-    __{{ item.based }}, err := New{{ item.based | @upper_camel }}Builder(nil).Build(data)
+    __{{ item.based }}, err := New{{ item.based_identifier }}Builder(nil).Build(data)
     if err != nil {
         return {{ table_name }}{}, err
     }
-    result.{{ item.based | @upper_camel }} = &__{{ item.based }}
+    result.{{ item.based_identifier }} = &__{{ item.based }}
 
 {{~ end ~}}
 {{~ for prop in item.props ~}}
@@ -59,7 +57,7 @@ func (b *{{ table_name }}Builder) Build(data json.RawMessage) ({{ table_name }},
     if err != nil {
         return {{ table_name }}{}, err
     }
-    result.{{ prop.name | @upper_camel}} = __{{ prop.name }}
+    result.{{ prop.identifier }} = __{{ prop.name }}
 {{~ if !for.last }}
 
 {{ end ~}}

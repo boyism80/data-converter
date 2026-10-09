@@ -7,39 +7,36 @@ func push_value_to_lua(value_path, type_info, indent)
     for i in 0..indent
         indent_str = indent_str + '    '
     end
-    
+
     $result = ''
-    
-    if type_info.is_nullable
-        if type_info.is_null_value
-            $result = indent_str + 'lua_pushnil(lua);'
-        else
-            inner_path = value_path + '.value()'
-            $result = push_value_to_lua(inner_path, type_info.inner_type, indent)
-        end
-    else if type_info.is_array
+    case type_info.kind
+    when 'null'
+        $result = indent_str + 'lua_pushnil(lua);'
+    when 'nullable'
+        $result = push_value_to_lua(value_path + '.value()', type_info.inner, indent)
+    when 'array'
         $result = indent_str + 'lua_newtable(lua);' + '\n'
         $result = $result + indent_str + 'for (size_t i = 0; i < ' + value_path + '.size(); ++i)' + '\n'
         $result = $result + indent_str + '{' + '\n'
         $result = $result + indent_str + '    lua_pushinteger(lua, static_cast<lua_Integer>(i + 1));' + '\n'
-        $result = $result + push_value_to_lua(value_path + '[i]', type_info.array_element, indent + 1) + '\n'
+        $result = $result + push_value_to_lua(value_path + '[i]', type_info.element, indent + 1) + '\n'
         $result = $result + indent_str + '    lua_settable(lua, -3);' + '\n'
         $result = $result + indent_str + '}'
-    else if type_info.is_map
+    when 'map'
         $result = indent_str + 'lua_newtable(lua);' + '\n'
         $result = $result + indent_str + 'for (const auto& pair : ' + value_path + ')' + '\n'
         $result = $result + indent_str + '{' + '\n'
-        $result = $result + push_value_to_lua('pair.first', type_info.map_key_type, indent + 1) + '\n'
-        $result = $result + push_value_to_lua('pair.second', type_info.map_value_type, indent + 1) + '\n'
+        $result = $result + push_value_to_lua('pair.first', type_info.key, indent + 1) + '\n'
+        $result = $result + push_value_to_lua('pair.second', type_info.value, indent + 1) + '\n'
         $result = $result + indent_str + '    lua_settable(lua, -3);' + '\n'
         $result = $result + indent_str + '}'
-    else if type_info.is_bool
+    when 'bool'
         $result = indent_str + 'lua_pushboolean(lua, ' + value_path + ');'
-    else if type_info.is_string
-        $result = indent_str + 'lua_pushstring(lua, ' + namespace_access_cpp(config.namespace) + 'option::encode(' + value_path + ').c_str());'
-    else if type_info.is_numeric
+    when 'string'
+        $result = indent_str + 'lua_pushstring(lua, ' + ns.access + 'option::encode(' + value_path + ').c_str());'
+    when 'numeric'
         $result = indent_str + 'lua_pushinteger(lua, static_cast<lua_Integer>(' + value_path + '));'
-    else if type_info.is_enum
+    when 'enum'
         if type_info.enum_value
             $result = indent_str + 'lua_getglobal(lua, "' + type_info.enum_name + '");' + '\n'
             $result = $result + indent_str + 'lua_getfield(lua, -1, "' + type_info.enum_value + '");' + '\n'
@@ -47,35 +44,33 @@ func push_value_to_lua(value_path, type_info, indent)
         else
             $result = indent_str + 'lua_pushinteger(lua, static_cast<lua_Integer>(' + value_path + '));'
         end
-    else if type_info.is_date_time
+    when 'date_time', 'time_span'
         $result = indent_str + 'lua_pushstring(lua, ' + value_path + '.to_string().c_str());'
-    else if type_info.is_time_span
-        $result = indent_str + 'lua_pushstring(lua, ' + value_path + '.to_string().c_str());'
-    else if type_info.is_date_range
+    when 'date_range'
         $result = indent_str + 'lua_newtable(lua);' + '\n'
         $result = $result + indent_str + 'lua_pushstring(lua, ' + value_path + '.begin.to_string().c_str());' + '\n'
         $result = $result + indent_str + 'lua_setfield(lua, -2, "begin");' + '\n'
         $result = $result + indent_str + 'lua_pushstring(lua, ' + value_path + '.end.to_string().c_str());' + '\n'
         $result = $result + indent_str + 'lua_setfield(lua, -2, "end");'
-    else if type_info.is_point
+    when 'point'
         $result = indent_str + 'lua_newtable(lua);' + '\n'
         $result = $result + indent_str + 'lua_pushinteger(lua, static_cast<lua_Integer>(' + value_path + '.x));' + '\n'
         $result = $result + indent_str + 'lua_setfield(lua, -2, "x");' + '\n'
         $result = $result + indent_str + 'lua_pushinteger(lua, static_cast<lua_Integer>(' + value_path + '.y));' + '\n'
         $result = $result + indent_str + 'lua_setfield(lua, -2, "y");'
-    else if type_info.is_range
+    when 'range'
         $result = indent_str + 'lua_newtable(lua);' + '\n'
         $result = $result + indent_str + 'lua_pushinteger(lua, static_cast<lua_Integer>(' + value_path + '.min));' + '\n'
         $result = $result + indent_str + 'lua_setfield(lua, -2, "min");' + '\n'
         $result = $result + indent_str + 'lua_pushinteger(lua, static_cast<lua_Integer>(' + value_path + '.max));' + '\n'
         $result = $result + indent_str + 'lua_setfield(lua, -2, "max");'
-    else if type_info.is_size
+    when 'size'
         $result = indent_str + 'lua_newtable(lua);' + '\n'
         $result = $result + indent_str + 'lua_pushinteger(lua, static_cast<lua_Integer>(' + value_path + '.width));' + '\n'
         $result = $result + indent_str + 'lua_setfield(lua, -2, "width");' + '\n'
         $result = $result + indent_str + 'lua_pushinteger(lua, static_cast<lua_Integer>(' + value_path + '.height));' + '\n'
         $result = $result + indent_str + 'lua_setfield(lua, -2, "height");'
-    else if type_info.is_area
+    when 'area'
         $result = indent_str + 'lua_newtable(lua);' + '\n'
         $result = $result + indent_str + 'lua_pushinteger(lua, static_cast<lua_Integer>(' + value_path + '.left));' + '\n'
         $result = $result + indent_str + 'lua_setfield(lua, -2, "left");' + '\n'
@@ -88,7 +83,7 @@ func push_value_to_lua(value_path, type_info, indent)
     else
         $result = indent_str + '// TODO: Handle type ' + type_info.naked_type
     end
-    
+
     ret $result
 end
 ~}}
@@ -99,18 +94,18 @@ inline void const_map(lua_State*)
     static_assert(sizeof(ConstTableType) == 0, "const_map specialization is required for this type");
 }
 
-{{~ for const_table in const_tables ~}}
+{{~ for table in lua_consts ~}}
 template <>
-inline void const_map<{{ config.namespace | array.concat config.const_namespace | array.add const_table.name | array.join '::'}}>(lua_State* lua)
+inline void const_map<{{ ns.const_root }}::{{ table.name }}>(lua_State* lua)
 {
     lua_newtable(lua);
-{{~ for prop in const_table.props ~}}
+{{~ for prop in table.props ~}}
     {{~ 
-        const_path = config.namespace | array.concat config.const_namespace | array.add const_table.name | array.add prop.name | array.join '::'
-        code = push_value_to_lua(const_path, prop.type_info, 0)
+        const_path = ns.const_root + '::' + table.name + '::' + prop.name
+        code = push_value_to_lua(const_path, prop.type, 0)
     ~}}
 {{ code }}
-    lua_setfield(lua, -2, "{{ prop.name | @upper_snake }}");
+    lua_setfield(lua, -2, "{{ prop.lua_name }}");
 {{~ end ~}}
 }
 
@@ -120,9 +115,9 @@ inline static void map_const(lua_State* lua)
 {
     lua_newtable(lua);
     
-{{~ for const_table in const_tables ~}}
-    const_map<{{ config.namespace | array.concat config.const_namespace | array.add const_table.name | array.join '::'}}>(lua);
-    lua_setfield(lua, -2, "{{ const_table.name | @upper_snake }}");
+{{~ for table in lua_consts ~}}
+    const_map<{{ ns.const_root }}::{{ table.name }}>(lua);
+    lua_setfield(lua, -2, "{{ table.identifier }}");
 {{~ end ~}}
     
     lua_setglobal(lua, "CONST");

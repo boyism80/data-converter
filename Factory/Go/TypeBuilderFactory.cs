@@ -2,152 +2,54 @@
 
 namespace ExcelTableConverter.Factory.Go
 {
-    public class TypeBuilderFactory : DataFormatFactory<string>
+    public class TypeBuilderFactory : TypeFormatFactory<string>
     {
+        private readonly TypeFactory _types;
+
         public TypeBuilderFactory(Context ctx) : base(ctx)
         {
+            _types = new TypeFactory(ctx);
         }
 
-        private string WithNullable(string root, bool nullable, IExcelFileTrackable tracker)
+        private string Default(DataType type, string name)
         {
-            root = new TypeFactory(Context).Build(root, tracker);
-            root = Util.Type.Nake(root);
-            if (nullable)
-                root = $"*{root}";
-
-            return root;
+            var goType = _types.Build(name).TrimStart('*');
+            return $"DefaultBuilder[{(type.Nullable ? $"*{goType}" : goType)}]()";
         }
 
-        protected override string ArrayType(object value, string root, string e, DataFormatOption option, IExcelFileTrackable tracker)
+        private string Func(DataType e, string trailing)
         {
-            var rootType = Context.Completed.Schema.GetRootTableType(e);
-            var func = $@"func(rm json.RawMessage) ({new TypeFactory(Context).Build(rootType, tracker)}, error) {{
-		return New{Build(e, tracker)}.Build(rm)
-    }}";
-            return $@"ArrayBuilder({func})";
+            return $"func(rm json.RawMessage) ({_types.Build(e)}, error) {{{trailing}\r\n\t\treturn New{Build(e)}.Build(rm)\r\n    }}";
         }
 
-        protected override string BooleanType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
+        private string Geometry(GeometryDataType type)
         {
-            return $"DefaultBuilder[{WithNullable(root, nullable, tracker)}]()";
+            var goType = _types.Build(type.Element).TrimStart('*');
+            return $"{type.Kind}Builder[{(type.Nullable ? $"*{goType}" : goType)}]()";
         }
 
-        protected override string DateRangeType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return "DateRangeBuilder()";
-        }
-
-        protected override string DateTimeType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return "DateTimeBuilder()";
-        }
-
-        protected override string DictionaryType(object value, string root, string k, string v, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            var rootKeyType = Context.Completed.Schema.GetRootTableType(k);
-            var rootValueType = Context.Completed.Schema.GetRootTableType(v);
-            var keyFunc = $@"func(rm json.RawMessage) ({new TypeFactory(Context).Build(rootKeyType, tracker)}, error) {{     
-		return New{Build(k, tracker)}.Build(rm)
-    }}";
-            var valueFunc = $@"func(rm json.RawMessage) ({new TypeFactory(Context).Build(rootValueType, tracker)}, error) {{
-		return New{Build(v, tracker)}.Build(rm)
-    }}";
-            return $"DictionaryBuilder({keyFunc}, {valueFunc})";
-        }
-
-        protected override string DoubleType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"DefaultBuilder[{WithNullable(root, nullable, tracker)}]()";
-        }
-
-        protected override string DslType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"DslBuilder()";
-        }
-
-        protected override string EnumType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"EnumBuilder[{e}]({root.ToLower()}_name_to_value)";
-        }
-
-        protected override string FloatType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"DefaultBuilder[{WithNullable("float32", nullable, tracker)}]()";
-        }
-
-        protected override string IntType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"DefaultBuilder[{WithNullable("int32", nullable, tracker)}]()";
-        }
-
-        protected override string LongType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"DefaultBuilder[{WithNullable("int64", nullable, tracker)}]()";
-        }
-
-        protected override string ByteType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"DefaultBuilder[{WithNullable("uint8", nullable, tracker)}]()";
-        }
-
-        protected override string SbyteType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"DefaultBuilder[{WithNullable("int8", nullable, tracker)}]()";
-        }
-
-        protected override string ShortType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"DefaultBuilder[{WithNullable("int16", nullable, tracker)}]()";
-        }
-
-        protected override string UshortType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"DefaultBuilder[{WithNullable("uint16", nullable, tracker)}]()";
-        }
-
-        protected override string UintType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"DefaultBuilder[{WithNullable("uint32", nullable, tracker)}]()";
-        }
-
-        protected override string UlongType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"DefaultBuilder[{WithNullable("uint64", nullable, tracker)}]()";
-        }
-
-        protected override string StringType(object value, string root, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"DefaultBuilder[string]()";
-        }
-
-        protected override string TimeSpanType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"TimeSpanBuilder()";
-        }
-
-        protected override string PointType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"PointBuilder[{WithNullable(e, nullable, tracker)}]()";
-        }
-
-        protected override string SizeType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"SizeBuilder[{WithNullable(e, nullable, tracker)}]()";
-        }
-
-        protected override string RangeType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"RangeBuilder[{WithNullable(e, nullable, tracker)}]()";
-        }
-
-        protected override string AreaType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"AreaBuilder[{WithNullable(e, nullable, tracker)}]()";
-        }
-
-        public string Build(string type, IExcelFileTrackable tracker = null)
-        {
-            return base.Build(type, null, null, tracker);
-        }
+        protected override string ByteType(DataType type) => Default(type, "uint8");
+        protected override string SbyteType(DataType type) => Default(type, "int8");
+        protected override string ShortType(DataType type) => Default(type, "int16");
+        protected override string UshortType(DataType type) => Default(type, "uint16");
+        protected override string BoolType(DataType type) => Default(type, type.Root);
+        protected override string IntType(DataType type) => Default(type, "int32");
+        protected override string UintType(DataType type) => Default(type, "uint32");
+        protected override string LongType(DataType type) => Default(type, "int64");
+        protected override string UlongType(DataType type) => Default(type, "uint64");
+        protected override string DoubleType(DataType type) => Default(type, type.Root);
+        protected override string FloatType(DataType type) => Default(type, "float32");
+        protected override string StringType(DataType type) => "DefaultBuilder[string]()";
+        protected override string DslType(DataType type) => "DslBuilder()";
+        protected override string TimeSpanType(DataType type) => "TimeSpanBuilder()";
+        protected override string DateTimeType(DataType type) => "DateTimeBuilder()";
+        protected override string DateRangeType(DataType type) => "DateRangeBuilder()";
+        protected override string ArrayType(ArrayDataType type) => $"ArrayBuilder({Func(type.Element, string.Empty)})";
+        protected override string MapType(MapDataType type) => $"DictionaryBuilder({Func(type.Key, "     ")}, {Func(type.Value, string.Empty)})";
+        protected override string PointType(GeometryDataType type) => Geometry(type);
+        protected override string SizeType(GeometryDataType type) => Geometry(type);
+        protected override string RangeType(GeometryDataType type) => Geometry(type);
+        protected override string AreaType(GeometryDataType type) => Geometry(type);
+        protected override string EnumType(EnumDataType type) => $"EnumBuilder[{type.Naked}]({type.Root.ToLower()}_name_to_value)";
     }
 }

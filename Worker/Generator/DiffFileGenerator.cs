@@ -1,5 +1,4 @@
 ﻿using ExcelTableConverter.Model;
-using ExcelTableConverter.Util;
 using Newtonsoft.Json;
 using System.Text;
 
@@ -28,9 +27,9 @@ namespace ExcelTableConverter.Worker.Generator
             }
         }
 
-        private void WriteFile(IEnumerable<SourceDataColumns> rdcs, string fname)
+        private void WriteFile(SourceColumns columns, string fname)
         {
-            var result = rdcs.ToModels();
+            var result = columns.Rows();
             var stringify = JsonConvert.SerializeObject(result, Formatting.Indented).Replace("\r\n", "\n");
             var path = Path.Combine(_dir, fname);
             File.WriteAllText(path, stringify, Encoding.UTF8);

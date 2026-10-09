@@ -1,9 +1,4 @@
-{{~
-func containable(table)
-    ret table.name == table.json
-end
-~}}
-{{~ for table in tables | array.filter @containable ~}}
+{{~ for table in containers ~}}
     function {{ table.name }}ContainerBuilder(hook) {
         return {
             build: function (v) {
@@ -14,14 +9,9 @@ end
 {{ end }}
 {{~ end ~}}
 
-{{~
-func containable(table)
-    ret table.name == table.json
-end
-~}}
 
 // Global table instances (published generations)
-{{~ for table in tables | array.filter @containable ~}}
+{{~ for table in containers ~}}
     let {{ table.name }} = null;
     let {{ table.name }}Hook = null;
 {{~ end ~}}
@@ -30,7 +20,7 @@ end
 
 // Global containers array
     const Containers = [
-{{~ for table in tables | array.filter @containable ~}}
+{{~ for table in containers ~}}
         { 
             name: '{{ table.name }}', 
             load: async function(root) {
@@ -48,7 +38,7 @@ end
 // Table object for global access
 // Capture a local reference for a stable snapshot: const snap = Table.spell;
     const Table = {
-{{~ for table in tables | array.filter @containable ~}}
+{{~ for table in containers ~}}
         get {{ table.name }}() { return {{ table.name }}; },
         set {{ table.name }}Hook(hook) { {{ table.name }}Hook = hook; },
 {{~ end ~}}
@@ -60,10 +50,10 @@ end
         },
         // Build every table, then publish all-or-nothing.
         async reload() {
-{{~ for table in tables | array.filter @containable ~}}
+{{~ for table in containers ~}}
             const next_{{ table.name }} = await Containers.find(c => c.name === '{{ table.name }}').build();
 {{~ end ~}}
-{{~ for table in tables | array.filter @containable ~}}
+{{~ for table in containers ~}}
             {{ table.name }} = next_{{ table.name }};
 {{~ end ~}}
         }

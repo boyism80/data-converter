@@ -1,9 +1,9 @@
-{{~ for item in items ~}}
-    public class {{ item.name | @upper_camel }}{{ if item.based }} : {{ config.namespace | array.each @upper_camel | array.join '.' }}.{{ item.based | @upper_camel }}{{ end }}
+{{~ for item in classes ~}}
+    public class {{ item.identifier }}{{ if item.based }} : {{ ns.root }}.{{ item.based_identifier }}{{ end }}
     {
 {{~ for prop in item.props ~}}
         [JsonProperty("{{ prop.name }}")]
-        public {{ prop.type }} {{ prop.name | @upper_camel }} { get; set; }
+        public {{ prop.type }} {{ prop.identifier }} { get; set; }
 {{~ end ~}}
     }
 {{~ if !for.last }}

@@ -46,12 +46,11 @@ namespace ExcelTableConverter.Worker.Validator
 
             while (queue.TryDequeue(out var rvd))
             {
-                if (Util.Type.IsRelation(rvd.Type, out var rel))
+                if (ColumnType.Parse(rvd.Type).Relation != null)
                 {
-                    rvd.Type = rel;
                     yield return rvd;
                 }
-                else if (Util.Type.IsArray(rvd.Type, out var e))
+                else if (DataType.IsArray(rvd.Type, out var e))
                 {
                     queue.Enqueue(new RelationTypeValidationData
                     {
@@ -61,13 +60,13 @@ namespace ExcelTableConverter.Worker.Validator
                         Scope = rvd.Scope,
                     });
                 }
-                else if (Util.Type.IsMap(rvd.Type, out var pair))
+                else if (DataType.IsMap(rvd.Type, out var mapKey, out var mapValue))
                 {
                     queue.Enqueue(new RelationTypeValidationData
                     {
                         Tracker = rvd.Tracker,
                         Name = rvd.Name,
-                        Type = pair.Key,
+                        Type = mapKey,
                         Scope = rvd.Scope,
                     });
 
@@ -75,7 +74,7 @@ namespace ExcelTableConverter.Worker.Validator
                     {
                         Tracker = rvd.Tracker,
                         Name = rvd.Name,
-                        Type = pair.Value,
+                        Type = mapValue,
                         Scope = rvd.Scope,
                     });
                 }
@@ -86,14 +85,14 @@ namespace ExcelTableConverter.Worker.Validator
 
         protected override IEnumerable<bool> OnWork(RelationTypeValidationData value)
         {
-            var refer = Util.Type.Nake(value.Type);
-            if (Util.Type.SplitReferenceType(refer, out var tableName, out var columnName) == false)
-                throw new LogicException("알 수 없는 에러", value.Tracker);
+            var columnType = ColumnType.Parse(value.Type);
+            var tableName = columnType.RelationTable ?? throw new LogicException("알 수 없는 에러", value.Tracker);
+            var columnName = columnType.RelationColumn;
 
-            if (Context.Completed.Schema.GetAllTableNames().Contains(tableName) == false)
+            if (Context.Completed.Schema.ContainsKey(tableName) == false)
                 throw new LogicException($"{tableName}는 정의되지 않은 테이블입니다.", value.Tracker);
 
-            if (Context.Completed.Schema.GetKeyTableNames().Contains(tableName) == false)
+            if (Context.Completed.Schema.KeyTableNames.Contains(tableName) == false)
                 throw new LogicException($"{tableName}는 키가 존재하지 않는 테이블입니다.", value.Tracker);
 
             if (string.IsNullOrEmpty(columnName) == false)
@@ -112,7 +111,7 @@ namespace ExcelTableConverter.Worker.Validator
 
         protected override void OnWorked(RelationTypeValidationData input, bool output, int percent)
         {
-            Logger.Write($"참조 타입을 검사했습니다. - {input.Type}");
+            Logger.Write($"참조 타입을 검사했습니다. - {ColumnType.Parse(input.Type).Relation}");
         }
 
         protected override IReadOnlyList<bool> OnFinish(IReadOnlyList<bool> output)

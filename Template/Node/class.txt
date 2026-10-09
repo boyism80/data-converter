@@ -1,4 +1,4 @@
-{{~ for item in items ~}}
+{{~ for item in classes ~}}
     class {{ item.name }}{{ if item.based }} extends {{ item.based}}{{ end }} {
         constructor(v) {
 {{~ if item.based ~}}

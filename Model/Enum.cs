@@ -7,7 +7,7 @@ namespace ExcelTableConverter.Model
         private string _fileName, _sheetName;
 
         public string Table { get; set; }
-        public Dictionary<string, List<object>> Values { get; set; }
+        public Dictionary<string, EnumExpression> Values { get; set; }
         public string FileName
         {
             get => Parent?.FileName ?? _fileName;

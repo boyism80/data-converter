@@ -25,7 +25,7 @@ using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace {{ config.namespace | array.each @upper_camel | array.join '.' }}
+namespace {{ ns.root }}
 {
     public class DateRange
     {
@@ -60,21 +60,21 @@ namespace {{ config.namespace | array.each @upper_camel | array.join '.' }}
     }
 }
 
-namespace {{ config.namespace | array.concat config.enum_namespace | array.each @upper_camel | array.join '.' }}
+namespace {{ ns.enum }}
 {
-{{ enum }}
+{{ include 'C#/enum.txt' }}
 }
 
-namespace {{ config.namespace | array.concat config.const_namespace | array.each @upper_camel | array.join '.' }}
+namespace {{ ns.const }}
 {
-{{ const }}
+{{ include 'C#/const.txt' }}
 }
 
-namespace {{ config.namespace | array.each @upper_camel | array.join '.' }}
+namespace {{ ns.root }}
 {
-{{ class }}
+{{ include 'C#/class.txt' }}
 
-{{ dsl }}
+{{ include 'C#/dsl.txt' }}
 
-{{ container }}
+{{ include 'C#/container.txt' }}
 }

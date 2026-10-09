@@ -1,5 +1,4 @@
-﻿using ExcelTableConverter.Util;
-using NPOI.SS.UserModel;
+﻿using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 
 namespace ExcelTableConverter.Model
@@ -21,7 +20,7 @@ namespace ExcelTableConverter.Model
     {
         public ISheet Source { get; private set; }
         public Workbook Parent { get; private set; }
-        public string Name => this.GetTableName();
+        public string Name => SheetName.Split('.').First();
         public string FileName => Parent.FileName;
         public string SheetName => Source.SheetName;
         public string FullName => $"{Parent.FileName}:{SheetName}";

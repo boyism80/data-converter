@@ -255,7 +255,7 @@ namespace ExcelTableConverter.Worker
 
         protected object GetValue(ICell cell, string type)
         {
-            switch (Util.Type.Nake(type))
+            switch (ColumnType.Parse(type).Naked)
             {
                 case "int":
                 case "long":

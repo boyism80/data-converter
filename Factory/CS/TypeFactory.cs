@@ -1,144 +1,43 @@
 ﻿using ExcelTableConverter.Model;
-using ExcelTableConverter.Util;
 
 namespace ExcelTableConverter.Factory.CS
 {
-    public class TypeFactory : DataFormatFactory<string>
+    public class TypeFactory : TypeFormatFactory<string>
     {
         public TypeFactory(Context ctx) : base(ctx)
-        {
+        { }
 
+        private static string Nullable(DataType type, string name)
+        {
+            return type.Nullable ? $"{name}?" : name;
         }
 
-        private string WithNullable(string type, bool nullable)
-        {
-            if (nullable)
-                return Util.Type.MakeNullable(type);
-            else
-                return type;
-        }
+        protected override string ByteType(DataType type) => Nullable(type, "byte");
+        protected override string SbyteType(DataType type) => Nullable(type, "sbyte");
+        protected override string ShortType(DataType type) => Nullable(type, "short");
+        protected override string UshortType(DataType type) => Nullable(type, "ushort");
+        protected override string BoolType(DataType type) => type.Root;
+        protected override string IntType(DataType type) => Nullable(type, "int");
+        protected override string UintType(DataType type) => Nullable(type, "uint");
+        protected override string LongType(DataType type) => Nullable(type, "long");
+        protected override string UlongType(DataType type) => Nullable(type, "ulong");
+        protected override string DoubleType(DataType type) => Nullable(type, "double");
+        protected override string FloatType(DataType type) => Nullable(type, "float");
+        protected override string StringType(DataType type) => "string";
+        protected override string DslType(DataType type) => Nullable(type, "Dsl");
+        protected override string TimeSpanType(DataType type) => Nullable(type, "TimeSpan");
+        protected override string DateTimeType(DataType type) => type.Root;
+        protected override string DateRangeType(DataType type) => type.Root;
+        protected override string ArrayType(ArrayDataType type) => $"List<{Build(type.Element)}>";
+        protected override string MapType(MapDataType type) => $"Dictionary<{Build(type.Key)}, {Build(type.Value)}>";
+        protected override string PointType(GeometryDataType type) => Nullable(type, $"Point<{Build(type.Element)}>");
+        protected override string SizeType(GeometryDataType type) => Nullable(type, $"Size<{Build(type.Element)}>");
+        protected override string RangeType(GeometryDataType type) => Nullable(type, $"Range<{Build(type.Element)}>");
+        protected override string AreaType(GeometryDataType type) => Nullable(type, $"Area<{Build(type.Element)}>");
 
-        protected override string ArrayType(object value, string root, string e, DataFormatOption option, IExcelFileTrackable tracker)
+        protected override string EnumType(EnumDataType type)
         {
-            return $"List<{Build(e, tracker)}>";
-        }
-
-        protected override string BooleanType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return root;
-        }
-
-        protected override string DateRangeType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return root;
-        }
-
-        protected override string DateTimeType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return root;
-        }
-
-        protected override string DictionaryType(object value, string root, string k, string v, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return $"Dictionary<{Build(k, tracker)}, {Build(v, tracker)}>";
-        }
-
-        protected override string DoubleType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable("double", nullable);
-        }
-
-        protected override string DslType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable("Dsl", nullable);
-        }
-
-        protected override string EnumType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            var namespaces = Context.Configuration.Namespace.Concat(Context.Configuration.EnumNamespace).Select(x => ScribanEx.UpperCamel(x));
-            var prefix = ScribanEx.NamespaceAccess(namespaces, LanguageType.CS);
-
-            return WithNullable($"{prefix}.{ScribanEx.UpperCamel(Util.Type.Nake(root))}", nullable);
-        }
-
-        protected override string FloatType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable("float", nullable);
-        }
-
-        protected override string IntType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable("int", nullable);
-        }
-
-        protected override string LongType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable("long", nullable);
-        }
-
-        protected override string ByteType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable("byte", nullable);
-        }
-
-        protected override string SbyteType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable("sbyte", nullable);
-        }
-
-        protected override string ShortType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable("short", nullable);
-        }
-
-        protected override string UshortType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable("ushort", nullable);
-        }
-
-        protected override string UintType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable("uint", nullable);
-        }
-
-        protected override string UlongType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable("ulong", nullable);
-        }
-
-        protected override string StringType(object value, string root, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return "string";
-        }
-
-        protected override string TimeSpanType(object value, string root, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable("TimeSpan", nullable);
-        }
-
-        protected override string PointType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable($"Point<{Build(e, tracker)}>", nullable);
-        }
-
-        protected override string SizeType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable($"Size<{Build(e, tracker)}>", nullable);
-        }
-
-        protected override string RangeType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable($"Range<{Build(e, tracker)}>", nullable);
-        }
-
-        protected override string AreaType(object value, string root, string e, bool nullable, DataFormatOption option, IExcelFileTrackable tracker)
-        {
-            return WithNullable($"Area<{Build(e, tracker)}>", nullable);
-        }
-
-        public string Build(string type, IExcelFileTrackable tracker = null)
-        {
-            return Build(type, null, null, tracker);
+            return Nullable(type, Language.CSharp.Qualify(Context.EnumNamespace, type.Naked));
         }
     }
 }

@@ -39,6 +39,7 @@ namespace ExcelTableConverter.Model
         public uint Scope { get; set; }
         public string Type { get; set; }
         public bool Bold { get; set; }
+        [JsonIgnore] public ColumnType ColumnType => ColumnType.Parse(Type);
 
         public override bool Equals(object obj)
         {
@@ -71,12 +72,39 @@ namespace ExcelTableConverter.Model
         public Dictionary<int, object> RowValuePairs { get; set; } = new Dictionary<int, object>();
     }
 
+    public class SourceColumns : List<SourceDataColumns>
+    {
+        public SourceColumns()
+        { }
+
+        public SourceColumns(IEnumerable<SourceDataColumns> columns) : base(columns)
+        { }
+
+        // Null when the sheet has no column of that kind
+        public (SourceColumns Bold, SourceColumns Normal) Split()
+        {
+            var group = this.GroupBy(x => x.Bold).ToDictionary(x => x.Key);
+            var bold = group.TryGetValue(true, out var b) ? new SourceColumns(b) : null;
+            var normal = group.TryGetValue(false, out var n) ? new SourceColumns(n) : null;
+            return (bold, normal);
+        }
+
+        public List<Dictionary<string, object>> Rows()
+        {
+            var result = new List<Dictionary<string, object>>();
+            foreach (var row in this.SelectMany(x => x.RowValuePairs.Keys).Distinct().OrderBy(x => x))
+                result.Add(this.ToDictionary(x => x.Name, x => x.RowValuePairs.GetValueOrDefault(row)));
+
+            return result;
+        }
+    }
+
     public class SourceSheetData : IExcelFileTrackable
     {
         private string _root, _sheetName, _tableName, _fileName;
         public string Based { get; set; }
         public string Json { get; set; }
-        public List<SourceDataColumns> Columns { get; set; } = new List<SourceDataColumns>();
+        public SourceColumns Columns { get; set; } = new SourceColumns();
 
         public string Root
         {
@@ -101,18 +129,6 @@ namespace ExcelTableConverter.Model
         [JsonIgnore] public Sheet Parent { get; set; }
         [JsonIgnore] public List<SourceSchemaData> Schema => Columns.Cast<SourceSchemaData>().OrderBy(x => x.Name).ToList();
 
-        public IEnumerable<SourceDataColumns> GetRowValues(int row)
-        {
-            return Columns.Select(column => new SourceDataColumns
-            {
-                Name = column.Name,
-                Bold = column.Bold,
-                Scope = column.Scope,
-                Type = column.Type,
-                RowValuePairs = column.RowValuePairs.Where(x => x.Key == row).ToDictionary(x => x.Key, x => x.Value)
-            });
-        }
-
         public IEnumerable<SourceDataColumns> GetRowValues(int minRow, int maxRow)
         {
             return Columns.Select(column => new SourceDataColumns
@@ -125,7 +141,7 @@ namespace ExcelTableConverter.Model
             });
         }
 
-        private IEnumerable<List<SourceDataColumns>> StaticChunk(int size)
+        private IEnumerable<SourceColumns> StaticChunk(int size)
         {
             var buffer = Columns.Select(column =>
             {
@@ -142,7 +158,7 @@ namespace ExcelTableConverter.Model
             var rows = buffer.Max(x => x.Count);
             for (int row = 0; row < rows; row++)
             {
-                yield return buffer.Select((chunkedColumns, col) =>
+                yield return new SourceColumns(buffer.Select((chunkedColumns, col) =>
                 {
                     return chunkedColumns.GetValueOrDefault(row) ?? new SourceDataColumns
                     {
@@ -152,11 +168,11 @@ namespace ExcelTableConverter.Model
                         Type = Columns[col].Type,
                         RowValuePairs = new Dictionary<int, object>()
                     };
-                }).ToList();
+                }));
             }
         }
 
-        public IEnumerable<List<SourceDataColumns>> Chunk(int size)
+        public IEnumerable<SourceColumns> Chunk(int size)
         {
             if (Columns.Exists(x => x.Bold))
             {
@@ -165,10 +181,10 @@ namespace ExcelTableConverter.Model
 
                 for (int i = 0; i < chunkedBoldRows.Count; i++)
                 {
-                    var begin = chunkedBoldRows.ElementAtOrDefault(i, int.MinValue);
-                    var end = chunkedBoldRows.ElementAtOrDefault(i + 1, int.MaxValue);
+                    var begin = chunkedBoldRows[i];
+                    var end = i + 1 < chunkedBoldRows.Count ? chunkedBoldRows[i + 1] : int.MaxValue;
 
-                    yield return GetRowValues(begin, end - 1).ToList();
+                    yield return new SourceColumns(GetRowValues(begin, end - 1));
                 }
             }
             else

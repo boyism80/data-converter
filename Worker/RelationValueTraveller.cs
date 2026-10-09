@@ -4,7 +4,8 @@ using Newtonsoft.Json.Linq;
 
 namespace ExcelTableConverter.Worker
 {
-    public class RelationValueTraveller : ParallelWorker<SourceSheetData[], List<RelationValueValidationData>>
+    // Consts are always visited: any data change can break a const relation, and every const is cast again on each run.
+    public class RelationValueTraveller : ParallelWorker<IExcelFileTrackable[], List<RelationValueValidationData>>
     {
         private const int CHUNK_SIZE = 250;
 
@@ -15,7 +16,7 @@ namespace ExcelTableConverter.Worker
             _files = files.ToHashSet();
         }
 
-        protected override IEnumerable<SourceSheetData[]> OnReady()
+        protected override IEnumerable<IExcelFileTrackable[]> OnReady()
         {
             foreach (var g in Context.Source.Data.SelectMany(x => x.Value).GroupBy(x => (x.FileName, x.SheetName)))
             {
@@ -25,45 +26,64 @@ namespace ExcelTableConverter.Worker
                 foreach (var chunk in g.Chunk(CHUNK_SIZE))
                     yield return chunk;
             }
+
+            foreach (var g in Context.Source.Const.SelectMany(x => x.Value).GroupBy(x => (x.FileName, x.SheetName)))
+            {
+                foreach (var chunk in g.Chunk(CHUNK_SIZE))
+                    yield return chunk;
+            }
         }
 
-        protected override IEnumerable<List<RelationValueValidationData>> OnWork(SourceSheetData[] rsds)
+        protected override IEnumerable<List<RelationValueValidationData>> OnWork(IExcelFileTrackable[] trackers)
         {
             var queue = new Queue<RelationValueValidationData>();
             var buffer = new List<RelationValueValidationData>();
 
-            foreach (var sourceData in rsds)
+            foreach (var tracker in trackers)
             {
-                foreach (var column in sourceData.Columns)
+                if (tracker is SourceSheetData sourceData)
                 {
-                    foreach (var value in column.RowValuePairs.Values)
+                    foreach (var column in sourceData.Columns)
                     {
-                        queue.Enqueue(new RelationValueValidationData
+                        foreach (var value in column.RowValuePairs.Values)
                         {
-                            Tracker = sourceData,
-                            Name = column.Name,
-                            Type = column.Type,
-                            Value = Context.Cast(column.Type, value),
-                            Scope = column.Scope
-                        });
+                            queue.Enqueue(new RelationValueValidationData
+                            {
+                                Tracker = sourceData,
+                                Name = column.Name,
+                                Type = column.Type,
+                                Value = Context.Cast(column.Type, value),
+                                Scope = column.Scope
+                            });
+                        }
                     }
+                }
+                else if (tracker is SourceConst sourceConst)
+                {
+                    queue.Enqueue(new RelationValueValidationData
+                    {
+                        Tracker = sourceConst,
+                        Name = sourceConst.Name,
+                        Type = sourceConst.Type,
+                        Value = Context.Cast(sourceConst.Type, sourceConst.Value),
+                        Scope = sourceConst.Scope
+                    });
                 }
             }
 
             while (queue.TryDequeue(out var rvd))
             {
-                if (Util.Type.IsRelation(rvd.Type, out var rel))
+                var columnType = ColumnType.Parse(rvd.Type);
+                if (columnType.Relation != null)
                 {
-                    if (Util.Value.IsNull(rvd.Value))
+                    if (rvd.Value is NullValue)
                         continue;
 
-                    rvd.Type = rel;
                     buffer.Add(rvd);
                 }
-                else if (Util.Type.IsArray(rvd.Type, out var e))
+                else if (DataType.IsArray(rvd.Type, out var e))
                 {
-                    var array = rvd.Value as List<object>;
-                    foreach (var x in array)
+                    foreach (var x in ((ArrayValue)rvd.Value).Items)
                     {
                         queue.Enqueue(new RelationValueValidationData
                         {
@@ -75,16 +95,15 @@ namespace ExcelTableConverter.Worker
                         });
                     }
                 }
-                else if (Util.Type.IsMap(rvd.Type, out var pair))
+                else if (DataType.IsMap(rvd.Type, out var mapKey, out var mapValue))
                 {
-                    var map = rvd.Value as Dictionary<object, object>;
-                    foreach (var (k, v) in map)
+                    foreach (var (k, v) in ((MapValue)rvd.Value).Entries)
                     {
                         queue.Enqueue(new RelationValueValidationData
                         {
                             Tracker = rvd.Tracker,
                             Name = rvd.Name,
-                            Type = pair.Key,
+                            Type = mapKey,
                             Value = k,
                             Scope = rvd.Scope,
                         });
@@ -93,18 +112,17 @@ namespace ExcelTableConverter.Worker
                         {
                             Tracker = rvd.Tracker,
                             Name = rvd.Name,
-                            Type = pair.Value,
+                            Type = mapValue,
                             Value = v,
                             Scope = rvd.Scope,
                         });
                     }
                 }
-                else if (Util.Type.Nake(rvd.Type) == "dsl")
+                else if (columnType.Naked == "dsl")
                 {
-                    var dsl = rvd.Value as DSL;
-                    if (dsl == null)
+                    if (rvd.Value is not DslValue dsl)
                     {
-                        if (Util.Type.IsNullable(rvd.Type))
+                        if (columnType.Nullable)
                             continue;
 
                         throw new LogicException("알 수 없는 에러", rvd.Tracker);
@@ -131,13 +149,13 @@ namespace ExcelTableConverter.Worker
             yield return buffer;
         }
 
-        protected override void OnWorked(SourceSheetData[] input, List<RelationValueValidationData> output, int percent)
+        protected override void OnWorked(IExcelFileTrackable[] input, List<RelationValueValidationData> output, int percent)
         {
-            var tracker = input[0] as IExcelFileTrackable;
+            var tracker = input[0];
             Logger.Write($"관계타입 데이터를 순회중입니다. - {tracker.FileName}:{tracker.SheetName}");
         }
 
-        protected override void OnError(SourceSheetData[] input, Exception e, IExcelFileTrackable tracker = null)
+        protected override void OnError(IExcelFileTrackable[] input, Exception e, IExcelFileTrackable tracker = null)
         {
             base.OnError(input, e, tracker);
         }

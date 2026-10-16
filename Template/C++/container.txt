@@ -433,6 +433,15 @@ public:
         this->_active.store(back, std::memory_order_relaxed);
         this->_published.store(typed, std::memory_order_release);
         this->_keep_alive.push_back(typed);
+        // use_count == 1 means only this vector still holds that generation.
+        auto kept = std::vector<std::shared_ptr<T>>{};
+        kept.reserve(this->_keep_alive.size());
+        for (auto& generation : this->_keep_alive)
+        {
+            if (generation.use_count() > 1)
+                kept.push_back(std::move(generation));
+        }
+        this->_keep_alive.swap(kept);
         this->_loaded = true;
     }
 

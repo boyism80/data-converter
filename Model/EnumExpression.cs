@@ -166,7 +166,9 @@ namespace ExcelTableConverter.Model
                 else if (Priority(item.Token) > 0)
                 {
                     while (ops.Count > 0 && Priority(ops.Peek()) >= Priority(item.Token))
+                    {
                         output.Add(ops.Pop());
+                    }
                     ops.Push(item.Token);
                 }
                 else
@@ -176,7 +178,9 @@ namespace ExcelTableConverter.Model
             }
 
             while (ops.Count > 0)
+            {
                 output.Add(ops.Pop());
+            }
 
             return output;
         }

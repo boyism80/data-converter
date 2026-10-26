@@ -36,6 +36,8 @@ func push_value_to_lua(value_path, type_info, indent)
         $result = indent_str + 'lua_pushstring(lua, ' + ns.access + 'option::encode(' + value_path + ').c_str());'
     when 'numeric'
         $result = indent_str + 'lua_pushinteger(lua, static_cast<lua_Integer>(' + value_path + '));'
+    when 'floating'
+        $result = indent_str + 'lua_pushnumber(lua, static_cast<lua_Number>(' + value_path + '));'
     when 'enum'
         if type_info.enum_value
             $result = indent_str + 'lua_getglobal(lua, "' + type_info.enum_name + '");' + '\n'

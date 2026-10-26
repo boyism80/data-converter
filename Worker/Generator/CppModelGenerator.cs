@@ -146,8 +146,11 @@ namespace ExcelTableConverter.Worker.Generator
                 case { Kind: DataKind.String }:
                     return new LuaType("string", naked);
 
-                case { Kind: DataKind.Byte or DataKind.Sbyte or DataKind.Short or DataKind.Ushort or DataKind.Int or DataKind.Uint or DataKind.Long or DataKind.Ulong or DataKind.Float or DataKind.Double }:
+                case { Kind: DataKind.Byte or DataKind.Sbyte or DataKind.Short or DataKind.Ushort or DataKind.Int or DataKind.Uint or DataKind.Long or DataKind.Ulong }:
                     return new LuaType("numeric", naked);
+
+                case { Kind: DataKind.Float or DataKind.Double }:
+                    return new LuaType("floating", naked);
 
                 case { Kind: DataKind.DateTime }:
                     return new LuaType("date_time", naked);
